@@ -151,6 +151,7 @@ export function getVideoDimensionRules(modelId?: string): VideoDimensionRules {
 export function getMaxContextImages(modelId: string): number {
   if (
     modelId === 'krea2_identity_edit_v1_2' ||
+    modelId === 'krea2_identity_edit_sogni_v0_3_alpha' ||
     modelId === 'dark_beast_krea2_identity_edit_v1_2'
   ) {
     return 2;

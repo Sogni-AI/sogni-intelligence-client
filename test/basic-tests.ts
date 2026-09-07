@@ -1987,6 +1987,13 @@ async function runTests() {
     }
   })();
 
+  await test('Sogni World Krea edit accepts its scene and second reference', () => {
+    const model = 'krea2_identity_edit_sogni_v0_3_alpha';
+    if (getMaxContextImages(model) !== 2 || !supportsContextImages(model)) {
+      throw new Error('The live Sogni Krea identity edit must accept exactly two context images');
+    }
+  })();
+
   // Test 39: getMaxContextImages for other models
   await test('getMaxContextImages returns correct values for other models', () => {
     if (getMaxContextImages('flux-1-schnell') !== 6) {
