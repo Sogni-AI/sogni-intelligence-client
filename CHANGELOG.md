@@ -1,3 +1,10 @@
+## [3.27.8](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.27.7...v3.27.8) (2026-09-08)
+
+
+### Bug Fixes
+
+* **deps:** bump sogni client to 5.34.0 ([4c444a3](https://github.com/Sogni-AI/sogni-intelligence-client/commit/4c444a3522382aa3dc5c6309350008d451977c2d))
+
 ## [3.27.7](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.27.6...v3.27.7) (2026-09-06)
 
 
