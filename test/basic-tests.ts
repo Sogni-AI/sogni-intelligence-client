@@ -3199,13 +3199,21 @@ async function runTests() {
 
   // Test 57: Sogni tool helper exports
   await test('Should export Sogni tool helpers and definitions', () => {
-    if (!SogniTools.generateImage || !SogniTools.generateVideo || !SogniTools.generateMusic) {
+    if (
+      !SogniTools.generateImage ||
+      !SogniTools.generateVideo ||
+      !SogniTools.generateMusic ||
+      !SogniTools.generateSpeech
+    ) {
       throw new Error('Missing one or more built-in Sogni tool definitions');
     }
 
     const all = SogniTools.all;
-    if (!Array.isArray(all) || all.length !== 25) {
-      throw new Error(`SogniTools.all expected 25 tools, got ${all.length}`);
+    if (!Array.isArray(all) || all.length !== 26) {
+      throw new Error(`SogniTools.all expected 26 tools, got ${all.length}`);
+    }
+    if (!all.some((tool) => tool.function.name === 'generate_speech')) {
+      throw new Error('SogniTools.all must include the generate_speech contract');
     }
     if (!all.some((tool) => tool.function.name === 'upscale_image')) {
       throw new Error('SogniTools.all must include the upscale_image contract');
