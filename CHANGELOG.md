@@ -1,3 +1,10 @@
+## [3.28.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.28.0...v3.28.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **deps:** consume complete Qwen speech SDK ([3e9b884](https://github.com/Sogni-AI/sogni-intelligence-client/commit/3e9b8841f713bcf1f6eee7f41b88eb11b628bba3))
+
 # [3.28.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.27.10...v3.28.0) (2026-09-08)
 
 
