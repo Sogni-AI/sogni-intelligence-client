@@ -1150,6 +1150,14 @@ export const MUSIC_GENERATION_SKILL: SkillManifest = {
   toolNames: ['generate_music'],
 };
 
+export const SPEECH_GENERATION_SKILL: SkillManifest = {
+  id: 'speech_generation',
+  name: 'Speech generation',
+  description:
+    'Read written words aloud: narration and voiceover in one of nine studio voices, a voice cloned from an uploaded recording, or a voice invented from a description. Ten languages, cross-lingual cloning.',
+  toolNames: ['generate_speech'],
+};
+
 export const MEDIA_ANALYSIS_SKILL: SkillManifest = {
   id: 'media_analysis',
   name: 'Media analysis',
@@ -1206,6 +1214,7 @@ export const ALL_BUILT_IN_SKILLS: readonly SkillManifest[] = [
   VIDEO_GENERATION_SKILL,
   VIDEO_EDITING_SKILL,
   MUSIC_GENERATION_SKILL,
+  SPEECH_GENERATION_SKILL,
   MEDIA_ANALYSIS_SKILL,
   PERSONA_MANAGEMENT_SKILL,
   APP_SETTINGS_SKILL,

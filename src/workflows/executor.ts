@@ -703,7 +703,7 @@ function artifactKindForTool(tool: string): Artifact['kind'] {
   if (tool === 'animate_photo' || tool === 'generate_video' || tool === 'sound_to_video'
     || tool === 'video_to_video' || tool === 'stitch_video' || tool === 'orbit_video'
     || tool === 'dance_montage') return 'video';
-  if (tool === 'generate_music') return 'audio';
+  if (tool === 'generate_music' || tool === 'generate_speech') return 'audio';
   if (tool === 'analyze_image' || tool === 'extract_metadata') return 'text';
   return 'image';
 }

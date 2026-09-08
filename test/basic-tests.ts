@@ -126,6 +126,7 @@ import { runHappyHorseReferencesTests } from './happyhorse-references-tests';
 import { runWan3VideoTests } from './wan3-video-tests';
 import { runWorkflowExecutorTests } from './workflow-executor-tests';
 import { runCostApprovalTests } from './cost-approval-tests';
+import { runSpeechSettingsTests } from './speech-settings-tests';
 import {
   isTurnAnalysis,
   isTurnTextArtifact,
@@ -5557,6 +5558,11 @@ async function runTests() {
   const costApprovalResults = runCostApprovalTests();
   testsPassed += costApprovalResults.passed;
   testsFailed += costApprovalResults.failed;
+
+  // Qwen3-TTS speech contract — per-checkpoint required and forbidden inputs
+  const speechResults = runSpeechSettingsTests();
+  testsPassed += speechResults.passed;
+  testsFailed += speechResults.failed;
 
   // Summary
   console.log('\n' + '='.repeat(50));

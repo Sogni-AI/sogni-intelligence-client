@@ -32,6 +32,7 @@ export type ToolCostClass =
   | 'video.vendor.standard'
   | 'video.vendor.premium'
   | 'audio.standard'
+  | 'audio.speech'
   | 'compose.standard'
   | 'compose.ffmpeg';
 
@@ -147,6 +148,17 @@ export const TOOL_COST_METADATA: ReadonlyArray<ToolCostMetadata> = [
     riskLevel: 'paid',
     userVisibleCost: 'Per-second audio pricing',
     description: 'Music generation with lyrics, BPM, key, style control.',
+  },
+
+  // Speech
+  {
+    tool: 'generate_speech',
+    // Its own class, not audio.standard: music is quoted per requested second,
+    // speech is a flat quote per take because the script decides the length.
+    costClass: 'audio.speech',
+    riskLevel: 'paid',
+    userVisibleCost: 'Flat per-take audio pricing',
+    description: 'Text to speech with a studio voice, a cloned voice, or a designed one.',
   },
 
   // Synchronous composition helpers (LLM-side)

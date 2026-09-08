@@ -9,6 +9,7 @@ export const BACKBONE_GENERATION_TOOL_NAMES = [
   "generate_image",
   "generate_video",
   "generate_music",
+  "generate_speech",
   "edit_image",
   "apply_style",
   "restore_photo",

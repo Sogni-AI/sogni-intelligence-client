@@ -838,6 +838,56 @@ const GENERATE_MUSIC_CONTRACT: PromptContract = {
 };
 
 // ---------------------------------------------------------------------------
+// generate_speech
+// ---------------------------------------------------------------------------
+const GENERATE_SPEECH_CONTRACT: PromptContract = {
+  contractId: 'generate_speech_v1',
+  version: '1.0.0',
+  toolName: 'generate_speech',
+  baseDescription: [
+    'generate_speech reads written words aloud. It is text-to-speech, not music: use',
+    'generate_music for songs, instrumentals and jingles.',
+    '',
+    'THE PROMPT IS THE SCRIPT. Unlike every image and video tool, prompt is not a description',
+    'of the output — it is the literal text to be spoken, character for character. Writing "a',
+    'calm woman reading the news" produces a voice saying those seven words. Put the delivery in',
+    'voiceDescription and the actual copy in prompt.',
+    '',
+    'WRITE THE SCRIPT WHEN THE USER DOES NOT. "Read me a haiku about rain", "record a podcast',
+    'intro" and "say something reassuring" are requests for words you compose and then speak.',
+    'Compose the line and pass it as prompt. Reach for compose_script only for a long or',
+    'structured piece; a sentence or two is yours to write.',
+    '',
+    'PICK THE MODEL FROM WHAT THE USER GAVE YOU. A voice clip uploaded with "make it sound like',
+    'me" is model="clone" with voiceSourceIndex pointing at that upload. A described speaker who',
+    'does not exist ("an old lighthouse keeper") is model="design" with voiceDescription. Anything',
+    'else is model="voice" — choose a voice from the roster and, if the user described a mood or',
+    'a delivery, put that in voiceDescription too.',
+    '',
+    'CLONING QUALITY. Set voiceTranscript whenever the words in the uploaded clip are known: it',
+    'is the difference between a close clone and a loose one. Tell the user if their reference is',
+    'shorter than three seconds, has music under it, or has two people talking — those are the',
+    'three reasons a clone comes back sounding wrong.',
+    '',
+    'PUNCTUATION IS PROSODY. Keep full stops, commas and question marks; they are the only pause',
+    'and intonation control there is. Spell out numbers, dates and abbreviations the way they',
+    'should be read when the written form is ambiguous.',
+    '',
+    'To put speech over video, generate it here and then call sound_to_video with the result.',
+    'Do not use animate_photo or generate_video to "say" a line of provided text.',
+  ].join('\n'),
+  parameterDocs: {
+    prompt: 'The literal words to speak, verbatim. Not a description of the audio.',
+    voiceDescription:
+      'Delivery direction for model="voice"; the speaker to invent for model="design". Never sent with model="clone".',
+    voiceSourceIndex:
+      'Index of the uploaded voice clip to clone (0-based, same numbering as other tools use for audio). Required for model="clone".',
+    voiceTranscript:
+      'What the uploaded clip says. Optional, but it makes the clone markedly closer to the source.',
+  },
+};
+
+// ---------------------------------------------------------------------------
 // resolve_personas
 // ---------------------------------------------------------------------------
 const RESOLVE_PERSONAS_CONTRACT: PromptContract = {
@@ -1642,6 +1692,7 @@ export const PROMPT_CONTRACTS: ReadonlyArray<PromptContract> = [
   SOUND_TO_VIDEO_CONTRACT,
   DANCE_MONTAGE_CONTRACT,
   GENERATE_MUSIC_CONTRACT,
+  GENERATE_SPEECH_CONTRACT,
   ANALYZE_IMAGE_CONTRACT,
   ANALYZE_VIDEO_CONTRACT,
   SET_CONTENT_FILTER_CONTRACT,

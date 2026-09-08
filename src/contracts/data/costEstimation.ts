@@ -19,7 +19,9 @@
  * - `compose.*` (1): planning / FFmpeg composition; near-free.
  * - `image.standard` (1) < `image.premium` (2) < `image.external` (3):
  *   standard internal < internal premium < third-party API.
- * - `audio.standard` (3): music generation tier.
+ * - `audio.standard` (3): music generation tier, weighted per second.
+ * - `audio.speech` (1): one text-to-speech take. Weighted per render rather
+ *   than per second, and roughly the cost of one standard image.
  * - `video.standard` (5) < `video.vendor.standard` (6) < `video.premium` (8)
  *   < `video.vendor.premium` (10). Note the deliberate interleave:
  *   `video.vendor.standard` is a third-party API at the standard tier
@@ -44,6 +46,7 @@ export const COST_CLASS_NUMERIC_WEIGHTS: Readonly<Record<ToolCostClass, number>>
   'video.vendor.standard': 6,
   'video.vendor.premium': 10,
   'audio.standard': 3,
+  'audio.speech': 1,
   'compose.standard': 1,
   'compose.ffmpeg': 1,
 };

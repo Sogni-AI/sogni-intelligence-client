@@ -78,6 +78,7 @@ export {
   extendVideoDefinition,
   generateImageDefinition,
   generateMusicDefinition,
+  generateSpeechDefinition,
   generateVideoDefinition,
   generationToolDefinitions,
   orbitVideoDefinition,

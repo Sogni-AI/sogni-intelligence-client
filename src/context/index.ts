@@ -22,6 +22,7 @@ const DEFAULT_VIDEO_TOOLS = new Set([
 
 const DEFAULT_AUDIO_TOOLS = new Set([
   'generate_music',
+  'generate_speech',
 ]);
 
 const DEFAULT_UNMASKABLE_TOOLS = new Set([

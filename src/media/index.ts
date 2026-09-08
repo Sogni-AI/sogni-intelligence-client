@@ -6,6 +6,7 @@ export * from './characterSheet.js';
 export * from './vendorModelPremium.js';
 export * from './videoAppSettings.js';
 export * from './musicSettings.js';
+export * from './speechSettings.js';
 export * from './cameraAngle.js';
 export * from './enhancementProfiles.js';
 export * from './audioReference.js';

@@ -131,6 +131,14 @@ export const MODELS_BY_TOOL: Record<string, ModelOption[]> = {
     { key: 'sft', displayName: 'ACE-Step 1.5 SFT' },
     { key: 'music3', displayName: 'MiniMax Music 3' },
   ],
+  // Three Qwen3-TTS checkpoints, picked by what the caller can supply rather
+  // than by quality tier: a preset voice, a recording to clone, or a written
+  // description of a speaker to invent.
+  generate_speech: [
+    { key: 'voice', displayName: 'Qwen3-TTS Studio Voices' },
+    { key: 'clone', displayName: 'Qwen3-TTS Voice Clone' },
+    { key: 'design', displayName: 'Qwen3-TTS Voice Design' },
+  ],
 };
 
 /** Tools that select models via a "quality" arg instead of "model"/"videoModel". */

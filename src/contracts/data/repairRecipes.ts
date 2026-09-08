@@ -41,6 +41,7 @@ const SAFETY_FILTERED_TOOLS: ReadonlyArray<string> = [
   'sound_to_video',
   'video_to_video',
   'generate_music',
+  'generate_speech',
 ];
 
 const SPECIFIC_RECIPES: ReadonlyArray<RepairRecipe> = [

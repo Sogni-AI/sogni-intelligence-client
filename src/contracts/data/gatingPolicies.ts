@@ -49,6 +49,7 @@ export const MEDIA_TOOL_NAMES: ReadonlyArray<string> = [
   'sound_to_video',
   'video_to_video',
   'generate_music',
+  'generate_speech',
   'extend_video',
   'replace_video_segment',
   'overlay_video',
