@@ -1,3 +1,15 @@
+# [3.28.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.27.10...v3.28.0) (2026-09-08)
+
+
+### Bug Fixes
+
+* **deps:** sync the lockfile with the protocol alpha.33 bump ([49dd7f4](https://github.com/Sogni-AI/sogni-intelligence-client/commit/49dd7f473df2bb2dffcddff663dfab25d5927dfa))
+
+
+### Features
+
+* **tools:** add generate_speech definition and shared contracts ([dee7b34](https://github.com/Sogni-AI/sogni-intelligence-client/commit/dee7b34ce037d5f10ed7c77baa2ea86b8bebd32f))
+
 ## [3.27.10](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.27.9...v3.27.10) (2026-09-08)
 
 
