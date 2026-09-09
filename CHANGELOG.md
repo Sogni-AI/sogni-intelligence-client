@@ -1,3 +1,10 @@
+## [3.28.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.28.1...v3.28.2) (2026-09-09)
+
+
+### Bug Fixes
+
+* **deps:** align client dependency with 5.36.2 ([c8b86b5](https://github.com/Sogni-AI/sogni-intelligence-client/commit/c8b86b5e1a1b093d6af1d64ec4dacad9c90d40e3))
+
 ## [3.28.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.28.0...v3.28.1) (2026-09-08)
 
 
