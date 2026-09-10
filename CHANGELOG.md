@@ -1,3 +1,10 @@
+## [3.28.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.28.2...v3.28.3) (2026-09-10)
+
+
+### Bug Fixes
+
+* **storyboard:** separate aspect ratios from frame counts ([a7e382c](https://github.com/Sogni-AI/sogni-intelligence-client/commit/a7e382c60a43d909caf9aaeaff21f007298703bb))
+
 ## [3.28.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.28.1...v3.28.2) (2026-09-09)
 
 
