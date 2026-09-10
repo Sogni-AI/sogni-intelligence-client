@@ -4754,6 +4754,9 @@ export function inferExplicitStoryboardFrameCountFromText(text: string): number 
   const normalized = text
     .replace(/[“”]/g, '"')
     .replace(/[’]/g, "'")
+    // Aspect-ratio dimensions describe each frame, not the number of frames.
+    // Remove the whole ratio so its trailing number cannot become a count.
+    .replace(/\b\d{1,5}\s*:\s*\d{1,5}\b/g, ' ')
     .trim();
   if (!normalized) return null;
 

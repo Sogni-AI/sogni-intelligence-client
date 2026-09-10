@@ -63,6 +63,7 @@ import {
   getModelDefaults,
   getBuiltinVideoModelConfig,
   inferStoryboardLayoutSpec,
+  inferExplicitStoryboardFrameCountFromText,
   LTX25_DEV_WORKFLOW_MODELS as RUNTIME_LTX25_DEV_WORKFLOW_MODELS,
   LTX25_WORKFLOW_MODELS as RUNTIME_LTX25_WORKFLOW_MODELS,
   resolveVideoModelAlias,
@@ -154,6 +155,17 @@ function test(name: string, fn: () => void | Promise<void>) {
 }
 
 async function runTests() {
+  for (const [text, count] of [
+    ['Create a grid of 10 cinematic 16:9 frames.', 10],
+    ['Use 12 portrait 9:16 panels.', 12],
+    ['Render cinematic 16:9 frames.', null],
+    ['Create seven timed beats for a vertical launch video.', 7],
+  ] as const) {
+    await test(`Should extract storyboard count without aspect-ratio digits: ${text}`, () => {
+      const actual = inferExplicitStoryboardFrameCountFromText(text);
+      if (actual !== count) throw new Error(`Expected ${count}, received ${actual}`);
+    })();
+  }
   // Test 1: Import validation
   await test('Should import all exports', () => {
     if (!SogniClientWrapper) throw new Error('SogniClientWrapper not imported');
