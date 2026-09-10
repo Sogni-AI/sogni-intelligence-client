@@ -17,6 +17,7 @@ export const definition: ToolDefinition = {
       'asks a generative model such as Seedance to re-render the clip, use video_to_video. The output is at most ' +
       'twice the source size, so 1080p needs a source whose short edge is 540-768px and 1440p needs 720-768px. ' +
       'The source must also be at most 362 frames and about 15 seconds long, 1-60 fps, and 100 MB. ' +
+      'It cannot produce 4K or any size above 1440p; when the user asks for one, say so and offer 1440p. ' +
       "Each upscale costs credits based on the source video's size and length.",
     parameters: {
       type: 'object',

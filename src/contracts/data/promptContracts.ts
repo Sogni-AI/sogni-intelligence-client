@@ -1040,7 +1040,8 @@ const UPSCALE_VIDEO_CONTRACT: PromptContract = {
     'The output is at most twice the source size, so 1440p needs a source short edge of 720-768px',
     'and 1080p needs 540-768px. Sources must also be at most 362 frames (about 15 seconds), 1-60 fps,',
     'and 100 MB. If the tool reports the source is outside these limits, explain the limit to the',
-    'user instead of switching to a generative video tool.',
+    'user instead of switching to a generative video tool. It cannot produce 4K or any size above',
+    '1440p: when the user asks for one, say so and offer 1440p instead of silently delivering less.',
   ].join('\n'),
   parameterDocs: {
     sourceVideoIndex: 'Omit for the latest generated video, then the most recent upload. Generated videos are zero-based; -1/-2 select uploaded videos.',

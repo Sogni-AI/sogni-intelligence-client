@@ -85,6 +85,12 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
     true,
   );
   expect(
+    'description and prompt contract explain the 4K limit',
+    String(fn.description).includes('cannot produce 4K')
+      && Boolean(PROMPT_CONTRACTS.find((candidate) => candidate.toolName === 'upscale_video')?.baseDescription.includes('cannot produce 4K')),
+    true,
+  );
+  expect(
     'registered as a generation tool',
     generationToolDefinitions.some((definition) => definition.function.name === 'upscale_video'),
     true,
