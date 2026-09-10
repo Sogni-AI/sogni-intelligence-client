@@ -5,6 +5,7 @@
 
 import { EventEmitter } from 'events';
 import { SogniClient, Project, Job, ChatStream } from '@sogni-ai/sogni-client';
+import { VIDEO_UPSCALE_MODEL_ID } from '../media/videoUpscale.js';
 import type {
   SogniClientConfig,
   SogniAttributionConfig,
@@ -992,6 +993,13 @@ export class SogniClientWrapper extends EventEmitter {
     }
 
     if (config.autoResizeVideoAssets === false) {
+      return config;
+    }
+
+    // FlashVSR upscales the uploaded source exactly as it is; the server derives
+    // the output size from that verified source. Never resize its reference or
+    // normalize its dimensions to another model family's envelope.
+    if (config.modelId === VIDEO_UPSCALE_MODEL_ID) {
       return config;
     }
 

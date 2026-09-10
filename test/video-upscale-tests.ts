@@ -34,6 +34,7 @@ import {
   getToolPermission,
 } from '../src/contracts/index.js';
 import { VIDEO_EDITING_SKILL } from '../src/public-skill-runtime/index.js';
+import { validateProjectConfig } from '../src/utils/helpers.js';
 
 let testsPassed = 0;
 let testsFailed = 0;
@@ -241,6 +242,31 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
       validateVideoUpscaleSourceTiming({ frames: 120, fps: 24, sizeBytes: VIDEO_UPSCALE_SOURCE_LIMITS.maxBytes + 1 }),
     ),
     'Video upscaling accepts source files up to 100 MB.',
+  );
+
+  // --- wrapper project validation -------------------------------------------
+  const wrapperMessage = (config: Record<string, unknown>): string | null => {
+    try {
+      validateProjectConfig(config as never);
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : String(error);
+    }
+  };
+  expect(
+    'wrapper accepts a promptless minimal upscale config',
+    wrapperMessage({ type: 'video', modelId: VIDEO_UPSCALE_MODEL_ID, positivePrompt: '', numberOfMedia: 1, upscaleResolution: 1440 }),
+    null,
+  );
+  expect(
+    'wrapper accepts a 2560px upscale output edge',
+    wrapperMessage({ type: 'video', modelId: VIDEO_UPSCALE_MODEL_ID, positivePrompt: '', numberOfMedia: 1, width: 2560, height: 1440 }),
+    null,
+  );
+  expect(
+    'other video models keep the 2048px wrapper bound',
+    wrapperMessage({ type: 'video', modelId: 'ltx25-22b-int8_t2v_distilled', positivePrompt: 'x', width: 2560, height: 1440 }),
+    'Width must be between 256 and 2048',
   );
 
   console.log(`\nvideoUpscale: ${testsPassed} passed, ${testsFailed} failed`);

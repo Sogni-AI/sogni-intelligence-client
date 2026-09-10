@@ -10,6 +10,7 @@ import type {
   AudioProjectConfig,
 } from '../types/index.js';
 import { SogniValidationError } from './errors.js';
+import { VIDEO_UPSCALE_MAX_OUTPUT, VIDEO_UPSCALE_MODEL_ID } from '../media/videoUpscale.js';
 import {
   getSeedanceReferenceLimits,
 } from '../tools/shared/seedanceReferences.js';
@@ -299,15 +300,17 @@ export function validateProjectConfig(config: ProjectConfig): void {
   }
 
   if (isImageProjectConfig(config) || isVideoProjectConfig(config)) {
+    // FlashVSR delivers up to 2560 px on the long edge; other models keep the 2048 px bound.
+    const maxDimension = config.modelId === VIDEO_UPSCALE_MODEL_ID ? VIDEO_UPSCALE_MAX_OUTPUT.longEdge : 2048;
     if (config.width !== undefined) {
-      if (typeof config.width !== 'number' || config.width < 256 || config.width > 2048) {
-        throw new SogniValidationError('Width must be between 256 and 2048');
+      if (typeof config.width !== 'number' || config.width < 256 || config.width > maxDimension) {
+        throw new SogniValidationError(`Width must be between 256 and ${maxDimension}`);
       }
     }
 
     if (config.height !== undefined) {
-      if (typeof config.height !== 'number' || config.height < 256 || config.height > 2048) {
-        throw new SogniValidationError('Height must be between 256 and 2048');
+      if (typeof config.height !== 'number' || config.height < 256 || config.height > maxDimension) {
+        throw new SogniValidationError(`Height must be between 256 and ${maxDimension}`);
       }
     }
   }
