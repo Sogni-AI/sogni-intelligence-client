@@ -21,6 +21,8 @@ export const VIDEO_UPSCALE_DEFAULT_RESOLUTION: VideoUpscaleTargetResolution = 14
 /** Public source limits, as documented for the upscale_video tool. */
 export const VIDEO_UPSCALE_SOURCE_LIMITS = Object.freeze({
   maxShortEdge: 768,
+  /** Largest source area, counted in 64-pixel blocks: about 1344×768, or 768×1344 in portrait. */
+  maxBlockPixels: 1344 * 768,
   maxFrames: 362,
   maxDurationSeconds: 362 / 24,
   minFps: 1,
@@ -58,6 +60,12 @@ function positiveInteger(value: number): boolean {
   return Number.isSafeInteger(value) && value > 0;
 }
 
+function sourceFitsBlockArea(sourceWidth: number, sourceHeight: number): boolean {
+  const blockWidth = Math.ceil(sourceWidth / 64) * 64;
+  const blockHeight = Math.ceil(sourceHeight / 64) * 64;
+  return blockWidth * blockHeight <= VIDEO_UPSCALE_SOURCE_LIMITS.maxBlockPixels;
+}
+
 function outputFor(
   sourceWidth: number,
   sourceHeight: number,
@@ -89,6 +97,7 @@ export function defaultVideoUpscaleResolution(
   sourceWidth: number,
   sourceHeight: number,
 ): VideoUpscaleTargetResolution | null {
+  if (!sourceFitsBlockArea(sourceWidth, sourceHeight)) return null;
   for (const resolution of [VIDEO_UPSCALE_DEFAULT_RESOLUTION, 1080] as const) {
     if (typeof outputFor(sourceWidth, sourceHeight, resolution) !== 'string') return resolution;
   }
@@ -114,6 +123,12 @@ export function resolveVideoUpscaleOutput(input: {
     throw new VideoUpscaleRequestError(
       `This video is ${sourceWidth}×${sourceHeight}; video upscaling accepts sources up to `
         + `${VIDEO_UPSCALE_SOURCE_LIMITS.maxShortEdge}px on the short edge.`,
+    );
+  }
+  if (!sourceFitsBlockArea(sourceWidth, sourceHeight)) {
+    throw new VideoUpscaleRequestError(
+      `This video is ${sourceWidth}×${sourceHeight}; video upscaling accepts sources up to about `
+        + '1344×768 pixels, or 768×1344 in portrait.',
     );
   }
   const requested = input.targetResolution ?? undefined;

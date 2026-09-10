@@ -204,10 +204,16 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
     'This video is 1920×1080; video upscaling accepts sources up to 768px on the short edge.',
   );
   expect(
-    'an ultra-wide source falls back to the resolution that fits',
-    resolveVideoUpscaleOutput({ sourceWidth: 1792, sourceHeight: 768 }),
-    { resolution: 1080, width: 2520, height: 1080 },
+    'a 16:9 source at the size limit reaches 1440p',
+    resolveVideoUpscaleOutput({ sourceWidth: 1344, sourceHeight: 756 }),
+    { resolution: 1440, width: 2560, height: 1440 },
   );
+  expect(
+    'an ultra-wide source larger than the source area is refused',
+    errorMessage(() => resolveVideoUpscaleOutput({ sourceWidth: 1792, sourceHeight: 768 })),
+    'This video is 1792×768; video upscaling accepts sources up to about 1344×768 pixels, or 768×1344 in portrait.',
+  );
+  expect('default helper refuses an oversized 21:9 source', defaultVideoUpscaleResolution(1680, 720), null);
   expect(
     'an unsupported resolution is refused',
     errorMessage(() => resolveVideoUpscaleOutput({ sourceWidth: 1280, sourceHeight: 720, targetResolution: 2160 })),
