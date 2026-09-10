@@ -1,3 +1,10 @@
+## [3.28.4](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.28.3...v3.28.4) (2026-09-10)
+
+
+### Bug Fixes
+
+* **workflows:** preserve durable content filter preferences ([e78450b](https://github.com/Sogni-AI/sogni-intelligence-client/commit/e78450ba8f39cd81a00e6ab0c0714a95c70e2c84))
+
 ## [3.28.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.28.2...v3.28.3) (2026-09-10)
 
 
