@@ -20,6 +20,7 @@
  *   - UPLOADED_BASE_VIDEO_SUBTITLES force subtitles for uploaded-video captions
  *   - UPLOADED_BASE_VIDEO_TRANSFORM force video_to_video for uploaded-video transforms
  *   - UPLOADED_BASE_VIDEO_STITCH    force stitch_video for uploaded-video stitching
+ *   - UPLOADED_BASE_VIDEO_UPSCALE   force upscale_video for uploaded-video resolution upscales
  *   - HAS_PERSONA_AND_REQUESTS_VIDEO  require resolve_personas + edit_image first only when persona is explicit
  *   - HAS_PERSONA_AND_REQUESTS_PERSONA_IMAGE  require edit_image (not generate_image)
  */
@@ -48,6 +49,7 @@ export const MEDIA_TOOL_NAMES: ReadonlyArray<string> = [
   'generate_video',
   'sound_to_video',
   'video_to_video',
+  'upscale_video',
   'generate_music',
   'generate_speech',
   'extend_video',
@@ -220,6 +222,24 @@ export const GATING_POLICIES: ReadonlyArray<ToolGatingPolicy> = [
     rationale:
       'The planner identified uploaded-video stitching. Use stitch_video with ' +
       'the uploaded clips instead of rendering a fresh clip.',
+  },
+  {
+    policyId: 'UPLOADED_BASE_VIDEO_UPSCALE',
+    version: '1.0.0',
+    trigger: {
+      allOf: ['has_uploaded_video', 'video_modification:upscale'],
+      sources: {
+        has_uploaded_video: 'session_state',
+        'video_modification:upscale': 'planner',
+      },
+    },
+    effect: {
+      forbid: ['generate_video', 'animate_photo', 'video_to_video'],
+      require: ['upscale_video'],
+    },
+    rationale:
+      'The planner identified a pure resolution upscale of the uploaded video. Use ' +
+      'the promptless upscale_video tool; do not re-render the clip with a generative model.',
   },
   {
     policyId: 'HAS_PERSONA_AND_REQUESTS_VIDEO',

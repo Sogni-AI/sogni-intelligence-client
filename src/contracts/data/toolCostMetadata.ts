@@ -90,6 +90,13 @@ export const TOOL_COST_METADATA: ReadonlyArray<ToolCostMetadata> = [
     description: 'Deterministic RTX VSR enlargement without generative changes.',
   },
   {
+    tool: 'upscale_video',
+    costClass: 'video.standard',
+    riskLevel: 'paid',
+    userVisibleCost: 'Priced by source video size and length',
+    description: 'Promptless FlashVSR 1080p/1440p video upscale that keeps every frame and the audio.',
+  },
+  {
     tool: 'apply_style',
     costClass: 'image.standard',
     riskLevel: 'paid',

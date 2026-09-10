@@ -1123,11 +1123,12 @@ export const VIDEO_EDITING_SKILL: SkillManifest = {
   id: 'video_editing',
   name: 'Video editing',
   description:
-    'Convert a still image, audio track, or existing clip into video, plus stitching, orbits, dance-montage compositions, segment extend/replace, and pure-ffmpeg post-production (overlay, subtitles).',
+    'Convert a still image, audio track, or existing clip into video, plus stitching, orbits, dance-montage compositions, segment extend/replace, promptless FlashVSR video upscaling, and pure-ffmpeg post-production (overlay, subtitles).',
   toolNames: [
     'animate_photo',
     'sound_to_video',
     'video_to_video',
+    'upscale_video',
     'stitch_video',
     'orbit_video',
     'dance_montage',
@@ -1139,6 +1140,7 @@ export const VIDEO_EDITING_SKILL: SkillManifest = {
   constraints: [
     'Preserve per-clip retry and batch progress semantics. Use one Dynamic Prompt project for prompt-only fan-out, and avoid serial waterfall calls for independent clips.',
     'animate_photo errors with all_failed must surface to the user; do not auto-retry from inside the chat loop.',
+    'Use upscale_video for a promptless 1080p/1440p resolution increase of an existing video; it keeps every frame, the frame rate, and the audio. Do not substitute video_to_video unless the user explicitly asks a generative model such as Seedance to re-render the clip.',
   ],
 };
 

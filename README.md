@@ -177,6 +177,7 @@ Sogni's hosted tool surface — `generate_image`, `generate_video`, `analyze_vid
 - Validate / normalize arguments before dispatch: `validateAndNormalizeHostedToolArguments` from `/contracts`.
 - Apply gating policies, repair recipes, and prompt contracts at runtime: `createPublicSkillDefaultContractRuntime` from `/public-skill-runtime`.
 - Generate JSON Schema clients for other languages from `/schemas/*`.
+- Upscale a finished video without a prompt: `upscaleVideoDefinition` from `/tools` is the `upscale_video` tool (one generated or uploaded video, 1080p or 1440p, every frame and the audio kept), and `resolveVideoUpscaleOutput` / `validateVideoUpscaleSourceTiming` from `/media` derive the output size and check the public source limits before you submit.
 
 For an end‑to‑end agent example, see the [Sogni Creative Agent Skill](https://github.com/Sogni-AI/sogni-creative-agent-skill) — the `sogni-agent` CLI plus a `SKILL.md` behavior file for Claude Code, OpenClaw, Hermes Agent, and Manus. It consumes only this package's public surface.
 

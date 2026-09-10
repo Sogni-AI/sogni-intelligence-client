@@ -14,6 +14,7 @@ const DEFAULT_VIDEO_TOOLS = new Set([
   'generate_video',
   'sound_to_video',
   'video_to_video',
+  'upscale_video',
   'stitch_video',
   'orbit_video',
   'dance_montage',

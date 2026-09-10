@@ -72,6 +72,9 @@ export const MODELS_BY_TOOL: Record<string, ModelOption[]> = {
   upscale_image: [
     { key: 'rtx-vsr', displayName: 'NVIDIA RTX Video Super Resolution' },
   ],
+  upscale_video: [
+    { key: 'flashvsr', displayName: 'FlashVSR v1.1' },
+  ],
   apply_style: QUALITY_TIER_MODELS,
   refine_result: QUALITY_TIER_MODELS,
   change_angle: QUALITY_ONLY_MODELS,

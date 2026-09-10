@@ -6,6 +6,7 @@ import { definition as editImageDefinition } from './edit-image/definition.js';
 import { definition as applyStyleDefinition } from './apply-style/definition.js';
 import { definition as restorePhotoDefinition } from './restore-photo/definition.js';
 import { definition as upscaleImageDefinition } from './upscale-image/definition.js';
+import { definition as upscaleVideoDefinition } from './upscale-video/definition.js';
 import { definition as refineResultDefinition } from './refine-result/definition.js';
 import { definition as animatePhotoDefinition } from './animate-photo/definition.js';
 import { definition as changeAngleDefinition } from './change-angle/definition.js';
@@ -47,6 +48,7 @@ export {
   replaceVideoSegmentDefinition,
   restorePhotoDefinition,
   upscaleImageDefinition,
+  upscaleVideoDefinition,
   soundToVideoDefinition,
   stitchVideoDefinition,
   videoToVideoDefinition,
@@ -64,6 +66,7 @@ export const generationToolDefinitions = [
   applyStyleDefinition,
   restorePhotoDefinition,
   upscaleImageDefinition,
+  upscaleVideoDefinition,
   refineResultDefinition,
   animatePhotoDefinition,
   changeAngleDefinition,

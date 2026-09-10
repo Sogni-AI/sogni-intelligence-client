@@ -81,6 +81,7 @@ export const IMAGE_CONTEXT_TOOL_NAMES: ReadonlyArray<string> = [
  */
 export const VIDEO_CONTEXT_TOOL_NAMES: ReadonlyArray<string> = [
   'video_to_video',
+  'upscale_video',
   'extend_video',
   'replace_video_segment',
   'overlay_video',

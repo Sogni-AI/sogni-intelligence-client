@@ -128,6 +128,7 @@ import { runWan3VideoTests } from './wan3-video-tests';
 import { runWorkflowExecutorTests } from './workflow-executor-tests';
 import { runCostApprovalTests } from './cost-approval-tests';
 import { runSpeechSettingsTests } from './speech-settings-tests';
+import { runVideoUpscaleTests } from './video-upscale-tests';
 import {
   isTurnAnalysis,
   isTurnTextArtifact,
@@ -5583,6 +5584,11 @@ async function runTests() {
   const speechResults = runSpeechSettingsTests();
   testsPassed += speechResults.passed;
   testsFailed += speechResults.failed;
+
+  // FlashVSR upscale_video contract — tool, routing data, and output geometry
+  const videoUpscaleResults = runVideoUpscaleTests();
+  testsPassed += videoUpscaleResults.passed;
+  testsFailed += videoUpscaleResults.failed;
 
   // Summary
   console.log('\n' + '='.repeat(50));
