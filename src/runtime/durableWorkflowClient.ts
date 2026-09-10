@@ -44,6 +44,8 @@ export type DurableCreativeWorkflowWaitingReason =
 
 export interface DurableCreativeWorkflowRecord {
   workflowId: string;
+  /** Safe Content Filter preference captured when the workflow started. */
+  safeContentFilter?: boolean;
   title?: string;
   status: BackboneWorkflowStatus;
   /** Why a `waiting_for_user` workflow is paused. */
@@ -73,6 +75,8 @@ export interface DurableCreativeWorkflowClientOptions {
   idempotencyKey?: string;
   maxEstimatedCapacityUnits?: number;
   confirmCost?: boolean;
+  /** Preference for a new workflow; omitted values use the service default. */
+  safeContentFilter?: boolean;
 }
 
 export interface StartDurableCreativeWorkflowRequest {
@@ -82,6 +86,7 @@ export interface StartDurableCreativeWorkflowRequest {
   media_references?: unknown[];
   max_estimated_capacity_units?: number;
   confirm_cost?: boolean;
+  safe_content_filter?: boolean;
 }
 
 function appendPath(baseUrl: string, path: string): string {
@@ -122,7 +127,7 @@ export function buildStartDurableCreativeWorkflowRequest(
   input: BackboneDurableWorkflowInput,
   options: Pick<
     DurableCreativeWorkflowClientOptions,
-    'tokenType' | 'appSource' | 'maxEstimatedCapacityUnits' | 'confirmCost'
+    'tokenType' | 'appSource' | 'maxEstimatedCapacityUnits' | 'confirmCost' | 'safeContentFilter'
   > = {},
 ): StartDurableCreativeWorkflowRequest {
   const { mediaReferences, ...requestInput } = input;
@@ -135,6 +140,7 @@ export function buildStartDurableCreativeWorkflowRequest(
       ? { max_estimated_capacity_units: options.maxEstimatedCapacityUnits }
       : {}),
     ...(options.confirmCost !== undefined ? { confirm_cost: options.confirmCost } : {}),
+    ...(options.safeContentFilter !== undefined ? { safe_content_filter: options.safeContentFilter } : {}),
   };
 }
 
@@ -222,6 +228,7 @@ export async function startDurableCreativeWorkflow(
       appSource: options.appSource,
       maxEstimatedCapacityUnits: options.maxEstimatedCapacityUnits,
       confirmCost: options.confirmCost,
+      safeContentFilter: options.safeContentFilter,
     })),
   });
   const envelope = await readJsonEnvelope<{ workflow: DurableCreativeWorkflowRecord }>(response);
