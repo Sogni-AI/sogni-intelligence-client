@@ -33,7 +33,7 @@ const H3_LORA_SELECTORS = [
 ] as const;
 
 const WAN3_VIDEO_MODEL_GUIDANCE =
-  '"wan3.0-video" is Alibaba Wan 3 and "wan3.0-spicy-video" is MuleRouter w3.0-video. Both support 2-30s or smart duration at 30 fps, optional native audio, prompt expansion, 480p/720p/1080p, adaptive/fixed ratios, first/last frames, and loose multimodal references. Frame-anchor and loose-reference modes are mutually exclusive. Enhanced has no document/web context or watermark. Do not send negativePrompt; video references are loose conditioning, not edit or extend modes.';
+  '"wan3.0-video" is Alibaba Wan 3 and "wan3.0-spicy-video" is MuleRouter w3.0-video. Both support 2-30s at 30 fps, optional native audio, prompt expansion, 480p/720p/1080p, adaptive/fixed ratios, first/last frames, and loose multimodal references. Frame-anchor and loose-reference modes are mutually exclusive. Enhanced has no document/web context or watermark. Do not send negativePrompt; video references are loose conditioning, not edit or extend modes.';
 
 export const definition: ToolDefinition = {
   type: "function",
@@ -123,11 +123,6 @@ BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary
           type: "number",
           description:
             'Video duration in seconds. Default: 5. Use when the user explicitly requests a specific length (e.g., "make a 10 second video"). Per-model maximum: ltx25 and ltx23 = 20s, wan22 = 10s (clips longer than this are invalid), wan3.0-video = 30s with a 2s minimum, minimax-h3 = 15.08s with a 5.17s minimum because H3 renders 124-362 frames on a 17-frame grid at a fixed 24 fps. For totals beyond the per-model cap, batch multiple clips via sourceImageIndices instead of requesting a single oversized clip.',
-        },
-        smartDuration: {
-          type: "boolean",
-          description:
-            "Wan 3 only. Let the model choose 2-30 seconds. Do not also set duration. The 30-second maximum is reserved and the final charge settles down to reported duration.",
         },
         ratio: {
           type: "string",

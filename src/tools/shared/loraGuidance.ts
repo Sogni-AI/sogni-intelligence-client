@@ -78,7 +78,7 @@ export const KREA2_LORA_MODEL_IDS_SENTENCE =
  * own selectors so neither sends the other's.
  */
 export const H3_VIDEO_LORA_CATALOG_REFERENCE =
-  'Three LoRAs are published for MiniMax H3 today and the set differs by mode, so '
+  'Five LoRAs are published for MiniMax H3 today and the set differs by mode, so '
   + 'GET /v1/loras/comfy?modelId=<model> is authoritative for the mode in hand and carries exact '
   + 'ranges, maturity flags, and anything published since. h3-realism-people (fal) is a realism '
   + 'pass trained on live-action footage of people: it restores skin texture and pores, stray '
@@ -86,7 +86,14 @@ export const H3_VIDEO_LORA_CATALOG_REFERENCE =
   + 'close-up. It is the only one gated on a trigger word — put r34l1sm near the FRONT of the '
   + 'prompt, or the render comes back as ordinary H3 with no error. h3-vbvr-video-reasoning is a '
   + 'prompt-adherence pass that holds the model to what was asked instead of improvising. '
-  + 'h3-mystic-xxx-v4 is an uncensored adult fine-tune. Do not invent ids.';
+  + 'h3-natural-face-speech (AdaptiveVision) makes people talking on camera look and sound more '
+  + 'natural: cheeks, brows, jaw and lips move together as in real speech, and spoken English comes '
+  + 'through clearer; use it for talking-head shots such as vlogs, podcasts, interviews and '
+  + 'presenters. h3-better-motion (AdaptiveVision) gives people more natural, consistent body '
+  + 'movement — weight shifts, strides, turns and gestures that follow through — for dance, '
+  + 'sport, walking and other full-body shots. Both AdaptiveVision LoRAs work best with short, '
+  + 'simple prompt sentences and are not validated on reference-to-video. h3-mystic-xxx-v4 is an '
+  + 'uncensored adult fine-tune. Do not invent ids.';
 
 /** Shared video `loraStrengths` guidance: positive-only, and what pushing it costs. */
 export const H3_VIDEO_LORA_STRENGTHS_GUIDANCE =
@@ -99,7 +106,9 @@ export const H3_VIDEO_LORA_STRENGTHS_GUIDANCE =
   + 'recomposes and the grade darkens, which on an image-conditioned mode can crop the subject out '
   + 'of the frame the user supplied. Raise it above 1 only when the user asks for more, and prefer '
   + 'the default when they supplied a first or last frame. h3-vbvr-video-reasoning and '
-  + 'h3-mystic-xxx-v4 both take 0-1 and do default to 1.0, with usable bands of 0.7-1 and 0.2-1.';
+  + 'h3-mystic-xxx-v4 both take 0-1 and do default to 1.0, with usable bands of 0.7-1 and 0.2-1. '
+  + 'h3-natural-face-speech and h3-better-motion take 0-1.5 and default to 0.6; their usable band '
+  + 'is 0.4-0.8.';
 
 /**
  * Which selectors accept the H3 LoRAs, in the vocabulary of one tool.

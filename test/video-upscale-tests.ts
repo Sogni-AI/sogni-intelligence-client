@@ -67,12 +67,30 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
 
   // --- tool definition -------------------------------------------------------
   const fn = upscaleVideoDefinition.function;
-  const properties = (fn.parameters?.properties ?? {}) as Record<string, { enum?: number[]; type?: string }>;
+  const properties = (fn.parameters?.properties ?? {}) as Record<
+    string,
+    { enum?: Array<number | string>; type?: string; minimum?: number; maximum?: number }
+  >;
   expect('tool name', fn.name, 'upscale_video');
-  expect('promptless: exposes only source selection and resolution', Object.keys(properties).sort(), [
+  expect('promptless: exposes source, resolution and the FlashVSR options only', Object.keys(properties).sort(), [
+    'detailPreference',
+    'processingSpeed',
+    'seed',
     'sourceVideoIndex',
     'targetResolution',
   ]);
+  expect('detail preference enum is stable/sharper', properties.detailPreference?.enum, ['stable', 'sharper']);
+  expect('processing speed enum is stable/faster', properties.processingSpeed?.enum, ['stable', 'faster']);
+  expect('seed is an integer from -1 (random) to 4294967295', [
+    properties.seed?.type,
+    properties.seed?.minimum,
+    properties.seed?.maximum,
+  ], ['integer', -1, 4294967295]);
+  expect(
+    'description keeps the FlashVSR options opt-in and price-neutral',
+    String(fn.description).includes('omit them unless the user asks, and none of them changes the price'),
+    true,
+  );
   expect('no required arguments', fn.parameters?.required, []);
   expect('resolution enum is 1080/1440', properties.targetResolution?.enum, [1080, 1440]);
   expect('resolution enum matches media constant', properties.targetResolution?.enum, [
@@ -122,9 +140,9 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
   const contract = PROMPT_CONTRACTS.find((candidate) => candidate.toolName === 'upscale_video');
   expect('prompt contract registered', contract?.contractId, 'upscale_video_v1');
   expect(
-    'prompt contract documents both parameters',
+    'prompt contract documents every parameter',
     Object.keys(contract?.parameterDocs ?? {}).sort(),
-    ['sourceVideoIndex', 'targetResolution'],
+    ['detailPreference', 'processingSpeed', 'seed', 'sourceVideoIndex', 'targetResolution'],
   );
   expect(
     'prompt contract keeps Seedance re-renders on video_to_video',

@@ -87,7 +87,11 @@ export interface VideoModelConfig {
   supportsNegativePrompt?: boolean;
   /** Whether the vendor can derive output shape from source media. */
   supportsAdaptiveRatio?: boolean;
-  /** Whether the vendor can choose output duration dynamically. */
+  /**
+   * Whether Sogni lets the vendor choose output duration dynamically.
+   * @deprecated Wan 3 smartDuration was retired on 2026-08-29 (the server and SDK
+   * reject it); no model sets this to true. Send an explicit duration instead.
+   */
   supportsSmartDuration?: boolean;
   /** Whether the vendor exposes prompt expansion control. */
   supportsPromptExtend?: boolean;
@@ -678,7 +682,7 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsAdaptiveRatio: true,
-    supportsSmartDuration: true,
+    supportsSmartDuration: false,
     supportsPromptExtend: true,
     supportsWatermark: true,
     supportsDocumentReference: true,
@@ -697,7 +701,7 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsAdaptiveRatio: true,
-    supportsSmartDuration: true,
+    supportsSmartDuration: false,
     supportsPromptExtend: true,
   },
 };

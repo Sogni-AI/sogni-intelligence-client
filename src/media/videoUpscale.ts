@@ -15,6 +15,19 @@ export const VIDEO_UPSCALE_MODEL_ID = 'flashvsr_v1.1_tiny_long_bf16';
 export const VIDEO_UPSCALE_TARGET_RESOLUTIONS = [1080, 1440] as const;
 export type VideoUpscaleTargetResolution = (typeof VIDEO_UPSCALE_TARGET_RESOLUTIONS)[number];
 
+/** FlashVSR detail preferences; `stable` is the default recipe every worker serves. */
+export const VIDEO_UPSCALE_DETAIL_PREFERENCES = ['stable', 'sharper'] as const;
+export type VideoUpscaleDetailPreference = (typeof VIDEO_UPSCALE_DETAIL_PREFERENCES)[number];
+
+/** FlashVSR processing speeds; `stable` is the default recipe every worker serves. */
+export const VIDEO_UPSCALE_PROCESSING_SPEEDS = ['stable', 'faster'] as const;
+export type VideoUpscaleProcessingSpeed = (typeof VIDEO_UPSCALE_PROCESSING_SPEEDS)[number];
+
+/** Seed sentinel the worker resolves to a random seed and reports back. */
+export const VIDEO_UPSCALE_RANDOM_SEED = -1;
+/** Largest explicit FlashVSR seed. Omitted means the repeatable default 0. */
+export const VIDEO_UPSCALE_MAX_SEED = 4294967295;
+
 /** Resolution used when the caller does not choose one and the source supports it. */
 export const VIDEO_UPSCALE_DEFAULT_RESOLUTION: VideoUpscaleTargetResolution = 1440;
 

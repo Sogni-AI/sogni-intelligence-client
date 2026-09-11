@@ -12,7 +12,7 @@ import {
 import { ASPECT_RATIO_DESCRIPTION } from '../../../media/index.js';
 
 const WAN3_VIDEO_MODEL_GUIDANCE =
-  '"wan3.0-video" is Alibaba Wan 3 and "wan3.0-spicy-video" is MuleRouter w3.0-video. Both support 2-30s or smart duration at 30 fps, optional native audio, prompt expansion, 480p/720p/1080p, adaptive/fixed ratios, and up to 10 image/5 video/5 audio references. Enhanced has no document/web context or watermark. Frame anchors cannot be mixed with loose references. Do not send negativePrompt; video references are loose conditioning, not edit or extend modes.';
+  '"wan3.0-video" is Alibaba Wan 3 and "wan3.0-spicy-video" is MuleRouter w3.0-video. Both support 2-30s at 30 fps, optional native audio, prompt expansion, 480p/720p/1080p, adaptive/fixed ratios, and up to 10 image/5 video/5 audio references. Enhanced has no document/web context or watermark. Frame anchors cannot be mixed with loose references. Do not send negativePrompt; video references are loose conditioning, not edit or extend modes.';
 
 export const definition: ToolDefinition = {
   type: "function",
@@ -80,11 +80,6 @@ BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary
             "Video duration in seconds. Default: 5. Per-model range: LTX/WAN 2.2 = 2-20s; Wan 3 = 2-30s; Seedance 2.0 and Mini = 4-15s; Seedance 2.5 = 4-30s. For music videos, use the maximum duration the selected model allows because the audio is usually longer than the video limit. Use when the user explicitly requests a specific length.",
           minimum: 2,
           maximum: 30,
-        },
-        smartDuration: {
-          type: "boolean",
-          description:
-            "Wan 3 only. Let the model choose 2-30 seconds. Do not also set duration. Sogni reserves 30 seconds and settles down to the provider-reported duration.",
         },
         ratio: {
           type: "string",

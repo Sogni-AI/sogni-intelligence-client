@@ -93,11 +93,6 @@ BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax. This i
           minimum: 2,
           maximum: 30,
         },
-        smartDuration: {
-          type: "boolean",
-          description:
-            "Wan 3 only. Set true to let Wan 3 choose an output length from 2-30 seconds. Do not also set duration. Sogni reserves the 30-second maximum before generation and settles the completed job down to Alibaba's reported output duration.",
-        },
         ratio: {
           type: "string",
           enum: ["adaptive", "16:9", "4:3", "1:1", "3:4", "9:16"],
@@ -150,7 +145,7 @@ BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax. This i
             SEEDANCE_TOOL_MULTIMODAL_REFERENCE_GUIDANCE +
             ' ' +
             HAPPYHORSE_GENERATE_VIDEO_MODEL_DESCRIPTION +
-            ' "wan3.0-video" is Alibaba Wan 3: one canonical premium-vendor model for text, first/last frames, loose multimodal references, audio-driven generation, and document/web context. It renders 2-30s or smart duration at fixed 30 fps with optional native audio, prompt expansion control, optional watermark, 480p/720p/1080p, and adaptive/16:9/4:3/1:1/3:4/9:16 ratios. It accepts up to 10 images, 5 videos, 5 audios, one file, or one webpage. "wan3.0-spicy-video" is MuleRouter w3.0-video with the same duration, audio, prompt expansion, resolution, ratio, and media-reference limits, but without document/web context or watermark. For both, frame-anchor and loose-reference modes are mutually exclusive; do not send negativePrompt, and treat video references as loose conditioning rather than source-video edit or extension.',
+            ' "wan3.0-video" is Alibaba Wan 3: one canonical premium-vendor model for text, first/last frames, loose multimodal references, audio-driven generation, and document/web context. It renders 2-30s at fixed 30 fps with optional native audio, prompt expansion control, optional watermark, 480p/720p/1080p, and adaptive/16:9/4:3/1:1/3:4/9:16 ratios. It accepts up to 10 images, 5 videos, 5 audios, one file, or one webpage. "wan3.0-spicy-video" is MuleRouter w3.0-video with the same duration, audio, prompt expansion, resolution, ratio, and media-reference limits, but without document/web context or watermark. For both, frame-anchor and loose-reference modes are mutually exclusive; do not send negativePrompt, and treat video references as loose conditioning rather than source-video edit or extension.',
         },
         generateAudio: {
           type: "boolean",

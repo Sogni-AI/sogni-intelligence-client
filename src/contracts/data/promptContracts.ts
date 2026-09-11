@@ -1020,7 +1020,7 @@ const UPSCALE_IMAGE_CONTRACT: PromptContract = {
 // ---------------------------------------------------------------------------
 const UPSCALE_VIDEO_CONTRACT: PromptContract = {
   contractId: 'upscale_video_v1',
-  version: '1.0.0',
+  version: '1.1.0',
   toolName: 'upscale_video',
   baseDescription: [
     'upscale_video performs promptless, deterministic FlashVSR super-resolution of exactly one',
@@ -1044,10 +1044,18 @@ const UPSCALE_VIDEO_CONTRACT: PromptContract = {
     'long or outside these limits, relay that error to the user instead of switching to a generative',
     'video tool. It cannot produce 4K or any size above 1440p: when the user asks for one, say so and',
     'offer 1440p instead of silently delivering less.',
+    '',
+    'The defaults give the most stable result. Set detailPreference to sharper only when the user',
+    'asks for a sharper, crisper, or more detailed upscale, and processingSpeed to faster only when',
+    'they ask for a quicker one. Leave seed out unless the user gives a seed or asks for a different',
+    'or random variation (-1 is random). None of these options changes the price.',
   ].join('\n'),
   parameterDocs: {
     sourceVideoIndex: 'Omit for the latest generated video, then the most recent upload. Generated videos are zero-based; -1/-2 select uploaded videos.',
     targetResolution: 'Output short edge in pixels: 1440 or 1080. Omit for the default (1440, or 1080 for sources under 720px); set 1080 when the user asks for 1080p or Full HD.',
+    detailPreference: 'stable (default) or sharper. Set sharper only when the user asks for a sharper, crisper, or more detailed result.',
+    processingSpeed: 'stable (default) or faster. Set faster only when the user asks for a quicker upscale.',
+    seed: 'Omit for the repeatable default 0. -1 is random; otherwise an integer 0-4294967295 the user gave.',
   },
 };
 

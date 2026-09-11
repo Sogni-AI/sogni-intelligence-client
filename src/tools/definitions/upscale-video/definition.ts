@@ -1,6 +1,12 @@
 /** Tool definition for promptless FlashVSR video upscaling. */
 
-import { VIDEO_UPSCALE_TARGET_RESOLUTIONS } from '../../../media/videoUpscale.js';
+import {
+  VIDEO_UPSCALE_DETAIL_PREFERENCES,
+  VIDEO_UPSCALE_MAX_SEED,
+  VIDEO_UPSCALE_PROCESSING_SPEEDS,
+  VIDEO_UPSCALE_RANDOM_SEED,
+  VIDEO_UPSCALE_TARGET_RESOLUTIONS,
+} from '../../../media/videoUpscale.js';
 import type { ToolDefinition } from '../types.js';
 
 export const definition: ToolDefinition = {
@@ -21,7 +27,9 @@ export const definition: ToolDefinition = {
       'rejects a source that is too long; never quote a length limit yourself, and if the tool ' +
       'reports that rejection, relay that error to the user. ' +
       'It cannot produce 4K or any size above 1440p; when the user asks for one, say so and offer 1440p. ' +
-      "Each upscale costs credits based on the source video's size and length.",
+      "Each upscale costs credits based on the source video's size and length. " +
+      'Optional detailPreference (stable or sharper), processingSpeed (stable or faster), and seed ' +
+      'tune the result; omit them unless the user asks, and none of them changes the price.',
     parameters: {
       type: 'object',
       properties: {
@@ -39,6 +47,32 @@ export const definition: ToolDefinition = {
             'Output resolution of the short edge in pixels: 1440 for 1440p/2K or 1080 for 1080p/Full HD. ' +
             'The long edge follows the source aspect ratio, so portrait videos stay portrait. ' +
             "Default: 1440, or 1080 when the source's short edge is below 720px. Set 1080 when the user asks for 1080p or Full HD.",
+        },
+        detailPreference: {
+          type: 'string',
+          enum: [...VIDEO_UPSCALE_DETAIL_PREFERENCES],
+          description:
+            'Detail preference. stable, the default, gives the most temporally stable result. ' +
+            'sharper renders crisper fine detail with a little more risk of shimmer between frames. ' +
+            'Set sharper only when the user asks for a sharper, crisper, or more detailed upscale; otherwise omit it. ' +
+            'It does not change the price.',
+        },
+        processingSpeed: {
+          type: 'string',
+          enum: [...VIDEO_UPSCALE_PROCESSING_SPEEDS],
+          description:
+            'Processing speed. stable, the default, gives the most stable result. ' +
+            'faster finishes sooner with slightly less stable detail. ' +
+            'Set faster only when the user asks for a quicker upscale; otherwise omit it. It does not change the price.',
+        },
+        seed: {
+          type: 'integer',
+          minimum: VIDEO_UPSCALE_RANDOM_SEED,
+          maximum: VIDEO_UPSCALE_MAX_SEED,
+          description:
+            "Seed for the upscaler's fine texture, 0 through 4294967295; different seeds give slightly different fine detail. " +
+            'Omit it to keep the repeatable default of 0. Use -1 for a random seed. ' +
+            'Set it only when the user gives a seed or asks for a different or random variation of an upscale.',
         },
       },
       required: [],
