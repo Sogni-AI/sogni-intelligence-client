@@ -1,3 +1,19 @@
+# [3.29.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.28.5...v3.29.0) (2026-09-11)
+
+
+### Bug Fixes
+
+* **client:** pass FlashVSR upscale projects through unchanged ([5f9e0fe](https://github.com/Sogni-AI/sogni-intelligence-client/commit/5f9e0fe24b51b17d43c3281eb34fc6ad2847a1fe))
+* **deps:** bump @sogni-ai/sogni-client to 5.37.1 ([b2de374](https://github.com/Sogni-AI/sogni-intelligence-client/commit/b2de374d7ad9f7b2140f1cfc480b70e8a4ef5ef9))
+* **deps:** bump @sogni-ai/sogni-client to 5.38.0 and protocol to alpha.34 ([b10c9cc](https://github.com/Sogni-AI/sogni-intelligence-client/commit/b10c9ccd94c3636a0b29e7c97ccc277e78bda04e))
+* **media:** refuse video upscale sources beyond the source area ([72b4ad7](https://github.com/Sogni-AI/sogni-intelligence-client/commit/72b4ad7c51b0625507ff2e829472cce65ddfe220))
+* **tools:** tell the model upscale_video stops at 1440p ([5467935](https://github.com/Sogni-AI/sogni-intelligence-client/commit/546793547c3fcbd97369a178f2d1f439770fe349))
+
+
+### Features
+
+* **tools:** add promptless FlashVSR upscale_video tool ([8e5786c](https://github.com/Sogni-AI/sogni-intelligence-client/commit/8e5786cbd2e0bed5e3156b5b7c811553221a3d0b))
+
 ## [3.28.5](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.28.4...v3.28.5) (2026-09-10)
 
 
