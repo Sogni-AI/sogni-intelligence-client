@@ -1,3 +1,10 @@
+## [3.30.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.30.0...v3.30.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **deps:** pin sogni-client 5.42.0 for reusable subscriber uploads ([12087a7](https://github.com/Sogni-AI/sogni-intelligence-client/commit/12087a766fb8942bf0e38ea84ab3cf76bb2a946a))
+
 # [3.30.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.29.2...v3.30.0) (2026-09-11)
 
 
