@@ -392,7 +392,13 @@ export function validateProjectConfig(config: ProjectConfig): void {
     }
 
     if (config.frames !== undefined) {
-      if (typeof config.frames !== 'number' || config.frames < 1 || config.frames > 2001) {
+      if (config.modelId === VIDEO_UPSCALE_MODEL_ID) {
+        // FlashVSR keeps the source's own frame count and has no client-side
+        // length cap: the server's admission check alone refuses a long source.
+        if (typeof config.frames !== 'number' || !Number.isInteger(config.frames) || config.frames < 1) {
+          throw new SogniValidationError('Frames must be a whole number of at least 1');
+        }
+      } else if (typeof config.frames !== 'number' || config.frames < 1 || config.frames > 2001) {
         throw new SogniValidationError('Frames must be between 1 and 2001');
       }
     }

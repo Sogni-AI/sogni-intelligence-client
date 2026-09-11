@@ -18,13 +18,16 @@ export type VideoUpscaleTargetResolution = (typeof VIDEO_UPSCALE_TARGET_RESOLUTI
 /** Resolution used when the caller does not choose one and the source supports it. */
 export const VIDEO_UPSCALE_DEFAULT_RESOLUTION: VideoUpscaleTargetResolution = 1440;
 
-/** Public source limits, as documented for the upscale_video tool. */
+/**
+ * Public source limits, as documented for the upscale_video tool. There is
+ * deliberately no frame-count or duration limit: the server's admission check
+ * is the one place the maximum clip length lives, and it refuses a source that
+ * is too long with a clear error.
+ */
 export const VIDEO_UPSCALE_SOURCE_LIMITS = Object.freeze({
   maxShortEdge: 768,
   /** Largest source area, counted in 64-pixel blocks: about 1344×768, or 768×1344 in portrait. */
   maxBlockPixels: 1344 * 768,
-  maxFrames: 362,
-  maxDurationSeconds: 362 / 24,
   minFps: 1,
   maxFps: 60,
   maxBytes: 100 * 1024 * 1024,
@@ -148,8 +151,10 @@ export function resolveVideoUpscaleOutput(input: {
 }
 
 /**
- * Check a source's frame count, frame rate, and optional byte size against
- * the public limits. Throws VideoUpscaleRequestError with a user-facing message.
+ * Check that a source's frame count and frame rate are readable and within the
+ * public 1-60 fps range, and its optional byte size within the file limit.
+ * Throws VideoUpscaleRequestError with a user-facing message. It sets no
+ * frame-count or duration limit: the server enforces the maximum clip length.
  */
 export function validateVideoUpscaleSourceTiming(input: {
   frames: number;
@@ -164,12 +169,6 @@ export function validateVideoUpscaleSourceTiming(input: {
   if (fps < limits.minFps || fps > limits.maxFps) {
     throw new VideoUpscaleRequestError(
       `This video runs at ${Number(fps.toFixed(3))} fps; video upscaling accepts ${limits.minFps}-${limits.maxFps} fps.`,
-    );
-  }
-  if (frames > limits.maxFrames || frames / fps > limits.maxDurationSeconds + 0.001) {
-    throw new VideoUpscaleRequestError(
-      `This video is ${frames} frames (${(frames / fps).toFixed(2)} s); video upscaling accepts up to `
-        + `${limits.maxFrames} frames and about ${Math.floor(limits.maxDurationSeconds)} seconds.`,
     );
   }
   if (sizeBytes !== undefined && sizeBytes > limits.maxBytes) {

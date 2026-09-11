@@ -91,6 +91,18 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
       && Boolean(PROMPT_CONTRACTS.find((candidate) => candidate.toolName === 'upscale_video')?.baseDescription.includes('cannot produce 4K')),
     true,
   );
+  const upscaleContractText = String(
+    PROMPT_CONTRACTS.find((candidate) => candidate.toolName === 'upscale_video')?.baseDescription,
+  );
+  expect(
+    'description and prompt contract leave the clip-length limit to the server',
+    [String(fn.description), upscaleContractText].every((text) =>
+      text.includes('The server sets the maximum clip length')
+        && text.includes('never quote a length limit yourself')
+        && !/\b\d+ frames\b|\babout \d+ seconds\b/.test(text),
+    ),
+    true,
+  );
   expect(
     'registered as a generation tool',
     generationToolDefinitions.some((definition) => definition.function.name === 'upscale_video'),
@@ -227,15 +239,24 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
     errorMessage(() => validateVideoUpscaleSourceTiming({ frames: 361, fps: 24000 / 1001 })),
     null,
   );
+  // No client-side length cap: the server's admission check alone refuses a
+  // source that is too long, so long sources pass these public checks.
+  for (const [frames, fps] of [[362, 24000 / 1001], [900, 30], [1800, 30], [7200, 60]] as const) {
+    expect(
+      `${frames} frames at ${Number(fps.toFixed(3))} fps passes`,
+      errorMessage(() => validateVideoUpscaleSourceTiming({ frames, fps })),
+      null,
+    );
+  }
   expect(
-    '362 frames at 24000/1001 is longer than the duration limit',
-    Boolean(errorMessage(() => validateVideoUpscaleSourceTiming({ frames: 362, fps: 24000 / 1001 }))),
-    true,
+    'source limits carry no frame-count or duration cap',
+    Object.keys(VIDEO_UPSCALE_SOURCE_LIMITS).filter((key) => /frame|duration/i.test(key)),
+    [],
   );
   expect(
-    'too many frames is refused',
-    Boolean(errorMessage(() => validateVideoUpscaleSourceTiming({ frames: VIDEO_UPSCALE_SOURCE_LIMITS.maxFrames + 1, fps: 60 }))),
-    true,
+    'an unreadable frame count is refused',
+    errorMessage(() => validateVideoUpscaleSourceTiming({ frames: 0, fps: 24 })),
+    'The source video frame count or frame rate could not be read.',
   );
   expect(
     'a frame rate above 60 is refused',
@@ -268,6 +289,21 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
     'wrapper accepts a 2560px upscale output edge',
     wrapperMessage({ type: 'video', modelId: VIDEO_UPSCALE_MODEL_ID, positivePrompt: '', numberOfMedia: 1, width: 2560, height: 1440 }),
     null,
+  );
+  expect(
+    'wrapper accepts an 1800-frame FlashVSR source: only the server caps length',
+    wrapperMessage({ type: 'video', modelId: VIDEO_UPSCALE_MODEL_ID, positivePrompt: '', numberOfMedia: 1, frames: 1800, fps: 30 }),
+    null,
+  );
+  expect(
+    'wrapper refuses a fractional FlashVSR frame count',
+    wrapperMessage({ type: 'video', modelId: VIDEO_UPSCALE_MODEL_ID, positivePrompt: '', numberOfMedia: 1, frames: 158.5 }),
+    'Frames must be a whole number of at least 1',
+  );
+  expect(
+    'other video models keep the 2001-frame wrapper bound',
+    wrapperMessage({ type: 'video', modelId: 'ltx25-22b-int8_t2v_distilled', positivePrompt: 'x', frames: 2002 }),
+    'Frames must be between 1 and 2001',
   );
   expect(
     'other video models keep the 2048px wrapper bound',
