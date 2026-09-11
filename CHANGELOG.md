@@ -1,3 +1,10 @@
+## [3.31.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.31.0...v3.31.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **models:** accept Sogni Krea identity edit references ([7a28432](https://github.com/Sogni-AI/sogni-intelligence-client/commit/7a28432a54d96cbb9964b514208e553fbe3c7b66))
+
 # [3.31.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.30.1...v3.31.0) (2026-09-11)
 
 
