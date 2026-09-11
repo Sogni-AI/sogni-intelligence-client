@@ -1,3 +1,10 @@
+# [3.31.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.30.1...v3.31.0) (2026-09-11)
+
+
+### Features
+
+* **tools:** add FlashVSR options and retire Wan 3 smartDuration ([69415d7](https://github.com/Sogni-AI/sogni-intelligence-client/commit/69415d72b95e1a908e43153d2e4a8cd11beb9106))
+
 ## [3.30.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.30.0...v3.30.1) (2026-09-11)
 
 
