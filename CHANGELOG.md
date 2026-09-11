@@ -1,3 +1,11 @@
+## [3.29.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.29.0...v3.29.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **deps:** bump sogni-protocol to 1.0.0-alpha.35 and sogni-client to 5.39.1 ([6f96789](https://github.com/Sogni-AI/sogni-intelligence-client/commit/6f9678959f3b23037cff4fbfd68a94a531efbbb5))
+* **media:** leave the video upscale length limit to the server ([10ea35f](https://github.com/Sogni-AI/sogni-intelligence-client/commit/10ea35f0061cff1f54537986bcc2992669db98d8))
+
 # [3.29.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.28.5...v3.29.0) (2026-09-11)
 
 
