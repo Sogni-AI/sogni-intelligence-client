@@ -1,3 +1,10 @@
+# [3.30.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.29.2...v3.30.0) (2026-09-11)
+
+
+### Features
+
+* **media:** add GPT Image 2.5 Sunburst and Flare ([87fd526](https://github.com/Sogni-AI/sogni-intelligence-client/commit/87fd526a331e1907e201ed85276744b3e8d53fee))
+
 ## [3.29.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.29.1...v3.29.2) (2026-09-11)
 
 
