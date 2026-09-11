@@ -407,6 +407,8 @@ const KREA2_EDIT_MODEL_NAMES = new Set([
 
 const GPT_IMAGE_MODEL_NAMES = new Set([
   "gpt-image-2",
+  "gpt-image-2-5-sunburst",
+  "gpt-image-2-5-flare",
   "gpt-image2",
   "gpt-2-image",
   "openai-gpt-image-2",
@@ -490,9 +492,11 @@ export function resolveImagePromptAuthoringProfile(
   if (intrinsicEdit && operation !== "edit") return null;
 
   if (GPT_IMAGE_MODEL_NAMES.has(model)) {
+    const variant = model === "gpt-image-2-5-sunburst" ? "sunburst" : model === "gpt-image-2-5-flare" ? "flare" : null;
+    const modelId = variant ? `gpt-image-2.5-${variant}` : "gpt-image-2";
     return imageProfile({
-      id: operation === "edit" ? "gpt-image-2-edit" : "gpt-image-2-generate",
-      modelTitle: "GPT Image 2",
+      id: `${modelId}-${operation}`,
+      modelTitle: variant ? `GPT Image 2.5 ${variant === "sunburst" ? "Sunburst" : "Flare"}` : "GPT Image 2",
       promptingType: operation === "edit" ? "gpt-image-edit" : "gpt-image",
       operation,
       ...(operation === "edit" ? { maxReferenceImages: 16 } : {}),

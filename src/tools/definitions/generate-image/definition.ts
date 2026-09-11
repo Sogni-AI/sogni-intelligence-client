@@ -59,7 +59,7 @@ VIDEO KEYFRAMES: When generating images intended as first+last frames for video 
           type: 'string',
           enum: GENERATE_IMAGE_MODELS.map(model => model.key),
           description:
-            'DO NOT SET THIS PARAMETER unless the user names a specific model, asks for a very complex image render, asks for a video storyboard/storyboard sheet/contact sheet/panel layout image, asks for anime without naming a model, requests permitted NSFW/nudity content, or explicitly asks for Z-image/Z-image Turbo/Krea 2 Turbo image-to-image. The app auto-selects based on quality settings. Set "gpt-image-2" when the user asks for a ChatGPT, OpenAI, GPT, GPT-2, GPT Image, or gpt-image-2 image/model, when they explicitly request very strong text rendering, or by default for complex single-image renders that need dense labels, crisp typography, multi-panel composition, timing notes, foley notes, professional storyboard-sheet layout, or a comprehensive character/mascot/model sheet with turnarounds, expressions, accessories, palette swatches, and brand notes. Set "one-obsession-v22" when the user asks for an anime or anime-style image and has not named a specific image model. Set "z-turbo" when the user asks for Z-image Turbo; set "z-image" when they ask for Z-image without Turbo. Set "krea-2-turbo" when the user asks for Krea 2 Turbo. If the user names another image model, honor that requested model instead. A model preference usually does not change which tool to use; the Z-image and Krea 2 Turbo image-to-image exception uses sourceImageIndex plus starting_image_strength on this tool. NSFW rule: "gpt-image-2" and Qwen image models CANNOT do nudity. For permitted NSFW/nudity content, prefer "dark-beast-krea2", then "dark-beast-z-turbo"; "chroma1-hd", "pony-v7", "chroma-detail", "chroma-v46-flash", and "z-turbo" are compatible fallbacks.',
+            'DO NOT SET THIS PARAMETER unless the user names a specific model, asks for a very complex image render, asks for a video storyboard/storyboard sheet/contact sheet/panel layout image, asks for anime without naming a model, requests permitted NSFW/nudity content, or explicitly asks for Z-image/Z-image Turbo/Krea 2 Turbo image-to-image. The app auto-selects based on quality settings. Set "gpt-image-2" when the user asks for a ChatGPT, OpenAI, GPT, GPT-2, GPT Image, or gpt-image-2 image/model, when they explicitly request very strong text rendering, or by default for complex single-image renders that need dense labels, crisp typography, multi-panel composition, timing notes, foley notes, professional storyboard-sheet layout, or a comprehensive character/mascot/model sheet with turnarounds, expressions, accessories, palette swatches, and brand notes. Set "one-obsession-v22" when the user asks for an anime or anime-style image and has not named a specific image model. Set "z-turbo" when the user asks for Z-image Turbo; set "z-image" when they ask for Z-image without Turbo. Set "krea-2-turbo" when the user asks for Krea 2 Turbo. If the user names another image model, honor that requested model instead. A model preference usually does not change which tool to use; the Z-image and Krea 2 Turbo image-to-image exception uses sourceImageIndex plus starting_image_strength on this tool. NSFW rule: "gpt-image-2" and Qwen image models CANNOT do nudity. For permitted NSFW/nudity content, prefer "dark-beast-krea2", then "dark-beast-z-turbo"; "chroma1-hd", "pony-v7", "chroma-detail", "chroma-v46-flash", and "z-turbo" are compatible fallbacks. GPT Image 2.5 adds two distinct models: use "gpt-image-2.5-sunburst" for an explicit Sunburst request and "gpt-image-2.5-flare" for an explicit Flare request. For GPT Image 2.5 without a named variant, use Flare. Preserve explicit GPT Image 2.0 as "gpt-image-2". Sunburst is positioned for difficult images and precise edits; Flare for faster everyday generation. Both generate and edit. Model choice is independent of rendering quality.',
         },
         width: {
           type: 'number',
@@ -121,9 +121,20 @@ VIDEO KEYFRAMES: When generating images intended as first+last frames for video 
         },
         gptImageQuality: {
           type: 'string',
-          enum: ['low', 'medium', 'high'],
+          enum: ['low', 'medium', 'high', 'xhigh', 'max'],
           description:
-            'Optional GPT Image 2 rendering quality. Only set with model="gpt-image-2" when the user explicitly asks for low/fast, medium/balanced, or high/final quality. Otherwise omit it and let the host app media quality setting map Fast to low, HQ to medium, and Pro to high.',
+            'Optional GPT Image rendering quality. Only set it when the user explicitly asks for low/fast, medium/balanced, high/final, xhigh/extra high, or max/maximum quality; xhigh and max require GPT Image 2.5 Sunburst or Flare. Provider-chosen (auto) quality is never used. Otherwise omit it and let the host app media quality setting map Fast to low, HQ to medium, and Pro to high. The same quality label does not promise equivalent results across models.',
+        },
+        gptImageBackground: {
+          type: 'string',
+          enum: ['auto', 'opaque', 'transparent'],
+          description: 'GPT Image background: auto or opaque; transparent is supported by GPT Image 2.5 Sunburst and Flare with PNG or WebP output. JPEG cannot preserve transparency.',
+        },
+        gptImageOutputCompression: {
+          type: 'integer',
+          minimum: 0,
+          maximum: 100,
+          description: 'Optional GPT Image JPEG/WebP output compression, from 0 to 100. Omit for PNG.',
         },
         outputFormat: {
           type: 'string',
@@ -134,7 +145,7 @@ VIDEO KEYFRAMES: When generating images intended as first+last frames for video 
         aspectRatio: {
           type: 'string',
           description:
-            `${ASPECT_RATIO_DESCRIPTION}\n\nSet this whenever the user specifies an image or downstream video orientation/aspect ratio such as 9:16, 16:9, portrait, vertical, landscape, widescreen, TikTok/Reels/Shorts, or exact pixels. This includes selection-gated image batches that will feed a later video or dance after the user picks one. For GPT Image 2 exact size requests, preserve exact pixel intent when possible and prefer popular GPT sizes such as 1536x1024, 1024x1536, 2048x1152, 3840x2160, and 2160x3840. GPT Image 2 does not support transparent-background output; do not promise a transparent result for this model.`,
+            `${ASPECT_RATIO_DESCRIPTION}\n\nSet this whenever the user specifies an image or downstream video orientation/aspect ratio such as 9:16, 16:9, portrait, vertical, landscape, widescreen, TikTok/Reels/Shorts, or exact pixels. This includes selection-gated image batches that will feed a later video or dance after the user picks one. For GPT Image 2 exact size requests, preserve exact pixel intent when possible and prefer popular GPT sizes such as 1536x1024, 1024x1536, 2048x1152, 3840x2160, and 2160x3840. Sogni does not expose transparent output for GPT Image 2.0. For transparent assets, select GPT Image 2.5 Sunburst or Flare with gptImageBackground=transparent and PNG or WebP output.`,
         },
       },
       required: ['prompt'],

@@ -97,13 +97,15 @@ COMPOSITE GPT IMAGE 2 STORYBOARD SHEETS: When numberOfVariations=1 and the user 
           type: 'string',
           enum: [
             'gpt-image-2',
+            'gpt-image-2.5-sunburst',
+            'gpt-image-2.5-flare',
             'qwen-lightning',
             'qwen',
             'krea-identity-edit',
             'dark-beast-krea2-identity-edit',
           ],
           description:
-            'The app auto-selects Fast→Qwen Lightning and HQ/Pro→full Qwen for ordinary identity-neutral edits. REQUIRED IDENTITY DEFAULT: set "krea-identity-edit" (Krea 2 Identity Edit LoRA v1.2) whenever an edit of a referenced person or character must keep likeness or character identity while changing clothes, hair or makeup, pose or position, face/head/body, background, lighting, or visual style. Infer that semantic intent in any language; never route from keyword or regex matching. Also use it for a single-character sheet in non-Pro mode. This semantic default applies even when the user did not name Krea; an explicitly user-requested model always wins. Set "dark-beast-krea2-identity-edit" only when the user explicitly asks for Dark Beast Krea 2 Identity Edit, its uncensored/community variant, or dark_beast_krea2_identity_edit_v1_2. Set "gpt-image-2" when the user explicitly names GPT/OpenAI/ChatGPT Image, or when precise typography, dense labels, or a professional multi-panel layout is the primary requirement; Pro character sheets may retain GPT Image 2. If GPT Image 2 is unavailable for detail-critical layout work, fall back to full "qwen", never "qwen-lightning". Krea identity edit models require at least one reference image, accept up to two context images, and work best at 512-2048px. Let the model tier and worker choose their current steps, guidance, sampler, scheduler, grounding, and reference-boost defaults; do not send a negative prompt. Put the base scene/image first and a person/detail reference second. Z-image, Z-image Turbo, and base Krea 2 Turbo are generate_image img2img models, not edit_image selectors. If the user names another edit/image model, honor it. GPT Image 2 always processes input images at high fidelity; do not set input_fidelity.',
+            'The app auto-selects Fast→Qwen Lightning and HQ/Pro→full Qwen for ordinary identity-neutral edits. REQUIRED IDENTITY DEFAULT: set "krea-identity-edit" (Krea 2 Identity Edit LoRA v1.2) whenever an edit of a referenced person or character must keep likeness or character identity while changing clothes, hair or makeup, pose or position, face/head/body, background, lighting, or visual style. Infer that semantic intent in any language; never route from keyword or regex matching. Also use it for a single-character sheet in non-Pro mode. This semantic default applies even when the user did not name Krea; an explicitly user-requested model always wins. Set "dark-beast-krea2-identity-edit" only when the user explicitly asks for Dark Beast Krea 2 Identity Edit, its uncensored/community variant, or dark_beast_krea2_identity_edit_v1_2. Set "gpt-image-2" when the user explicitly names GPT/OpenAI/ChatGPT Image, or when precise typography, dense labels, or a professional multi-panel layout is the primary requirement; Pro character sheets may retain GPT Image 2. If GPT Image 2 is unavailable for detail-critical layout work, fall back to full "qwen", never "qwen-lightning". Krea identity edit models require at least one reference image, accept up to two context images, and work best at 512-2048px. Let the model tier and worker choose their current steps, guidance, sampler, scheduler, grounding, and reference-boost defaults; do not send a negative prompt. Put the base scene/image first and a person/detail reference second. Z-image, Z-image Turbo, and base Krea 2 Turbo are generate_image img2img models, not edit_image selectors. If the user names another edit/image model, honor it. GPT Image 2 always processes input images at high fidelity; do not set input_fidelity. GPT Image 2.5 adds two distinct models: use "gpt-image-2.5-sunburst" for an explicit Sunburst request and "gpt-image-2.5-flare" for an explicit Flare request. For GPT Image 2.5 without a named variant, use Flare. Preserve explicit GPT Image 2.0 as "gpt-image-2". Sunburst is positioned for difficult images and precise edits; Flare for faster everyday generation. Both generate and edit. Model choice is independent of rendering quality.',
         },
         sourceImageIndex: {
           type: 'number',
@@ -146,13 +148,29 @@ ${KREA2_LORA_CATALOG_REFERENCE}`,
         aspectRatio: {
           type: 'string',
           description:
-            `${ASPECT_RATIO_DESCRIPTION}\n\nSet this whenever the user specifies an image or downstream video orientation/aspect ratio such as 9:16, 16:9, portrait, vertical, landscape, widescreen, TikTok/Reels/Shorts, or exact pixels. This includes selection-gated reference-guided image batches that will feed a later video or dance after the user picks one. For GPT Image 2 exact size requests, preserve exact pixel intent when possible and prefer popular GPT sizes such as 1536x1024, 1024x1536, 2048x1152, 3840x2160, and 2160x3840. GPT Image 2 does not support transparent-background output; do not promise a transparent result for this model.`,
+            `${ASPECT_RATIO_DESCRIPTION}\n\nSet this whenever the user specifies an image or downstream video orientation/aspect ratio such as 9:16, 16:9, portrait, vertical, landscape, widescreen, TikTok/Reels/Shorts, or exact pixels. This includes selection-gated reference-guided image batches that will feed a later video or dance after the user picks one. For GPT Image 2 exact size requests, preserve exact pixel intent when possible and prefer popular GPT sizes such as 1536x1024, 1024x1536, 2048x1152, 3840x2160, and 2160x3840. Sogni does not expose transparent output for GPT Image 2.0. For transparent assets, select GPT Image 2.5 Sunburst or Flare with gptImageBackground=transparent and PNG or WebP output.`,
         },
         gptImageQuality: {
           type: 'string',
-          enum: ['low', 'medium', 'high'],
+          enum: ['low', 'medium', 'high', 'xhigh', 'max'],
           description:
-            'Optional GPT Image 2 rendering quality. Only set with model="gpt-image-2" when the user explicitly asks for low/fast, medium/balanced, or high/final quality. Otherwise omit it and let the host app media quality setting map Fast to low, HQ to medium, and Pro to high.',
+            'Optional GPT Image rendering quality. Only set it when the user explicitly asks for low/fast, medium/balanced, high/final, xhigh/extra high, or max/maximum quality; xhigh and max require GPT Image 2.5 Sunburst or Flare. Provider-chosen (auto) quality is never used. Otherwise omit it and let the host app media quality setting map Fast to low, HQ to medium, and Pro to high. The same quality label does not promise equivalent results across models.',
+        },
+        mask_image_url: {
+          type: 'string',
+          description:
+            'Optional GPT Image edit mask URL or inline data:image/png;base64 URI. Requires a PNG alpha mask matching the first source reference dimensions; the source itself may be JPEG, PNG or WebP. Transparent mask regions identify edits; opaque regions are preserved as guidance. With multiple references the mask applies only to the first image.',
+        },
+        gptImageBackground: {
+          type: 'string',
+          enum: ['auto', 'opaque', 'transparent'],
+          description: 'GPT Image background: auto or opaque; transparent is supported by GPT Image 2.5 Sunburst and Flare with PNG or WebP output. JPEG cannot preserve transparency.',
+        },
+        gptImageOutputCompression: {
+          type: 'integer',
+          minimum: 0,
+          maximum: 100,
+          description: 'Optional GPT Image JPEG/WebP output compression, from 0 to 100. Omit for PNG.',
         },
         outputFormat: {
           type: 'string',

@@ -1,11 +1,39 @@
 import type { MediaDimensionBounds } from './aspectRatio.js';
 import { textRequestsProfessionalCharacterSheetImage } from './characterSheet.js';
 
-export type GptImageQuality = 'low' | 'medium' | 'high';
+// Sogni never uses provider-chosen ('auto') quality; it is rejected like any
+// unsupported value.
+export type GptImageQuality = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 export type GptImageQualityArg = GptImageQuality;
 export type ImageOutputFormat = 'png' | 'jpg' | 'webp';
 
 export const GPT_IMAGE_MODEL_KEY = 'gpt-image-2';
+export const GPT_IMAGE_MODEL_IDS = ['gpt-image-2', 'gpt-image-2.5-sunburst', 'gpt-image-2.5-flare'] as const;
+export type GptImageModelId = (typeof GPT_IMAGE_MODEL_IDS)[number];
+export const GPT_IMAGE_25_SUNBURST_MODEL_KEY = 'gpt-image-2.5-sunburst';
+export const GPT_IMAGE_25_FLARE_MODEL_KEY = 'gpt-image-2.5-flare';
+
+export function isGptImageModel(value: unknown): value is GptImageModelId {
+  return typeof value === 'string' && (GPT_IMAGE_MODEL_IDS as readonly string[]).includes(value);
+}
+
+export function isGptImage25Model(value: unknown): boolean {
+  return value === GPT_IMAGE_25_SUNBURST_MODEL_KEY || value === GPT_IMAGE_25_FLARE_MODEL_KEY;
+}
+
+/** Sogni capabilities based on provider docs (2026-09-10); retain the 2.0 integration defaults. */
+export function getGptImageCapabilities(modelId: GptImageModelId) {
+  const is25 = isGptImage25Model(modelId);
+  return {
+    modelId,
+    qualities: (is25 ? ['low', 'medium', 'high', 'xhigh', 'max'] : ['low', 'medium', 'high']) as readonly GptImageQuality[],
+    defaultQuality: 'medium' as const,
+    supportsTransparency: is25,
+    outputFormats: ['png', 'jpg', 'webp'] as const,
+    dimensionStep: 16,
+    experimentalAbovePixels: 3_686_400,
+  };
+}
 export const GPT_IMAGE_MIN_PIXELS = 655_360;
 export const GPT_IMAGE_MAX_PIXELS = 8_294_400;
 
@@ -41,10 +69,20 @@ const GPT_IMAGE_MODEL_ALIAS_VALUES = [
   'gpt-2-image',
   'gptimage2',
   'gpt-image2',
+  'gpt-image-2.0',
   GPT_IMAGE_MODEL_KEY,
 ] as const;
 
 export const GPT_IMAGE_MODEL_ALIASES: ReadonlySet<string> = new Set(GPT_IMAGE_MODEL_ALIAS_VALUES);
+
+const GPT_IMAGE_25_ALIASES: Readonly<Record<string, GptImageModelId>> = {
+  'gpt-image-2.5-sunburst': GPT_IMAGE_25_SUNBURST_MODEL_KEY,
+  'gpt-image-2.5-flare': GPT_IMAGE_25_FLARE_MODEL_KEY,
+  'gpt-image-2.5': GPT_IMAGE_25_FLARE_MODEL_KEY,
+  'gpt-image2.5': GPT_IMAGE_25_FLARE_MODEL_KEY,
+  sunburst: GPT_IMAGE_25_SUNBURST_MODEL_KEY,
+  flare: GPT_IMAGE_25_FLARE_MODEL_KEY,
+};
 
 const VERSIONED_NON_GPT_IMAGE_MODEL_NAME_PATTERN = String.raw`(?:flux(?:[\s.-]?(?:1|2|one|two|krea))|qwen(?:[\s.-]?(?:image|2512|edit|lightning))|krea(?:[\s.-]?(?:2|two))?(?:[\s.-]?(?:turbo|identity|edit|lora|v?1\.?2))*|dark[\s.-]?beast(?:[\s.-]?(?:krea(?:[\s.-]?2|2)?|z(?:[-\s]?image)?|identity|edit|turbo))*|z[-\s]?image|z[-\s]?turbo|chroma[-\s]?(?:1[-\s]?hd|detail|flash|v?\.?46)|one[-\s]?obsession(?:[-\s]?v?2\.?2)?|pony[-\s]?v?\d+|sdxl|albedo(?:[-\s]?xl)?|animagine(?:[-\s]?xl)?|anima\s*pencil(?:[-\s]?xl)?|art\s*universe(?:[-\s]?xl)?|hyphoria|analog\s*madness(?:[-\s]?xl)?|cyberrealistic(?:[-\s]?xl)?|real\s*dream(?:[-\s]?xl)?|faetastic(?:[-\s]?xl)?|zavychroma(?:[-\s]?xl)?|pony[-\s]?faetality|dreamshaper(?:[-\s]?xl)?)`;
 const FAMILY_NON_GPT_IMAGE_MODEL_NAME_PATTERN = String.raw`(?:flux|qwen|chroma|krea|dark[\s.-]?beast)`;
@@ -54,6 +92,7 @@ const GPT_IMAGE_TOOL_NAMES = new Set(['generate_image', 'edit_image']);
 export function normalizeGptImageModelAlias(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
   const normalized = value.trim().toLowerCase().replace(/[_\s]+/g, '-');
+  if (Object.prototype.hasOwnProperty.call(GPT_IMAGE_25_ALIASES, normalized)) return GPT_IMAGE_25_ALIASES[normalized];
   if (GPT_IMAGE_MODEL_ALIASES.has(normalized)) return GPT_IMAGE_MODEL_KEY;
   return value;
 }
@@ -124,6 +163,27 @@ export function textSuggestsGptImage2DefaultImageModel(text: string): boolean {
   return asksForStoryboardImage || asksForCharacterSheetImage || asksForVideoStoryboardImage || asksForComplexRender || asksForTextOrLayoutPrecision;
 }
 
+const GPT_IMAGE_25_REQUEST_PATTERN = /\bgpt[-\s]*image[-\s]*2\.5(?:[-\s]*\(?\s*(sunburst|flare))?\b/i;
+const GPT_IMAGE_25_NAMED_VARIANT_PATTERN = /\b(?:use|using|with)\s+(sunburst|flare)\s+(?:image\s+)?model\b/i;
+
+/**
+ * The GPT Image 2.5 variant a message asks for by name: the variant,
+ * 'unspecified' when it names GPT Image 2.5 without one, or null when it does
+ * not ask for GPT Image 2.5.
+ */
+export function textRequestedGptImage25Variant(
+  text: string | null | undefined,
+): typeof GPT_IMAGE_25_SUNBURST_MODEL_KEY | typeof GPT_IMAGE_25_FLARE_MODEL_KEY | 'unspecified' | null {
+  if (!text) return null;
+  const requested = text.match(GPT_IMAGE_25_REQUEST_PATTERN);
+  const named = text.match(GPT_IMAGE_25_NAMED_VARIANT_PATTERN);
+  if (!requested && !named) return null;
+  const variant = (requested?.[1] ?? named?.[1])?.toLowerCase();
+  if (variant === 'sunburst') return GPT_IMAGE_25_SUNBURST_MODEL_KEY;
+  if (variant === 'flare') return GPT_IMAGE_25_FLARE_MODEL_KEY;
+  return 'unspecified';
+}
+
 export function getGptImage2ModelOverride(
   toolName: string,
   currentModel: unknown,
@@ -132,9 +192,22 @@ export function getGptImage2ModelOverride(
   if (!GPT_IMAGE_TOOL_NAMES.has(toolName)) return null;
   if (textExplicitlyAvoidsGptImageModel(latestUserText)) return null;
 
-  const normalizedModel = normalizeGptImageModelAlias(currentModel);
-  if (normalizedModel === GPT_IMAGE_MODEL_KEY) {
+  // Exact version requests take precedence over generic GPT routing and a
+  // previously selected model. Avoid interpreting an unspecified variant as 2.0.
+  const requested25 = textRequestedGptImage25Variant(latestUserText);
+  if (requested25) {
+    // A variant named elsewhere in the message ("the Sunburst variant of GPT
+    // Image 2.5") is left to the model's own 2.5 selection.
+    if (requested25 === 'unspecified' && isGptImage25Model(currentModel)) return null;
+    const requested = requested25 === 'unspecified' ? GPT_IMAGE_25_FLARE_MODEL_KEY : requested25;
+    return currentModel === requested ? null : requested;
+  }
+  if (/\bgpt[-\s]*image[-\s]*2(?:\.0)?(?![.\d])\b/i.test(latestUserText)) {
     return currentModel === GPT_IMAGE_MODEL_KEY ? null : GPT_IMAGE_MODEL_KEY;
+  }
+  const normalizedModel = normalizeGptImageModelAlias(currentModel);
+  if (isGptImageModel(normalizedModel)) {
+    return currentModel === normalizedModel ? null : normalizedModel;
   }
 
   const explicitlyRequestedGptImage = textRequestsGptImage2ImageModel(latestUserText);
@@ -149,12 +222,18 @@ export function getGptImage2ModelOverride(
     : null;
 }
 
-export function normalizeGptImageQuality(value: unknown): GptImageQualityArg | undefined {
+export function normalizeGptImageQuality(value: unknown, modelId?: GptImageModelId): GptImageQualityArg | undefined {
   if (typeof value !== 'string') return undefined;
   const normalized = value.trim().toLowerCase();
   if (['low', 'fast', 'draft', 'quick'].includes(normalized)) return 'low';
   if (['medium', 'standard', 'balanced', 'hq'].includes(normalized)) return 'medium';
   if (['high', 'pro', 'best', 'final'].includes(normalized)) return 'high';
+  if (normalized === 'xhigh' || normalized === 'max') {
+    if (modelId && !isGptImage25Model(modelId)) {
+      throw new RangeError(`${normalized} quality requires GPT Image 2.5 Sunburst or Flare`);
+    }
+    return normalized;
+  }
   return undefined;
 }
 
@@ -185,4 +264,27 @@ const HIGH_DETAIL_SMALL_TYPE_PATTERN =
 export function promptNeedsHighDetailGptImage(prompt: string | null | undefined): boolean {
   const text = prompt ?? '';
   return HIGH_DETAIL_STORYBOARD_PATTERN.test(text) && HIGH_DETAIL_SMALL_TYPE_PATTERN.test(text);
+}
+
+/** Preserve explicit advanced options across tool execution, confirmation and replay. */
+export function getGptImageRequestOptions(args: Record<string, unknown>, modelId: string): {
+  gptImageBackground?: 'auto' | 'opaque' | 'transparent';
+  gptImageOutputCompression?: number;
+  gptImageMaskUrl?: string;
+} {
+  const background = args.gptImageBackground ?? args.gpt_image_background;
+  const compression = args.gptImageOutputCompression ?? args.gpt_image_output_compression;
+  const mask = args.mask_image_url ?? args.gptImageMaskUrl;
+  if (background === undefined && compression === undefined && mask === undefined) return {};
+  if (!isGptImageModel(modelId)) throw new Error('GPT Image options require a GPT Image model');
+  const format = normalizeImageOutputFormat(args.outputFormat ?? args.output_format) ?? 'png';
+  if (background !== undefined && !['auto', 'opaque', ...(isGptImage25Model(modelId) ? ['transparent'] : [])].includes(String(background))) throw new Error('Unsupported GPT Image background');
+  if (background === 'transparent' && format === 'jpg') throw new Error('Transparent output requires PNG or WebP');
+  if (compression !== undefined && (typeof compression !== 'number' || !Number.isInteger(compression) || compression < 0 || compression > 100 || format === 'png')) throw new Error('Output compression requires JPEG/WebP and an integer from 0 to 100');
+  if (mask !== undefined && (typeof mask !== 'string' || !mask.trim())) throw new Error('mask_image_url must be a non-empty PNG URL or data URI');
+  return {
+    ...(background !== undefined ? { gptImageBackground: background as 'auto' | 'opaque' | 'transparent' } : {}),
+    ...(compression !== undefined ? { gptImageOutputCompression: compression as number } : {}),
+    ...(mask !== undefined ? { gptImageMaskUrl: mask as string } : {}),
+  };
 }

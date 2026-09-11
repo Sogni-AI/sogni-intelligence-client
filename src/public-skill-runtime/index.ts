@@ -20,6 +20,7 @@ import {
 } from '../utils/seedanceModelIds.js';
 import { resolveRegisteredVideoModelFamily } from '../utils/videoModelIds.js';
 import { resolveRegisteredImageReferenceModelId } from '../utils/imageReferenceModelIds.js';
+import { isGptImageModel, normalizeGptImageModelAlias } from '../media/gptImage.js';
 
 type LtxWorkflow = 't2v' | 'i2v' | 'ia2v' | 'a2v' | 'v2v';
 type Ltx25Workflow = LtxWorkflow;
@@ -1028,7 +1029,7 @@ export function getModelRefFormat(modelId: string): ModelRefFormat {
     return CONTEXT_MODEL_REF_FORMAT;
   }
   const imageReferenceModelId = resolveRegisteredImageReferenceModelId(trimmed);
-  if (imageReferenceModelId === 'gpt-image-2' || imageReferenceModelId === 'flux') {
+  if (imageReferenceModelId?.startsWith('gpt-image-') || imageReferenceModelId === 'flux') {
     return GPT_IMAGE_MODEL_REF_FORMAT;
   }
   if (imageReferenceModelId === 'qwen-image-edit' || imageReferenceModelId === 'krea-identity-edit') {
@@ -1498,42 +1499,53 @@ const PUBLIC_SEEDANCE_ADAPTER: PublicStoryboardAdapter = {
   },
 };
 
-const PUBLIC_GPT_IMAGE_2_ADAPTER: PublicStoryboardAdapter = {
-  modelId: 'gpt-image-2',
-  name: 'GPT Image 2',
-  supportedStages: ['storyboard_image', 'keyframe'],
-  compile(storyboard, input) {
-    if (input.stage === 'storyboard_image') {
-      return {
-        stage: 'storyboard_image',
-        prompt: compileStoryboardImagePromptFromProject(storyboard),
-        args: {
-          model: 'gpt-image-2',
-          ...buildStoryboardCanvasArgs(storyboard.outputAspectRatio, true, storyboard.boardDimensions),
-          numberOfVariations: 1,
-        },
-      };
-    }
-    if (input.stage === 'keyframe') {
-      const scene = input.scene ?? storyboard.scenes[0];
-      if (!scene) throw new Error('GPT_IMAGE_2_ADAPTER keyframe requires at least one storyboard scene.');
-      return {
-        stage: 'keyframe',
-        prompt: compileStoryboardKeyframePrompt(storyboard, scene),
-        args: {
-          model: 'gpt-image-2',
-          aspectRatio: storyboard.frameAspectRatio,
-          numberOfVariations: 1,
-          sceneId: scene.id,
-        },
-      };
-    }
-    throw new StoryboardAdapterUnsupportedStageError('gpt-image-2', input.stage);
-  },
-  getSystemPromptGuidance() {
-    return 'GPT IMAGE 2 ROUTING: When the user asks for a ChatGPT, OpenAI, GPT, GPT-2, GPT Image, or gpt-image-2 image/model, use model="gpt-image-2". Use generate_image for text-to-image requests. If uploaded/reference/persona images must guide identity, likeness, composition, style, or objects, use edit_image with model="gpt-image-2" instead of forcing generate_image.';
-  },
-};
+const PUBLIC_GPT_IMAGE_2_GUIDANCE = 'GPT IMAGE 2 ROUTING: When the user asks for a ChatGPT, OpenAI, GPT, GPT-2, GPT Image, or gpt-image-2 image/model, use model="gpt-image-2". An explicit GPT Image 2.5, Sunburst, or Flare request follows GPT IMAGE 2.5 ROUTING instead. Use generate_image for text-to-image requests. If uploaded/reference/persona images must guide identity, likeness, composition, style, or objects, use edit_image with model="gpt-image-2" instead of forcing generate_image.';
+
+// Shared by both variants; composeAdapterPromptGuidance() emits it once.
+const PUBLIC_GPT_IMAGE_25_GUIDANCE = 'GPT IMAGE 2.5 ROUTING: OpenAI GPT Image 2.5 has two variants. model="gpt-image-2.5-sunburst" is the base model, optimized for quality; model="gpt-image-2.5-flare" is the smaller model, optimized for speed. When the user names Sunburst or Flare, use that exact variant; a GPT Image 2.5 request that names neither uses model="gpt-image-2.5-flare". Never substitute either variant for the other or for gpt-image-2. Use generate_image for text-to-image requests. If uploaded/reference/persona images must guide identity, likeness, composition, style, or objects, use edit_image with the same model. Quality does not select a different GPT Image model.';
+
+function createPublicGptImageAdapter(modelId: string, name: string, guidance: string): PublicStoryboardAdapter {
+  return {
+    modelId,
+    name,
+    supportedStages: ['storyboard_image', 'keyframe'],
+    compile(storyboard, input) {
+      if (input.stage === 'storyboard_image') {
+        return {
+          stage: 'storyboard_image',
+          prompt: compileStoryboardImagePromptFromProject(storyboard),
+          args: {
+            model: modelId,
+            ...buildStoryboardCanvasArgs(storyboard.outputAspectRatio, true, storyboard.boardDimensions),
+            numberOfVariations: 1,
+          },
+        };
+      }
+      if (input.stage === 'keyframe') {
+        const scene = input.scene ?? storyboard.scenes[0];
+        if (!scene) throw new Error('GPT_IMAGE_2_ADAPTER keyframe requires at least one storyboard scene.');
+        return {
+          stage: 'keyframe',
+          prompt: compileStoryboardKeyframePrompt(storyboard, scene),
+          args: {
+            model: modelId,
+            aspectRatio: storyboard.frameAspectRatio,
+            numberOfVariations: 1,
+            sceneId: scene.id,
+          },
+        };
+      }
+      throw new StoryboardAdapterUnsupportedStageError(modelId, input.stage);
+    },
+    getSystemPromptGuidance() {
+      return guidance;
+    },
+  };
+}
+
+const PUBLIC_GPT_IMAGE_2_ADAPTER = createPublicGptImageAdapter('gpt-image-2', 'GPT Image 2', PUBLIC_GPT_IMAGE_2_GUIDANCE);
+const PUBLIC_GPT_IMAGE_25_SUNBURST_ADAPTER = createPublicGptImageAdapter('gpt-image-2.5-sunburst', 'GPT Image 2.5 Sunburst', PUBLIC_GPT_IMAGE_25_GUIDANCE);
+const PUBLIC_GPT_IMAGE_25_FLARE_ADAPTER = createPublicGptImageAdapter('gpt-image-2.5-flare', 'GPT Image 2.5 Flare', PUBLIC_GPT_IMAGE_25_GUIDANCE);
 
 const PUBLIC_LTX25_ADAPTER: PublicStoryboardAdapter = {
   modelId: 'ltx25',
@@ -1609,6 +1621,8 @@ const PUBLIC_WAN_ADAPTER: PublicStoryboardAdapter = {
 const PUBLIC_STORYBOARD_ADAPTERS = [
   PUBLIC_SEEDANCE_ADAPTER,
   PUBLIC_GPT_IMAGE_2_ADAPTER,
+  PUBLIC_GPT_IMAGE_25_SUNBURST_ADAPTER,
+  PUBLIC_GPT_IMAGE_25_FLARE_ADAPTER,
   PUBLIC_LTX25_ADAPTER,
   PUBLIC_LTX23_ADAPTER,
   PUBLIC_WAN_ADAPTER,
@@ -1619,6 +1633,8 @@ export function composeAdapterPromptGuidance(adapters: ReadonlyArray<PublicStory
     .map(adapter => adapter.getSystemPromptGuidance?.())
     .filter((guidance): guidance is string => typeof guidance === 'string' && guidance.trim().length > 0)
     .map(guidance => guidance.trim())
+    // Model variants may share one guidance block; emit it once.
+    .filter((guidance, index, blocks) => blocks.indexOf(guidance) === index)
     .join('\n\n');
 }
 
@@ -1669,9 +1685,11 @@ export const storyboardAdapterRegistry: StoryboardAdapterRegistryLike = {
     const exact = PUBLIC_STORYBOARD_ADAPTERS.find(adapter => adapter.modelId === trimmed);
     if (exact) return exact;
     if (trimmed === 'seedance' || isSeedanceModelSelection(trimmed)) return PUBLIC_SEEDANCE_ADAPTER;
-    if (resolveRegisteredImageReferenceModelId(trimmed) === 'gpt-image-2') {
-      return PUBLIC_GPT_IMAGE_2_ADAPTER;
-    }
+    // Exact GPT Image variants first: the reference family maps them all to 2.0.
+    const gptImageModel = normalizeGptImageModelAlias(trimmed);
+    const imageModel = isGptImageModel(gptImageModel) ? gptImageModel : resolveRegisteredImageReferenceModelId(trimmed);
+    const imageAdapter = PUBLIC_STORYBOARD_ADAPTERS.find(adapter => adapter.modelId === imageModel);
+    if (imageAdapter) return imageAdapter;
     const videoFamily = resolveRegisteredVideoModelFamily(trimmed);
     if (videoFamily === 'ltx25') return PUBLIC_LTX25_ADAPTER;
     if (videoFamily === 'ltx23' || videoFamily === 'ltx2') return PUBLIC_LTX23_ADAPTER;
@@ -3870,7 +3888,7 @@ export interface StoryboardVideoHostedWorkflowBuildOptions {
   title?: string;
   frameCount?: number;
   imageModel?: string;
-  imageQuality?: 'low' | 'medium' | 'high';
+  imageQuality?: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
   imageOutputFormat?: 'png' | 'jpg' | 'jpeg' | 'webp';
   imageWidth?: number;
   imageHeight?: number;

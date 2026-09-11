@@ -167,7 +167,7 @@
     "dev": "tsc --watch",
     "prepare": "npm run codegen && husky",
     "prepublishOnly": "npm run build",
-    "test": "node --import tsx test/basic-tests.ts && node --import tsx --test test/replay-redaction.test.ts test/durable-workflow-content-filter.test.ts",
+    "test": "node --import tsx test/basic-tests.ts && node --import tsx --test test/replay-redaction.test.ts test/durable-workflow-content-filter.test.ts test/gpt-image-25.test.ts",
     "test:e2e": "node --import tsx test/e2e-test.ts",
     "test:e2e:llm": "SOGNI_E2E_SCOPE=llm node --import tsx test/e2e-test.ts",
     "typecheck:examples": "tsc --noEmit -p tsconfig.examples.json",
@@ -205,8 +205,8 @@
   },
   "homepage": "https://github.com/Sogni-AI/sogni-intelligence-client#readme",
   "dependencies": {
-    "@sogni-ai/sogni-client": "5.40.0",
-    "@sogni-ai/sogni-protocol": "1.0.0-alpha.35",
+    "@sogni-ai/sogni-client": "5.41.0",
+    "@sogni-ai/sogni-protocol": "1.0.0-alpha.36",
     "sharp": "^0.35.3"
   },
   "devDependencies": {

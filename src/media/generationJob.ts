@@ -1,4 +1,31 @@
 import { parseAspectRatio } from './imageDimensions.js';
+import { isGptImage25Model, isGptImageModel, normalizeGptImageModelAlias } from './gptImage.js';
+
+const GPT_IMAGE_ONLY_ARG_KEYS = [
+  'gptImageQuality',
+  'gpt_image_quality',
+  'gptImageBackground',
+  'gpt_image_background',
+  'gptImageOutputCompression',
+  'gpt_image_output_compression',
+  'mask_image_url',
+] as const;
+
+/** A model switch keeps only the GPT Image options the new model supports. */
+function dropGptImageOptionsUnsupportedBy(args: Record<string, unknown>, modelKey: string): void {
+  const model = normalizeGptImageModelAlias(modelKey);
+  if (!isGptImageModel(model)) {
+    for (const key of GPT_IMAGE_ONLY_ARG_KEYS) delete args[key];
+    return;
+  }
+  if (isGptImage25Model(model)) return;
+  for (const key of ['gptImageQuality', 'gpt_image_quality']) {
+    if (args[key] === 'xhigh' || args[key] === 'max') delete args[key];
+  }
+  for (const key of ['gptImageBackground', 'gpt_image_background']) {
+    if (args[key] === 'transparent') delete args[key];
+  }
+}
 
 export interface GenerationJobDetail {
   label: string;
@@ -170,6 +197,7 @@ export function applyGenerationJobOverridesToArgs(
   if (overrides.modelKey) {
     const modelArgKey = options.modelArgKey ?? 'model';
     nextArgs[modelArgKey] = overrides.modelKey;
+    dropGptImageOptionsUnsupportedBy(nextArgs, overrides.modelKey);
   }
 
   if (overrides.dimensionMode === 'dimensions') {

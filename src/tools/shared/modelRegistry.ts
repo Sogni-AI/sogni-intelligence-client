@@ -28,6 +28,8 @@ const QUALITY_ONLY_MODELS: ModelOption[] = [
 /** Exact active selectors that may be named on generate_image calls. */
 export const GENERATE_IMAGE_MODELS = [
   { key: 'gpt-image-2', displayName: 'GPT Image 2' },
+  { key: 'gpt-image-2.5-sunburst', displayName: 'GPT Image 2.5 Sunburst' },
+  { key: 'gpt-image-2.5-flare', displayName: 'GPT Image 2.5 Flare' },
   { key: 'z-turbo', displayName: 'Z-Image Turbo' },
   { key: 'z-image', displayName: 'Z-Image' },
   { key: 'krea-2-turbo', displayName: 'Krea 2 Turbo' },
@@ -63,6 +65,8 @@ export const MODELS_BY_TOOL: Record<string, ModelOption[]> = {
   generate_image: [...GENERATE_IMAGE_MODELS],
   edit_image: [
     { key: 'gpt-image-2', displayName: 'GPT Image 2' },
+    { key: 'gpt-image-2.5-sunburst', displayName: 'GPT Image 2.5 Sunburst' },
+    { key: 'gpt-image-2.5-flare', displayName: 'GPT Image 2.5 Flare' },
     { key: 'qwen-lightning', displayName: 'Qwen Image Edit Lightning' },
     { key: 'qwen', displayName: 'Qwen Image Edit 2511' },
     { key: 'krea-identity-edit', displayName: 'Krea 2 Identity Edit LoRA v1.2' },
