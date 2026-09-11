@@ -3222,11 +3222,14 @@ async function runTests() {
     }
 
     const all = SogniTools.all;
-    if (!Array.isArray(all) || all.length !== 26) {
-      throw new Error(`SogniTools.all expected 26 tools, got ${all.length}`);
+    if (!Array.isArray(all) || all.length !== 27) {
+      throw new Error(`SogniTools.all expected 27 tools, got ${all.length}`);
     }
     if (!all.some((tool) => tool.function.name === 'generate_speech')) {
       throw new Error('SogniTools.all must include the generate_speech contract');
+    }
+    if (!all.some((tool) => tool.function.name === 'upscale_video')) {
+      throw new Error('SogniTools.all must include the upscale_video contract');
     }
     if (!all.some((tool) => tool.function.name === 'upscale_image')) {
       throw new Error('SogniTools.all must include the upscale_image contract');
