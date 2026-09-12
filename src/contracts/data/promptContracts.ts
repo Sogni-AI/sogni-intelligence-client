@@ -897,7 +897,7 @@ const GENERATE_SPEECH_CONTRACT: PromptContract = {
     voiceDescription:
       'Delivery direction for model="voice"; the speaker to invent for model="design". Never sent with model="clone".',
     voiceSourceIndex:
-      'Index of the uploaded voice clip to clone (0-based, same numbering as other tools use for audio). Required for model="clone".',
+      'Which audio holds the voice to clone, same numbering as other tools use for audio: -1 is the first upload, -2 the second, and 0-based non-negative indices address audio generated earlier. Required for model="clone".',
     voiceTranscript:
       'What the uploaded clip says. Optional, but it makes the clone markedly closer to the source.',
   },

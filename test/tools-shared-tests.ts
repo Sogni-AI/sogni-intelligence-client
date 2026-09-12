@@ -6,6 +6,7 @@ import {
   editImageDefinition,
   generateVideoDefinition,
   generateImageDefinition,
+  generateSpeechDefinition,
   extractDynamicPromptBranches,
   getModelOptions,
   isStoryboardKeyframeBatchPrompt,
@@ -397,6 +398,38 @@ Directly reuse <Audio 1> unchanged.`;
       'draw 2 more',
     ),
     null,
+  );
+
+  // generate_speech voiceSourceIndex addresses media the same way every other
+  // tool does: negatives are uploads. A `minimum: 0` here used to reject the only
+  // index a clone can realistically use — the recording the user just uploaded —
+  // and the rejected call ended the whole turn.
+  expect(
+    'generate_speech accepts an uploaded voiceSourceIndex',
+    validateAndNormalizeHostedToolArguments([generateSpeechDefinition], 'generate_speech', {
+      prompt: 'Read this aloud.',
+      model: 'clone',
+      voiceSourceIndex: -1,
+    }).ok,
+    true,
+  );
+  expect(
+    'generate_speech accepts a generated voiceSourceIndex',
+    validateAndNormalizeHostedToolArguments([generateSpeechDefinition], 'generate_speech', {
+      prompt: 'Read this aloud.',
+      model: 'clone',
+      voiceSourceIndex: 0,
+    }).ok,
+    true,
+  );
+  expect(
+    'generate_speech rejects a non-numeric voiceSourceIndex',
+    validateAndNormalizeHostedToolArguments([generateSpeechDefinition], 'generate_speech', {
+      prompt: 'Read this aloud.',
+      model: 'clone',
+      voiceSourceIndex: 'first',
+    }).ok,
+    false,
   );
 
   console.log(`\ntools/shared: ${testsPassed} passed, ${testsFailed} failed`);

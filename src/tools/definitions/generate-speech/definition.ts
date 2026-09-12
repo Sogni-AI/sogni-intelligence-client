@@ -63,8 +63,7 @@ Limit 4096 characters, roughly five minutes of speech. A longer script is refuse
         voiceSourceIndex: {
           type: 'number',
           description:
-            'Index of the uploaded audio file holding the voice to clone (0-based, from the uploaded files list, the same numbering other tools use for audio). Required when model="clone" and ignored otherwise. The clip should be three to thirty seconds of one person speaking cleanly, with no music, no second speaker and no heavy room echo; anything past thirty seconds is trimmed.',
-          minimum: 0,
+            'Which audio holds the voice to clone, using the same numbering every other tool uses for audio: negative indices are uploads (-1 = first/primary upload, -2 = second upload, and so on) and 0-based non-negative indices are audio generated earlier in this conversation. A clip the user just uploaded is -1. Required when model="clone" and ignored otherwise. The clip should be three to thirty seconds of one person speaking cleanly, with no music, no second speaker and no heavy room echo; anything past thirty seconds is trimmed.',
         },
         voiceTranscript: {
           type: 'string',
