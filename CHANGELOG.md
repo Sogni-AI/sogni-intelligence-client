@@ -1,3 +1,16 @@
+# [3.32.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.31.1...v3.32.0) (2026-09-12)
+
+
+### Bug Fixes
+
+* **deps:** bump sogni-client to 5.45.0 and sogni-protocol to 1.0.0-alpha.39 ([35eb653](https://github.com/Sogni-AI/sogni-intelligence-client/commit/35eb65319d7a484ba164efa5b9db7808dbb54add))
+* **generate-speech:** let voiceSourceIndex address an uploaded recording ([3896b0d](https://github.com/Sogni-AI/sogni-intelligence-client/commit/3896b0d882c6b0188564b752185a64bcd53418aa))
+
+
+### Features
+
+* **tools:** offer the MiniMax H3 2K outputScale on generate_video and animate_photo ([a146b6b](https://github.com/Sogni-AI/sogni-intelligence-client/commit/a146b6bacc3e9287077e70838bc11b5f5377f713))
+
 ## [3.31.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.31.0...v3.31.1) (2026-09-11)
 
 
