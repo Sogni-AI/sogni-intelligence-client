@@ -65,7 +65,7 @@ const ORBIT_VIDEO_CONTRACT: PromptContract = {
 // ---------------------------------------------------------------------------
 const ANIMATE_PHOTO_CONTRACT: PromptContract = {
   contractId: 'animate_photo_v1',
-  version: '1.0.0',
+  version: '1.1.0',
   toolName: 'animate_photo',
   baseDescription: [
     'animate_photo produces video from one or more source images using LTX 2.5 by default,',
@@ -218,6 +218,13 @@ const ANIMATE_PHOTO_CONTRACT: PromptContract = {
     'from "every N seconds" when present; otherwise divide the requested total by the number of',
     'adjacent clips. After animate_photo returns the batch videos, call stitch_video with',
     'those video indices before finalizing unless the user explicitly asked to keep separate clips only.',
+    '',
+    'MINIMAX H3 2K OUTPUT: outputScale=2 is available only on the MiniMax H3 selectors. It renders on',
+    'the normal H3 canvas and delivers the clip at twice its width and height (1344x768 becomes',
+    '2688x1536) with the same length and audio, for +10 Spark per second (+6 at 480p). Set',
+    'outputScale=2 only when the user asks for 2K, 1440p-class or extra-sharp H3 output; keep',
+    'targetResolution at 768 or omit it, never set 1080p, 1440p or 4K for H3, and leave outputScale',
+    'unset otherwise. Do not set it for any other model.',
   ].join('\n'),
   parameterDocs: {
     sourceImageIndices: 'Batch source image indices. Read startIndex from prior generate_image/edit_image result. Negative = uploaded images (-1 = first upload). May be paired with frameRole="end" only for explicit last/end-frame-only fan-out.',
@@ -225,6 +232,7 @@ const ANIMATE_PHOTO_CONTRACT: PromptContract = {
     duration: 'Per-clip duration in seconds. Target 15s when dialogue is involved and total length is given without per-clip spec.',
     frameRole: 'Set to "end" for explicit last/end-frame-only fan-out; set to "both" for first+last frame transitions using sourceImageIndices + endImageIndices.',
     endImageIndices: 'End frames for adjacent-chain transitions. N images → N-1 clips.',
+    outputScale: 'MiniMax H3 only: 2 = 2K delivery (twice the width and height, same length and audio, +10 Spark/s, +6 at 480p). Set only when the user asks for 2K, 1440p-class or extra-sharp H3 output; otherwise omit.',
   },
 };
 
@@ -233,7 +241,7 @@ const ANIMATE_PHOTO_CONTRACT: PromptContract = {
 // ---------------------------------------------------------------------------
 const GENERATE_VIDEO_CONTRACT: PromptContract = {
   contractId: 'generate_video_v1',
-  version: '1.2.0',
+  version: '1.3.0',
   toolName: 'generate_video',
   baseDescription: [
     'generate_video produces text-to-video clips and multimodal reference videos.',
@@ -306,10 +314,18 @@ const GENERATE_VIDEO_CONTRACT: PromptContract = {
     'for Seedance below 4s, do not silently round up. Ask whether they prefer a 4s Seedance clip',
     'or an exact-duration LTX clip. If the user did not explicitly ask for Seedance, choose the',
     'model/tool that can satisfy the requested duration exactly.',
+    '',
+    'MINIMAX H3 2K OUTPUT: outputScale=2 is available only on the MiniMax H3 selectors. It renders on',
+    'the normal H3 canvas and delivers the clip at twice its width and height (1344x768 becomes',
+    '2688x1536) with the same length and audio, for +10 Spark per second (+6 at 480p). Set',
+    'outputScale=2 only when the user asks for 2K, 1440p-class or extra-sharp H3 output; keep',
+    'targetResolution at 768 or omit it, never set 1080p, 1440p or 4K for H3, and leave outputScale',
+    'unset otherwise. Do not set it for any other model.',
   ].join('\n'),
   parameterDocs: {
     prompt: 'Video prompt. Use double quotes ONLY for spoken dialogue. Describe visual text without quotes.',
     duration: 'Clip duration in seconds. Plan dialogue word count against the 3.75 words/second ceiling.',
+    outputScale: 'MiniMax H3 only: 2 = 2K delivery (twice the width and height, same length and audio, +10 Spark/s, +6 at 480p). Set only when the user asks for 2K, 1440p-class or extra-sharp H3 output; otherwise omit.',
   },
 };
 

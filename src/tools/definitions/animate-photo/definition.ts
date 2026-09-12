@@ -8,7 +8,7 @@ import {
   ANIMATE_PHOTO_SKIP_PROMPT_PROCESSING_DESCRIPTION,
   LITERAL_VIDEO_PROMPT_OVERRIDE,
 } from '../../../contracts/toolPromptMarkers.js';
-import { ASPECT_RATIO_DESCRIPTION } from '../../../media/index.js';
+import { ASPECT_RATIO_DESCRIPTION, MINIMAX_H3_OUTPUT_SCALES } from '../../../media/index.js';
 import {
   H3_VIDEO_LORA_CATALOG_REFERENCE,
   H3_VIDEO_LORA_STRENGTHS_GUIDANCE,
@@ -136,7 +136,13 @@ BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary
         targetResolution: {
           type: "number",
           description:
-            'Short-side video resolution target in pixels. Use when the user asks for a bare named resolution such as "480p", "720p", or "1080p" without exact pixels or an output orientation. This preserves the source image aspect ratio. Wan 3 supports 480p, 720p, and 1080p; HappyHorse supports only 720p and 1080p. Never set 4K for either. MiniMax H3 renders inside a 1344x768 pixel budget on a 32px grid, so use 768 for H3 and never 1080p or 4K. Do NOT set width, height, or exact-pixel aspectRatio for bare named resolution requests. If the user says "720p portrait" or "720p landscape", use exact-pixel aspectRatio instead.',
+            'Short-side video resolution target in pixels. Use when the user asks for a bare named resolution such as "480p", "720p", or "1080p" without exact pixels or an output orientation. This preserves the source image aspect ratio. Wan 3 supports 480p, 720p, and 1080p; HappyHorse supports only 720p and 1080p. Never set 4K for either. MiniMax H3 renders inside a 1344x768 pixel budget on a 32px grid, so use 768 for H3 and never 1080p or 4K. Do NOT set width, height, or exact-pixel aspectRatio for bare named resolution requests. If the user says "720p portrait" or "720p landscape", use exact-pixel aspectRatio instead. For MiniMax H3 2K requests keep targetResolution at 768 (or omit it) and set outputScale to 2 instead.',
+        },
+        outputScale: {
+          type: "integer",
+          enum: [...MINIMAX_H3_OUTPUT_SCALES],
+          description:
+            'MiniMax H3 only. 2 delivers 2K output: the clip renders on the normal H3 canvas and is delivered at twice its width and height (1344x768 becomes 2688x1536) with the same length and audio, for +10 Spark per second (+6 at 480p). Set 2 only when the user asks for 2K, 1440p-class or extra-sharp H3 output; leave unset otherwise. Ignored for other models.',
         },
         sourceImageIndex: {
           type: "number",

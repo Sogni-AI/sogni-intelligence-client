@@ -85,6 +85,12 @@ export interface VideoModelConfig {
   supportsAudioToggle?: boolean;
   /** Whether the model accepts a separate negative prompt. */
   supportsNegativePrompt?: boolean;
+  /**
+   * Whether the model accepts `outputScale: 2` (MiniMax H3 2K delivery: the
+   * clip renders on its normal canvas and is delivered at twice its width and
+   * height with the same length and audio; Comfy worker 1.0.212+).
+   */
+  supportsOutputScale2K?: boolean;
   /** Whether the vendor can derive output shape from source media. */
   supportsAdaptiveRatio?: boolean;
   /**
@@ -410,6 +416,7 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
+    supportsOutputScale2K: true,
   },
   "minimax-h3-i2v": {
     model: "minimax-h3-fl2va-fp8_i2v",
@@ -430,6 +437,7 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
+    supportsOutputScale2K: true,
   },
   "minimax-h3-flf2v": {
     model: "minimax-h3-fl2va-fp8_flf2v",
@@ -450,6 +458,7 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
+    supportsOutputScale2K: true,
   },
   "minimax-h3-r2v": {
     model: "minimax-h3-ref2va-fp8_r2v",
@@ -470,6 +479,7 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
+    supportsOutputScale2K: true,
   },
   // MiniMax H3 Turbo uses LightX2V four-step LoRAs. The FL2VA worker graphs own
   // ER-SDE sampling, while Ref2VA Turbo follows its upstream Euler recipe.
@@ -491,6 +501,7 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
+    supportsOutputScale2K: true,
   },
   "minimax-h3-i2v-turbo": {
     model: "minimax-h3-fl2va-fp8_i2v_turbo",
@@ -510,6 +521,7 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
+    supportsOutputScale2K: true,
   },
   "minimax-h3-flf2v-turbo": {
     model: "minimax-h3-fl2va-fp8_flf2v_turbo",
@@ -529,6 +541,7 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
+    supportsOutputScale2K: true,
   },
   "minimax-h3-r2v-turbo": {
     model: "minimax-h3-ref2va-fp8_r2v_turbo",
@@ -549,6 +562,7 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
+    supportsOutputScale2K: true,
   },
   // FastH3 is the FastVideo VSA four-step recipe. It is separate from the
   // existing LightX2V Turbo selectors and is qualified only with Euler/simple.
@@ -571,6 +585,7 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
+    supportsOutputScale2K: true,
   },
   "minimax-h3-fasth3-i2v-turbo": {
     model: "minimax-h3-fastvideo-int8_i2v_turbo",
@@ -591,6 +606,7 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
+    supportsOutputScale2K: true,
   },
   "minimax-h3-fasth3-flf2v-turbo": {
     model: "minimax-h3-fastvideo-int8_flf2v_turbo",
@@ -611,6 +627,7 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
+    supportsOutputScale2K: true,
   },
   // Seedance 2.0 routes through Sogni Socket's vendor-job path to BytePlus.
   // The socket re-derives ratio from width/height and duration from
@@ -707,6 +724,20 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
 };
 
 // Wan 3 unified multimodal capability contract (provider APIs, 2026-08).
+/**
+ * MiniMax H3 `outputScale` values. 1 is the normal delivery; 2 is 2K delivery
+ * (twice the requested width and height, same length and audio) served by Comfy
+ * worker 1.0.212 and newer for +10 Spark per second (+6 at the 480p class).
+ */
+export const MINIMAX_H3_OUTPUT_SCALES = [1, 2] as const;
+export type MinimaxH3OutputScale = (typeof MINIMAX_H3_OUTPUT_SCALES)[number];
+/** The `outputScale` value that requests MiniMax H3 2K delivery. */
+export const MINIMAX_H3_2K_OUTPUT_SCALE: MinimaxH3OutputScale = 2;
+/** True when a video model config accepts `outputScale: 2`. */
+export function supportsMinimaxH3OutputScale2K(modelId: string): boolean {
+  return (VIDEO_MODEL_CONFIGS as Record<string, VideoModelConfig | undefined>)[modelId]?.supportsOutputScale2K === true;
+}
+
 export const WAN3_VIDEO_MODEL_ID = "wan3.0-video" as const;
 export const WAN3_ENHANCED_VIDEO_MODEL_ID = "wan3.0-spicy-video" as const;
 export type Wan3Resolution = "480P" | "720P" | "1080P";

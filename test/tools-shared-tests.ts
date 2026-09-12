@@ -269,6 +269,35 @@ Directly reuse <Audio 1> unchanged.`;
     }).ok,
     false,
   );
+  // MiniMax H3 2K delivery is an integer enum, so 2 passes on both video tools
+  // and anything else is rejected before a host forwards it to the SDK.
+  expect(
+    'generate_video accepts outputScale 2 for MiniMax H3',
+    validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
+      prompt: 'A lighthouse keeper watches the storm roll in.',
+      videoModel: 'minimax-h3-t2v',
+      outputScale: 2,
+    }).ok,
+    true,
+  );
+  expect(
+    'generate_video rejects outputScale 3',
+    validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
+      prompt: 'A lighthouse keeper watches the storm roll in.',
+      videoModel: 'minimax-h3-t2v',
+      outputScale: 3,
+    }).ok,
+    false,
+  );
+  expect(
+    'animate_photo accepts outputScale 2 for MiniMax H3',
+    validateAndNormalizeHostedToolArguments([animatePhotoDefinition], 'animate_photo', {
+      prompt: 'She turns to the window as the rain starts.',
+      videoModel: 'minimax-h3-i2v',
+      outputScale: 2,
+    }).ok,
+    true,
+  );
   // edit_image gained LoRAs after the parity check was written against
   // generate_image by name, so it went unchecked until the check moved onto the
   // schema. Guard the regression rather than the one tool.
