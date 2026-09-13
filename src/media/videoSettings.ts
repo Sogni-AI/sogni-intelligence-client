@@ -24,6 +24,9 @@ export type VideoModelId =
   | "minimax-h3-fasth3-t2v-turbo"
   | "minimax-h3-fasth3-i2v-turbo"
   | "minimax-h3-fasth3-flf2v-turbo"
+  | "minimax-h3-fasth3-t2v-turbo-2stage"
+  | "minimax-h3-fasth3-i2v-turbo-2stage"
+  | "minimax-h3-fasth3-flf2v-turbo-2stage"
   | "seedance2"
   | "seedance2-mini"
   | "seedance2-5"
@@ -85,12 +88,6 @@ export interface VideoModelConfig {
   supportsAudioToggle?: boolean;
   /** Whether the model accepts a separate negative prompt. */
   supportsNegativePrompt?: boolean;
-  /**
-   * Whether the model accepts `outputScale: 2` (MiniMax H3 2K delivery: the
-   * clip renders on its normal canvas and is delivered at twice its width and
-   * height with the same length and audio; Comfy worker 1.0.212+).
-   */
-  supportsOutputScale2K?: boolean;
   /** Whether the vendor can derive output shape from source media. */
   supportsAdaptiveRatio?: boolean;
   /**
@@ -416,7 +413,6 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
-    supportsOutputScale2K: true,
   },
   "minimax-h3-i2v": {
     model: "minimax-h3-fl2va-fp8_i2v",
@@ -437,7 +433,6 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
-    supportsOutputScale2K: true,
   },
   "minimax-h3-flf2v": {
     model: "minimax-h3-fl2va-fp8_flf2v",
@@ -458,7 +453,6 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
-    supportsOutputScale2K: true,
   },
   "minimax-h3-r2v": {
     model: "minimax-h3-ref2va-fp8_r2v",
@@ -479,7 +473,6 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
-    supportsOutputScale2K: true,
   },
   // MiniMax H3 Turbo uses LightX2V four-step LoRAs. The FL2VA worker graphs own
   // ER-SDE sampling, while Ref2VA Turbo follows its upstream Euler recipe.
@@ -501,7 +494,6 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
-    supportsOutputScale2K: true,
   },
   "minimax-h3-i2v-turbo": {
     model: "minimax-h3-fl2va-fp8_i2v_turbo",
@@ -521,7 +513,6 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
-    supportsOutputScale2K: true,
   },
   "minimax-h3-flf2v-turbo": {
     model: "minimax-h3-fl2va-fp8_flf2v_turbo",
@@ -541,7 +532,6 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
-    supportsOutputScale2K: true,
   },
   "minimax-h3-r2v-turbo": {
     model: "minimax-h3-ref2va-fp8_r2v_turbo",
@@ -562,7 +552,6 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
-    supportsOutputScale2K: true,
   },
   // FastH3 is the FastVideo VSA four-step recipe. It is separate from the
   // existing LightX2V Turbo selectors and is qualified only with Euler/simple.
@@ -585,7 +574,6 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
-    supportsOutputScale2K: true,
   },
   "minimax-h3-fasth3-i2v-turbo": {
     model: "minimax-h3-fastvideo-int8_i2v_turbo",
@@ -606,7 +594,6 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
-    supportsOutputScale2K: true,
   },
   "minimax-h3-fasth3-flf2v-turbo": {
     model: "minimax-h3-fastvideo-int8_flf2v_turbo",
@@ -627,7 +614,72 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     nativeAudio: true,
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
-    supportsOutputScale2K: true,
+  },
+  // FastH3 two-stage renders the FastH3 canvas, then the worker enlarges it 2x
+  // and refines it: the clip is delivered at exactly twice the canvas with the
+  // same frames and audio. Request shape, sampling, and LoRAs match the base
+  // FastH3 id; only the canvas tiers differ. targetResolution names the
+  // delivered class (MINIMAX_H3_TWO_STAGE_RESOLUTIONS): 720 renders a 384 px
+  // short edge, 1080 renders 544, and 1440 (2K, the default) renders 768.
+  "minimax-h3-fasth3-t2v-turbo-2stage": {
+    model: "minimax-h3-fastvideo-int8_t2v_turbo_2stage",
+    fps: 24,
+    steps: 4,
+    guidance: 1,
+    dimensionDivisor: 32,
+    minDimension: 32,
+    maxDimension: 1344,
+    sampler: "euler",
+    scheduler: "simple",
+    resolutionTiers: [768, 544, 384],
+    frameBase: 124,
+    frameStep: 17,
+    minFrames: 124,
+    maxFrames: 362,
+    maxPixels: 1_032_192,
+    nativeAudio: true,
+    supportsAudioToggle: true,
+    supportsNegativePrompt: false,
+  },
+  "minimax-h3-fasth3-i2v-turbo-2stage": {
+    model: "minimax-h3-fastvideo-int8_i2v_turbo_2stage",
+    fps: 24,
+    steps: 4,
+    guidance: 1,
+    dimensionDivisor: 32,
+    minDimension: 32,
+    maxDimension: 1344,
+    sampler: "euler",
+    scheduler: "simple",
+    resolutionTiers: [768, 544, 384],
+    frameBase: 124,
+    frameStep: 17,
+    minFrames: 124,
+    maxFrames: 362,
+    maxPixels: 1_032_192,
+    nativeAudio: true,
+    supportsAudioToggle: true,
+    supportsNegativePrompt: false,
+  },
+  "minimax-h3-fasth3-flf2v-turbo-2stage": {
+    model: "minimax-h3-fastvideo-int8_flf2v_turbo_2stage",
+    fps: 24,
+    steps: 4,
+    guidance: 1,
+    dimensionDivisor: 32,
+    minDimension: 32,
+    maxDimension: 1344,
+    sampler: "euler",
+    scheduler: "simple",
+    resolutionTiers: [768, 544, 384],
+    frameBase: 124,
+    frameStep: 17,
+    minFrames: 124,
+    maxFrames: 362,
+    maxPixels: 1_032_192,
+    nativeAudio: true,
+    supportsAudioToggle: true,
+    supportsNegativePrompt: false,
   },
   // Seedance 2.0 routes through Sogni Socket's vendor-job path to BytePlus.
   // The socket re-derives ratio from width/height and duration from
@@ -723,21 +775,114 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
   },
 };
 
-// Wan 3 unified multimodal capability contract (provider APIs, 2026-08).
 /**
- * MiniMax H3 `outputScale` values. 1 is the normal delivery; 2 is 2K delivery
- * (twice the requested width and height, same length and audio) served by Comfy
- * worker 1.0.212 and newer for +10 Spark per second (+6 at the 480p class).
+ * MiniMax H3 two-stage FastH3: every spelling that names it. The family alias
+ * picks t2v/i2v/flf2v the same way `minimax-h3-fasth3-turbo` does; the three
+ * selectors map to the three socket ids.
  */
-export const MINIMAX_H3_OUTPUT_SCALES = [1, 2] as const;
-export type MinimaxH3OutputScale = (typeof MINIMAX_H3_OUTPUT_SCALES)[number];
-/** The `outputScale` value that requests MiniMax H3 2K delivery. */
-export const MINIMAX_H3_2K_OUTPUT_SCALE: MinimaxH3OutputScale = 2;
-/** True when a video model config accepts `outputScale: 2`. */
-export function supportsMinimaxH3OutputScale2K(modelId: string): boolean {
-  return (VIDEO_MODEL_CONFIGS as Record<string, VideoModelConfig | undefined>)[modelId]?.supportsOutputScale2K === true;
+export const MINIMAX_H3_TWO_STAGE_MODEL_IDS: readonly string[] = Object.freeze([
+  "minimax-h3-fasth3-turbo-2stage",
+  "minimax-h3-fasth3-t2v-turbo-2stage",
+  "minimax-h3-fasth3-i2v-turbo-2stage",
+  "minimax-h3-fasth3-flf2v-turbo-2stage",
+  "minimax-h3-fastvideo-int8_t2v_turbo_2stage",
+  "minimax-h3-fastvideo-int8_i2v_turbo_2stage",
+  "minimax-h3-fastvideo-int8_flf2v_turbo_2stage",
+]);
+
+/** A two-stage clip is delivered at exactly this multiple of its canvas. */
+export const MINIMAX_H3_TWO_STAGE_DELIVERED_SCALE = 2 as const;
+
+/** One MiniMax H3 two-stage delivered-resolution class. */
+export interface MinimaxH3TwoStageResolution {
+  /** The `targetResolution` that names this class: the delivered short-edge class. */
+  readonly targetResolution: 720 | 1080 | 1440;
+  /** Short edge of the canvas FastH3 renders (the width/height sent to the socket). */
+  readonly canvasShortEdge: 384 | 544 | 768;
+  /** Short edge of the delivered clip: twice the canvas. */
+  readonly deliveredShortEdge: 768 | 1088 | 1536;
 }
 
+/**
+ * The MiniMax H3 two-stage size table, the only place these sizes live. For a
+ * two-stage selector `targetResolution` names the delivered class, and the
+ * canvas keeps the requested aspect on the 32 px grid (1344x768 renders
+ * 672x384, 960x544, or 1344x768 and is delivered at 1344x768, 1920x1088, or
+ * 2688x1536). Omitted, 1536, and "2K" mean 1440.
+ */
+export const MINIMAX_H3_TWO_STAGE_RESOLUTIONS: readonly MinimaxH3TwoStageResolution[] = Object.freeze([
+  Object.freeze({ targetResolution: 720, canvasShortEdge: 384, deliveredShortEdge: 768 }),
+  Object.freeze({ targetResolution: 1080, canvasShortEdge: 544, deliveredShortEdge: 1088 }),
+  Object.freeze({ targetResolution: 1440, canvasShortEdge: 768, deliveredShortEdge: 1536 }),
+] as const);
+
+/** The delivered class an omitted two-stage `targetResolution` gets: 2K. */
+export const MINIMAX_H3_TWO_STAGE_DEFAULT_TARGET_RESOLUTION = 1440 as const;
+
+function normalizeMinimaxH3TwoStageTargetResolution(targetResolution: number | string): number {
+  if (typeof targetResolution === "number") {
+    return targetResolution === 1536 ? 1440 : targetResolution;
+  }
+  const spelled = targetResolution.trim().toLowerCase().replace(/p$/, "");
+  if (spelled === "2k" || spelled === "1536") return 1440;
+  return /^\d+$/.test(spelled) ? Number(spelled) : Number.NaN;
+}
+
+/**
+ * The canvas short edge FastH3 renders for a two-stage `targetResolution`:
+ * 720 -> 384, 1080 -> 544, 1440 / 1536 / "2K" / omitted -> 768 (a "p" suffix
+ * is accepted). Any other value throws: the delivered class is ambiguous (768
+ * could mean either the delivered size of 720 or the 2K canvas), so it is never
+ * guessed.
+ */
+export function minimaxH3TwoStageCanvasShortEdge(
+  targetResolution?: number | string | null,
+): MinimaxH3TwoStageResolution["canvasShortEdge"] {
+  const requested = targetResolution === undefined || targetResolution === null
+    ? MINIMAX_H3_TWO_STAGE_DEFAULT_TARGET_RESOLUTION
+    : normalizeMinimaxH3TwoStageTargetResolution(targetResolution);
+  const row = MINIMAX_H3_TWO_STAGE_RESOLUTIONS.find(entry => entry.targetResolution === requested);
+  if (!row) {
+    throw new Error(
+      `MiniMax H3 two-stage targetResolution must be 720, 1080, or 1440 (2K; also 1536 or "2K"), or omitted for 2K; received ${String(targetResolution)}`,
+    );
+  }
+  return row.canvasShortEdge;
+}
+
+function normalizeMinimaxH3ModelSpelling(value: string): string {
+  return value.trim().toLowerCase().replace(/[\s_.]+/g, "-").replace(/-+/g, "-");
+}
+
+const NORMALIZED_MINIMAX_H3_TWO_STAGE_MODEL_IDS: ReadonlySet<string> = new Set(
+  MINIMAX_H3_TWO_STAGE_MODEL_IDS.map(normalizeMinimaxH3ModelSpelling),
+);
+
+/** True for a two-stage FastH3 selector, family alias, or socket id (any `_`/`-` spelling). */
+export function isMinimaxH3TwoStageModelId(modelId: string | null | undefined): boolean {
+  return typeof modelId === "string"
+    && NORMALIZED_MINIMAX_H3_TWO_STAGE_MODEL_IDS.has(normalizeMinimaxH3ModelSpelling(modelId));
+}
+
+/**
+ * The size a two-stage clip is delivered at for a given canvas: exactly twice
+ * the width and height (1344x768 -> 2688x1536, 960x544 -> 1920x1088,
+ * 672x384 -> 1344x768).
+ */
+export function minimaxH3TwoStageDeliveredSize(
+  width: number,
+  height: number,
+): { width: number; height: number } {
+  if (!Number.isInteger(width) || width <= 0 || !Number.isInteger(height) || height <= 0) {
+    throw new Error(`MiniMax H3 two-stage canvas must be positive integer pixels; received ${width}x${height}`);
+  }
+  return {
+    width: width * MINIMAX_H3_TWO_STAGE_DELIVERED_SCALE,
+    height: height * MINIMAX_H3_TWO_STAGE_DELIVERED_SCALE,
+  };
+}
+
+// Wan 3 unified multimodal capability contract (provider APIs, 2026-08).
 export const WAN3_VIDEO_MODEL_ID = "wan3.0-video" as const;
 export const WAN3_ENHANCED_VIDEO_MODEL_ID = "wan3.0-spicy-video" as const;
 export type Wan3Resolution = "480P" | "720P" | "1080P";
@@ -948,6 +1093,12 @@ export type VideoQualityPreset = keyof typeof VIDEO_QUALITY_PRESETS;
 // Dimension & Frame Calculations
 // ============================================================================
 
+/**
+ * The canvas to send for a video request. `targetResolution` is the short-side
+ * target, except on the MiniMax H3 two-stage selectors, where it names the
+ * delivered class and becomes the canvas through
+ * `minimaxH3TwoStageCanvasShortEdge` (an unsupported class throws).
+ */
 export function calculateVideoDimensions(
   imageWidth: number,
   imageHeight: number,
@@ -955,6 +1106,9 @@ export function calculateVideoDimensions(
   modelId: VideoModelId = DEFAULT_VIDEO_MODEL,
   aspectRatio?: string,
 ): { width: number; height: number } {
+  if (isMinimaxH3TwoStageModelId(modelId)) {
+    targetResolution = minimaxH3TwoStageCanvasShortEdge(targetResolution);
+  }
   const config = VIDEO_MODEL_CONFIGS[resolveLegacyVideoModelId(modelId)];
   const divisor = config.dimensionDivisor;
   const minDim = config.minDimension;
@@ -977,7 +1131,7 @@ export function calculateVideoDimensions(
   }
 
   // Resolution tier logic: snap shorter side to a fixed tier (e.g. LTX 2.3:
-  // 1088/768 and MiniMax H3: 768). Explicit supported tiers use this same
+  // 1088/768, MiniMax H3: 768, H3 two-stage: 768/544/384). Explicit supported tiers use this same
   // path so their canonical landscape/portrait dimensions remain exact.
   const roundedTarget = targetResolution === undefined
     ? undefined

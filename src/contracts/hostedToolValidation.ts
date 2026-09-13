@@ -423,6 +423,17 @@ export function validateAndNormalizeHostedToolArguments(
     warnings: [],
   };
 
+  // Check the original arguments before unknown-property cleanup can erase
+  // this retired option and turn the request into a different video job.
+  if (
+    (toolName === 'generate_video' || toolName === 'animate_photo')
+    && Object.prototype.hasOwnProperty.call(args, 'outputScale')
+  ) {
+    context.errors.push(
+      'Argument "outputScale" is no longer supported. For MiniMax H3 two-stage output, use a -2stage videoModel with targetResolution 720, 1080, or 1440.',
+    );
+  }
+
   const normalizedSchema: HostedToolSchema = {
     ...schema,
     type: schema.type ?? 'object',

@@ -115,9 +115,14 @@ import {
   getLtx25StepsForQuality,
   getLtx25WorkflowModelIdForQuality,
   isKreaIdentityEditModel,
+  isMinimaxH3TwoStageModelId,
   LTX2VideoModels,
   LTX25_DEV_WORKFLOW_MODELS,
   LTX25_DISTILLED_WORKFLOW_MODELS,
+  MINIMAX_H3_TWO_STAGE_DEFAULT_TARGET_RESOLUTION,
+  MINIMAX_H3_TWO_STAGE_RESOLUTIONS,
+  minimaxH3TwoStageCanvasShortEdge,
+  minimaxH3TwoStageDeliveredSize,
   resolveImageEditModelForProfile,
 } from '../src/media/index.js';
 import { SogniClient } from '@sogni-ai/sogni-client';
@@ -795,6 +800,123 @@ async function runTests() {
         throw new Error(`${selector} sampling defaults do not match the FastH3 recipe`);
       }
     }
+
+    // Two-stage FastH3 renders on the FastH3 canvas and is delivered at 2x, so
+    // every request field must match its base selector; only the model and the
+    // canvas tiers (one per delivered class) differ.
+    const twoStageExpected = {
+      'minimax-h3-fasth3-t2v-turbo-2stage': ['minimax-h3-fastvideo-int8_t2v_turbo_2stage', 'minimax-h3-fasth3-t2v-turbo'],
+      'minimax-h3-fasth3-i2v-turbo-2stage': ['minimax-h3-fastvideo-int8_i2v_turbo_2stage', 'minimax-h3-fasth3-i2v-turbo'],
+      'minimax-h3-fasth3-flf2v-turbo-2stage': ['minimax-h3-fastvideo-int8_flf2v_turbo_2stage', 'minimax-h3-fasth3-flf2v-turbo'],
+    } as const;
+    for (const [selector, [model, baseSelector]] of Object.entries(twoStageExpected)) {
+      const config = getVideoModelConfig(selector as keyof typeof twoStageExpected);
+      if (config.model !== model) throw new Error(`${selector} mapped to ${config.model}`);
+      const { model: _baseModel, resolutionTiers: _baseTiers, ...baseFields } = getVideoModelConfig(baseSelector);
+      const { model: _twoStageModel, resolutionTiers: twoStageTiers, ...twoStageFields } = config;
+      if (JSON.stringify(twoStageFields) !== JSON.stringify(baseFields)) {
+        throw new Error(`${selector} request fields drifted from ${baseSelector}`);
+      }
+      if (JSON.stringify(twoStageTiers) !== JSON.stringify([768, 544, 384])) {
+        throw new Error(`${selector} canvas tiers must be the two-stage canvas classes; got ${JSON.stringify(twoStageTiers)}`);
+      }
+      for (const spelling of [selector, model]) {
+        if (!isMinimaxH3TwoStageModelId(spelling)) throw new Error(`${spelling} is not recognized as two-stage`);
+        if (!isMiniMaxH3VideoModel(spelling)) throw new Error(`${spelling} is not recognized as MiniMax H3`);
+      }
+      if (isMinimaxH3TwoStageModelId(baseSelector) || isMinimaxH3TwoStageModelId(getVideoModelConfig(baseSelector).model)) {
+        throw new Error(`${baseSelector} must not be recognized as two-stage`);
+      }
+    }
+    if (!isMinimaxH3TwoStageModelId('minimax-h3-fasth3-turbo-2stage')) {
+      throw new Error('The two-stage family alias is not recognized');
+    }
+    if (!isMiniMaxH3VideoModel('minimax-h3-fasth3-turbo-2stage')) {
+      throw new Error('The two-stage family alias is not a MiniMax H3 model');
+    }
+    if (isMinimaxH3TwoStageModelId('minimax-h3-fasth3-turbo') || isMinimaxH3TwoStageModelId('minimax-h3-t2v-turbo')) {
+      throw new Error('Single-stage H3 selectors must not be recognized as two-stage');
+    }
+    const delivered2K = minimaxH3TwoStageDeliveredSize(1344, 768);
+    const delivered1080p = minimaxH3TwoStageDeliveredSize(960, 544);
+    const delivered720 = minimaxH3TwoStageDeliveredSize(672, 384);
+    if (
+      JSON.stringify([delivered2K, delivered1080p, delivered720])
+      !== JSON.stringify([{ width: 2688, height: 1536 }, { width: 1920, height: 1088 }, { width: 1344, height: 768 }])
+    ) {
+      throw new Error(`Two-stage delivered sizes are wrong: ${JSON.stringify({ delivered2K, delivered1080p, delivered720 })}`);
+    }
+
+    // targetResolution on a two-stage selector names the delivered class. The
+    // table is the only place the sizes live; every row delivers 2x its canvas.
+    if (
+      JSON.stringify(MINIMAX_H3_TWO_STAGE_RESOLUTIONS)
+      !== JSON.stringify([
+        { targetResolution: 720, canvasShortEdge: 384, deliveredShortEdge: 768 },
+        { targetResolution: 1080, canvasShortEdge: 544, deliveredShortEdge: 1088 },
+        { targetResolution: 1440, canvasShortEdge: 768, deliveredShortEdge: 1536 },
+      ])
+      || MINIMAX_H3_TWO_STAGE_DEFAULT_TARGET_RESOLUTION !== 1440
+    ) {
+      throw new Error(`Two-stage resolution table is wrong: ${JSON.stringify(MINIMAX_H3_TWO_STAGE_RESOLUTIONS)}`);
+    }
+    const canvasByRequest: Array<[number | string | null | undefined, number]> = [
+      [720, 384], ["720p", 384], [1080, 544], ["1080P", 544], [1440, 768], ["1440p", 768],
+      [1536, 768], ["2K", 768], ["2k", 768], [undefined, 768], [null, 768],
+    ];
+    for (const [requested, canvas] of canvasByRequest) {
+      if (minimaxH3TwoStageCanvasShortEdge(requested) !== canvas) {
+        throw new Error(`Two-stage targetResolution ${String(requested)} should render a ${canvas} canvas`);
+      }
+    }
+    for (const unsupported of [768, 480, 544, 1088, 2160, "4K", "", "1080x"]) {
+      let threw = false;
+      try {
+        minimaxH3TwoStageCanvasShortEdge(unsupported);
+      } catch {
+        threw = true;
+      }
+      if (!threw) throw new Error(`Two-stage targetResolution ${String(unsupported)} must be rejected`);
+    }
+    const twoStageCanvases = {
+      omitted: calculateVideoDimensions(1344, 768, undefined, "minimax-h3-fasth3-t2v-turbo-2stage"),
+      p720: calculateVideoDimensions(1344, 768, 720, "minimax-h3-fasth3-t2v-turbo-2stage"),
+      p1080: calculateVideoDimensions(1344, 768, 1080, "minimax-h3-fasth3-i2v-turbo-2stage"),
+      p1440: calculateVideoDimensions(1920, 1080, 1440, "minimax-h3-fasth3-flf2v-turbo-2stage"),
+      p1536: calculateVideoDimensions(1344, 768, 1536, "minimax-h3-fasth3-t2v-turbo-2stage"),
+      portrait720: calculateVideoDimensions(768, 1344, 720, "minimax-h3-fasth3-i2v-turbo-2stage"),
+      portrait1080: calculateVideoDimensions(1080, 1920, 1080, "minimax-h3-fasth3-i2v-turbo-2stage"),
+      square720: calculateVideoDimensions(768, 768, 720, "minimax-h3-fasth3-flf2v-turbo-2stage"),
+      baseFastH3: calculateVideoDimensions(1344, 768, 768, "minimax-h3-fasth3-t2v-turbo"),
+    };
+    const expectedCanvases = {
+      omitted: { width: 1344, height: 768 },
+      p720: { width: 672, height: 384 },
+      p1080: { width: 960, height: 544 },
+      p1440: { width: 1344, height: 768 },
+      p1536: { width: 1344, height: 768 },
+      portrait720: { width: 384, height: 672 },
+      portrait1080: { width: 544, height: 960 },
+      square720: { width: 384, height: 384 },
+      baseFastH3: { width: 1344, height: 768 },
+    };
+    if (JSON.stringify(twoStageCanvases) !== JSON.stringify(expectedCanvases)) {
+      throw new Error(`Two-stage canvases are wrong: ${JSON.stringify(twoStageCanvases)}`);
+    }
+    let rejectedAmbiguousClass = false;
+    try {
+      calculateVideoDimensions(1344, 768, 768, "minimax-h3-fasth3-t2v-turbo-2stage");
+    } catch {
+      rejectedAmbiguousClass = true;
+    }
+    if (!rejectedAmbiguousClass) throw new Error("A two-stage canvas must not accept the ambiguous 768 class");
+    let rejectedInvalidCanvas = false;
+    try {
+      minimaxH3TwoStageDeliveredSize(0, 768);
+    } catch {
+      rejectedInvalidCanvas = true;
+    }
+    if (!rejectedInvalidCanvas) throw new Error('Two-stage delivered size accepted a zero-width canvas');
   })();
 
   await test('Should expose every real MiniMax H3 Turbo tool and video-only Ref2VA guidance', () => {
@@ -816,6 +938,17 @@ async function runTests() {
       if (!animateModels.includes(selector)) {
         throw new Error(`animate_photo is missing ${selector}`);
       }
+    }
+    if (!generateModels.includes('minimax-h3-fasth3-t2v-turbo-2stage')) {
+      throw new Error('generate_video is missing MiniMax H3 FastH3 two-stage T2V');
+    }
+    for (const selector of ['minimax-h3-fasth3-i2v-turbo-2stage', 'minimax-h3-fasth3-flf2v-turbo-2stage']) {
+      if (!animateModels.includes(selector) || generateModels.includes(selector)) {
+        throw new Error(`${selector} must be exposed by animate_photo only`);
+      }
+    }
+    if (animateModels.includes('minimax-h3-fasth3-t2v-turbo-2stage')) {
+      throw new Error('The two-stage T2V selector must be exposed by generate_video only');
     }
     if (!generateModels.includes('minimax-h3-r2v-turbo') || animateModels.includes('minimax-h3-r2v-turbo')) {
       throw new Error('R2V Turbo must be exposed by generate_video only');

@@ -1,3 +1,4 @@
+import { MINIMAX_H3_TWO_STAGE_MODEL_IDS } from '../media/videoSettings.js';
 import {
   isSeedanceVideoModelId,
   resolveSeedanceVideoModelId,
@@ -96,6 +97,7 @@ const MINIMAX_H3_MODEL_IDS = normalizedSet([
   ]),
   'minimax-h3-ref2va-fp8_r2v',
   'minimax-h3-ref2va-fp8_r2v_turbo',
+  ...MINIMAX_H3_TWO_STAGE_MODEL_IDS,
 ]);
 
 // These workflows treat every supplied image as loose conditioning context,

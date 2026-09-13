@@ -8,7 +8,7 @@ import {
   ANIMATE_PHOTO_SKIP_PROMPT_PROCESSING_DESCRIPTION,
   LITERAL_VIDEO_PROMPT_OVERRIDE,
 } from '../../../contracts/toolPromptMarkers.js';
-import { ASPECT_RATIO_DESCRIPTION, MINIMAX_H3_OUTPUT_SCALES } from '../../../media/index.js';
+import { ASPECT_RATIO_DESCRIPTION } from '../../../media/index.js';
 import {
   H3_VIDEO_LORA_CATALOG_REFERENCE,
   H3_VIDEO_LORA_STRENGTHS_GUIDANCE,
@@ -27,9 +27,11 @@ const H3_LORA_SELECTORS = [
   "minimax-h3-i2v",
   "minimax-h3-i2v-turbo",
   "minimax-h3-fasth3-i2v-turbo",
+  "minimax-h3-fasth3-i2v-turbo-2stage",
   "minimax-h3-flf2v",
   "minimax-h3-flf2v-turbo",
   "minimax-h3-fasth3-flf2v-turbo",
+  "minimax-h3-fasth3-flf2v-turbo-2stage",
 ] as const;
 
 const WAN3_VIDEO_MODEL_GUIDANCE =
@@ -98,15 +100,17 @@ BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary
             "minimax-h3-i2v",
             "minimax-h3-i2v-turbo",
             "minimax-h3-fasth3-i2v-turbo",
+            "minimax-h3-fasth3-i2v-turbo-2stage",
             "minimax-h3-flf2v",
             "minimax-h3-flf2v-turbo",
             "minimax-h3-fasth3-flf2v-turbo",
+            "minimax-h3-fasth3-flf2v-turbo-2stage",
             "wan3.0-video",
             "wan3.0-spicy-video",
           ],
           description:
             '"ltx25" (default): LTX 2.5 I2V or first/last-frame video with native audio; Fast, HQ, and Pro currently use the release-validated official Distilled INT8 workflow. The Dev checkpoints are not publicly routed until upstream publishes and Sogni validates an official ComfyUI Dev recipe. ' +
-            'Which video model to use. "ltx23": LTX 2.3 rollback with native audio. "wan22": quick simple motion without audio, up to 10s. "minimax-h3-i2v" is standard MiniMax H3 from one first frame; "minimax-h3-i2v-turbo" is the existing 4-step LightX2V Turbo engine; "minimax-h3-fasth3-i2v-turbo" is the separate FastVideo VSA four-step FastH3 engine, about 2x faster and fixed to Euler/simple. The matching FLF2V selectors provide standard, LightX2V Turbo, and FastH3 Turbo first/last-frame generation; use frameRole="both" and provide the end frame. FastH3 has no R2V mode. H3 generates native audio at fixed 24fps for 5.17-15.08s and has no negative-prompt input. H3 Base and Turbo prompts use the exact three-field contract and the official mode-specific alignment line. Do not set Seedance here; use generate_video with Seedance references. ' +
+            'Which video model to use. "ltx23": LTX 2.3 rollback with native audio. "wan22": quick simple motion without audio, up to 10s. "minimax-h3-i2v" is standard MiniMax H3 from one first frame; "minimax-h3-i2v-turbo" is the existing 4-step LightX2V Turbo engine; "minimax-h3-fasth3-i2v-turbo" is the separate FastVideo VSA four-step FastH3 engine, about 2x faster and fixed to Euler/simple. "minimax-h3-fasth3-i2v-turbo-2stage" (first frame) and "minimax-h3-fasth3-flf2v-turbo-2stage" (first and last frame) are the two-stage FastH3 engine: FastH3 renders the canvas, then the worker enlarges it 2x and refines it, so the clip is delivered at twice the canvas width and height with the same length and audio. targetResolution picks the delivered class: 1080 renders a 544px short-edge canvas (960x544 is delivered at 1920x1088) for 14 Spark per second, 1440 or omitted renders the 768p canvas for 2K (1344x768 is delivered at 2688x1536) for 14 Spark per second, and 720 renders a 384px canvas (672x384 is delivered at 1344x768) for about the regular FastH3 price of 4 Spark per second. The estimate prices every request. They take the same inputs, durations and LoRAs as their FastH3 selectors. Choose them when the user asks for 1080p, 1440p or 2K MiniMax H3 output, for two-stage output, or for the sharpest/best H3 quality; for ordinary 768p FastH3 output keep the regular FastH3 selector at targetResolution 768. The matching FLF2V selectors provide standard, LightX2V Turbo, FastH3 Turbo, and two-stage FastH3 first/last-frame generation; use frameRole="both" and provide the end frame. FastH3 has no R2V mode. H3 generates native audio at fixed 24fps for 5.17-15.08s and has no negative-prompt input. H3 Base and Turbo prompts use the exact three-field contract and the official mode-specific alignment line. Do not set Seedance here; use generate_video with Seedance references. ' +
             WAN3_VIDEO_MODEL_GUIDANCE,
         },
         negativePrompt: {
@@ -136,13 +140,7 @@ BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary
         targetResolution: {
           type: "number",
           description:
-            'Short-side video resolution target in pixels. Use when the user asks for a bare named resolution such as "480p", "720p", or "1080p" without exact pixels or an output orientation. This preserves the source image aspect ratio. Wan 3 supports 480p, 720p, and 1080p; HappyHorse supports only 720p and 1080p. Never set 4K for either. MiniMax H3 renders inside a 1344x768 pixel budget on a 32px grid, so use 768 for H3 and never 1080p or 4K. Do NOT set width, height, or exact-pixel aspectRatio for bare named resolution requests. If the user says "720p portrait" or "720p landscape", use exact-pixel aspectRatio instead. For MiniMax H3 2K requests keep targetResolution at 768 (or omit it) and set outputScale to 2 instead.',
-        },
-        outputScale: {
-          type: "integer",
-          enum: [...MINIMAX_H3_OUTPUT_SCALES],
-          description:
-            'MiniMax H3 only. 2 delivers 2K output: the clip renders on the normal H3 canvas and is delivered at twice its width and height (1344x768 becomes 2688x1536) with the same length and audio, for +10 Spark per second (+6 at 480p). Set 2 only when the user asks for 2K, 1440p-class or extra-sharp H3 output; leave unset otherwise. Ignored for other models.',
+            'Short-side video resolution target in pixels. Use when the user asks for a bare named resolution such as "480p", "720p", or "1080p" without exact pixels or an output orientation. This preserves the source image aspect ratio. Wan 3 supports 480p, 720p, and 1080p; HappyHorse supports only 720p and 1080p. Never set 4K for either. MiniMax H3 renders inside a 1344x768 pixel budget on a 32px grid, so use 768 for the regular H3 selectors and never 1080p or 4K. The two-stage H3 selectors "minimax-h3-fasth3-i2v-turbo-2stage" and "minimax-h3-fasth3-flf2v-turbo-2stage" deliver twice the canvas, so there targetResolution names the delivered short-edge class: 1080 (544px canvas short edge: 960x544 delivered at 1920x1088), 1440 for 2K (the 1344x768 canvas delivered at 2688x1536), or 720 (384px canvas: 672x384 delivered at 1344x768); omit it for 2K. The source aspect is kept: a portrait source at 1080 renders 544x960 and is delivered at 1088x1920. Never set 4K for H3. Do NOT set width, height, or exact-pixel aspectRatio for bare named resolution requests. If the user says "720p portrait" or "720p landscape", use exact-pixel aspectRatio instead.',
         },
         sourceImageIndex: {
           type: "number",
