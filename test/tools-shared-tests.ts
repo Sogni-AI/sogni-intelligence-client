@@ -101,13 +101,14 @@ export function runToolsSharedTests(): { passed: number; failed: number } {
   const generateVideoModelKeys = getModelOptions('generate_video').map(option => option.key);
   const animatePhotoModelKeys = getModelOptions('animate_photo').map(option => option.key);
   expect(
-    'model registry: generate_video includes H3 LightX2V, FastH3, and R2V Turbo selectors',
+    'model registry: generate_video includes H3 LightX2V, FastH3, two-stage, and R2V Turbo selectors',
     {
       t2vTurbo: generateVideoModelKeys.includes('minimax-h3-t2v-turbo'),
       fastH3T2vTurbo: generateVideoModelKeys.includes('minimax-h3-fasth3-t2v-turbo'),
+      fastH3T2vTwoStage: generateVideoModelKeys.includes('minimax-h3-fasth3-t2v-turbo-2stage'),
       r2vTurbo: generateVideoModelKeys.includes('minimax-h3-r2v-turbo'),
     },
-    { t2vTurbo: true, fastH3T2vTurbo: true, r2vTurbo: true },
+    { t2vTurbo: true, fastH3T2vTurbo: true, fastH3T2vTwoStage: true, r2vTurbo: true },
   );
   expect(
     'model registry: animate_photo includes H3 I2V and FLF2V Turbo selectors',
@@ -116,9 +117,19 @@ export function runToolsSharedTests(): { passed: number; failed: number } {
       flf2vTurbo: animatePhotoModelKeys.includes('minimax-h3-flf2v-turbo'),
       fastH3I2vTurbo: animatePhotoModelKeys.includes('minimax-h3-fasth3-i2v-turbo'),
       fastH3Flf2vTurbo: animatePhotoModelKeys.includes('minimax-h3-fasth3-flf2v-turbo'),
+      fastH3I2vTwoStage: animatePhotoModelKeys.includes('minimax-h3-fasth3-i2v-turbo-2stage'),
+      fastH3Flf2vTwoStage: animatePhotoModelKeys.includes('minimax-h3-fasth3-flf2v-turbo-2stage'),
       r2vTurbo: animatePhotoModelKeys.includes('minimax-h3-r2v-turbo'),
     },
-    { i2vTurbo: true, flf2vTurbo: true, fastH3I2vTurbo: true, fastH3Flf2vTurbo: true, r2vTurbo: false },
+    {
+      i2vTurbo: true,
+      flf2vTurbo: true,
+      fastH3I2vTurbo: true,
+      fastH3Flf2vTurbo: true,
+      fastH3I2vTwoStage: true,
+      fastH3Flf2vTwoStage: true,
+      r2vTurbo: false,
+    },
   );
   const generateImageProperties = generateImageDefinition.function.parameters.properties ?? {};
   expect(
@@ -155,8 +166,8 @@ export function runToolsSharedTests(): { passed: number; failed: number } {
   // MiniMax H3 video LoRAs. The two tools split the H3 modes between them, so
   // each must carry the arrays and name only its own selectors.
   for (const [toolName, definition, expectedSelectors] of [
-    ['generate_video', generateVideoDefinition, ['minimax-h3-t2v', 'minimax-h3-t2v-turbo', 'minimax-h3-fasth3-t2v-turbo', 'minimax-h3-r2v', 'minimax-h3-r2v-turbo']],
-    ['animate_photo', animatePhotoDefinition, ['minimax-h3-i2v', 'minimax-h3-i2v-turbo', 'minimax-h3-fasth3-i2v-turbo', 'minimax-h3-flf2v', 'minimax-h3-flf2v-turbo', 'minimax-h3-fasth3-flf2v-turbo']],
+    ['generate_video', generateVideoDefinition, ['minimax-h3-t2v', 'minimax-h3-t2v-turbo', 'minimax-h3-fasth3-t2v-turbo', 'minimax-h3-fasth3-t2v-turbo-2stage', 'minimax-h3-r2v', 'minimax-h3-r2v-turbo']],
+    ['animate_photo', animatePhotoDefinition, ['minimax-h3-i2v', 'minimax-h3-i2v-turbo', 'minimax-h3-fasth3-i2v-turbo', 'minimax-h3-fasth3-i2v-turbo-2stage', 'minimax-h3-flf2v', 'minimax-h3-flf2v-turbo', 'minimax-h3-fasth3-flf2v-turbo', 'minimax-h3-fasth3-flf2v-turbo-2stage']],
   ] as const) {
     const properties = definition.function.parameters.properties ?? {};
     expect(
@@ -270,34 +281,65 @@ Directly reuse <Audio 1> unchanged.`;
     }).ok,
     false,
   );
-  // MiniMax H3 2K delivery is an integer enum, so 2 passes on both video tools
-  // and anything else is rejected before a host forwards it to the SDK.
+  // MiniMax H3 2K is the two-stage FastH3 selectors, not a request option: the
+  // outputScale argument is gone from both video tools, and each two-stage
+  // selector validates (with LoRAs) only on the tool that owns its mode.
   expect(
-    'generate_video accepts outputScale 2 for MiniMax H3',
+    'generate_video and animate_photo no longer declare outputScale',
+    [generateVideoDefinition, animatePhotoDefinition].map(
+      definition => 'outputScale' in (definition.function.parameters.properties ?? {}),
+    ),
+    [false, false],
+  );
+  expect(
+    'two-stage targetResolution docs name the delivered classes and keep 768p on the base FastH3 selector',
+    [generateVideoDefinition, animatePhotoDefinition].map(definition => {
+      const properties = definition.function.parameters.properties ?? {};
+      const targetResolution = String(properties.targetResolution?.description ?? '');
+      const videoModel = String(properties.videoModel?.description ?? '');
+      return [
+        targetResolution.includes('targetResolution names the delivered short-edge class'),
+        ['384px canvas', '544px canvas', 'omit it for 2K'].every(text => targetResolution.includes(text)),
+        videoModel.includes('for ordinary 768p FastH3 output keep the regular FastH3 selector at targetResolution 768'),
+      ];
+    }),
+    [[true, true, true], [true, true, true]],
+  );
+  expect(
+    'generate_video accepts the FastH3 two-stage T2V selector with an H3 LoRA',
     validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
-      prompt: 'A lighthouse keeper watches the storm roll in.',
-      videoModel: 'minimax-h3-t2v',
-      outputScale: 2,
+      prompt: 'r34l1sm, a lighthouse keeper watches the storm roll in.',
+      videoModel: 'minimax-h3-fasth3-t2v-turbo-2stage',
+      loras: ['h3-realism-people'],
+      loraStrengths: [0.8],
     }).ok,
     true,
   );
   expect(
-    'generate_video rejects outputScale 3',
-    validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
-      prompt: 'A lighthouse keeper watches the storm roll in.',
-      videoModel: 'minimax-h3-t2v',
-      outputScale: 3,
-    }).ok,
-    false,
+    'generate_video rejects the image-conditioned two-stage selectors',
+    ['minimax-h3-fasth3-i2v-turbo-2stage', 'minimax-h3-fasth3-flf2v-turbo-2stage'].map(videoModel =>
+      validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
+        prompt: 'A lighthouse keeper watches the storm roll in.',
+        videoModel,
+      }).ok),
+    [false, false],
   );
   expect(
-    'animate_photo accepts outputScale 2 for MiniMax H3',
+    'animate_photo accepts the FastH3 two-stage I2V and FLF2V selectors',
+    ['minimax-h3-fasth3-i2v-turbo-2stage', 'minimax-h3-fasth3-flf2v-turbo-2stage'].map(videoModel =>
+      validateAndNormalizeHostedToolArguments([animatePhotoDefinition], 'animate_photo', {
+        prompt: 'She turns to the window as the rain starts.',
+        videoModel,
+      }).ok),
+    [true, true],
+  );
+  expect(
+    'animate_photo rejects the two-stage T2V selector',
     validateAndNormalizeHostedToolArguments([animatePhotoDefinition], 'animate_photo', {
       prompt: 'She turns to the window as the rain starts.',
-      videoModel: 'minimax-h3-i2v',
-      outputScale: 2,
+      videoModel: 'minimax-h3-fasth3-t2v-turbo-2stage',
     }).ok,
-    true,
+    false,
   );
   // edit_image gained LoRAs after the parity check was written against
   // generate_image by name, so it went unchecked until the check moved onto the

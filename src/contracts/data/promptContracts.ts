@@ -65,7 +65,7 @@ const ORBIT_VIDEO_CONTRACT: PromptContract = {
 // ---------------------------------------------------------------------------
 const ANIMATE_PHOTO_CONTRACT: PromptContract = {
   contractId: 'animate_photo_v1',
-  version: '1.1.0',
+  version: '1.2.0',
   toolName: 'animate_photo',
   baseDescription: [
     'animate_photo produces video from one or more source images using LTX 2.5 by default,',
@@ -219,12 +219,20 @@ const ANIMATE_PHOTO_CONTRACT: PromptContract = {
     'adjacent clips. After animate_photo returns the batch videos, call stitch_video with',
     'those video indices before finalizing unless the user explicitly asked to keep separate clips only.',
     '',
-    'MINIMAX H3 2K OUTPUT: outputScale=2 is available only on the MiniMax H3 selectors. It renders on',
-    'the normal H3 canvas and delivers the clip at twice its width and height (1344x768 becomes',
-    '2688x1536) with the same length and audio, for +10 Spark per second (+6 at 480p). Set',
-    'outputScale=2 only when the user asks for 2K, 1440p-class or extra-sharp H3 output; keep',
-    'targetResolution at 768 or omit it, never set 1080p, 1440p or 4K for H3, and leave outputScale',
-    'unset otherwise. Do not set it for any other model.',
+    'MINIMAX H3 TWO-STAGE OUTPUT: 1080p and 2K MiniMax H3 delivery is its own selector, not an option.',
+    '"minimax-h3-fasth3-i2v-turbo-2stage" (first frame) and "minimax-h3-fasth3-flf2v-turbo-2stage"',
+    '(first and last frame, frameRole="both" with an end frame) are the two-stage FastH3 engine: FastH3',
+    'renders the canvas, then the worker enlarges it 2x and refines it, so the clip is delivered at',
+    'twice the canvas width and height with the same length and audio. targetResolution names the',
+    'delivered class: 1080 renders a 544px short-edge canvas (960x544 becomes 1920x1088) for 14 Spark',
+    'per second, 1440 or omitted renders the 768p canvas for 2K (1344x768 becomes 2688x1536) for 14',
+    'Spark per second, and 720 renders a 384px canvas (672x384 becomes 1344x768) for about the regular',
+    'FastH3 price of 4 Spark per second. The estimate prices every request. The source aspect is kept',
+    '(a portrait source at 1080 renders 544x960 and is delivered at 1088x1920). They take the same',
+    'prompt contract, durations and LoRAs as their FastH3 selectors. Choose them when the user asks for',
+    '1080p, 1440p or 2K MiniMax H3 output, for two-stage output, or for the sharpest/best H3 quality;',
+    'for ordinary 768p FastH3 output keep the regular FastH3 selector at targetResolution 768. Never',
+    'set 4K for H3.',
   ].join('\n'),
   parameterDocs: {
     sourceImageIndices: 'Batch source image indices. Read startIndex from prior generate_image/edit_image result. Negative = uploaded images (-1 = first upload). May be paired with frameRole="end" only for explicit last/end-frame-only fan-out.',
@@ -232,7 +240,6 @@ const ANIMATE_PHOTO_CONTRACT: PromptContract = {
     duration: 'Per-clip duration in seconds. Target 15s when dialogue is involved and total length is given without per-clip spec.',
     frameRole: 'Set to "end" for explicit last/end-frame-only fan-out; set to "both" for first+last frame transitions using sourceImageIndices + endImageIndices.',
     endImageIndices: 'End frames for adjacent-chain transitions. N images → N-1 clips.',
-    outputScale: 'MiniMax H3 only: 2 = 2K delivery (twice the width and height, same length and audio, +10 Spark/s, +6 at 480p). Set only when the user asks for 2K, 1440p-class or extra-sharp H3 output; otherwise omit.',
   },
 };
 
@@ -241,7 +248,7 @@ const ANIMATE_PHOTO_CONTRACT: PromptContract = {
 // ---------------------------------------------------------------------------
 const GENERATE_VIDEO_CONTRACT: PromptContract = {
   contractId: 'generate_video_v1',
-  version: '1.3.0',
+  version: '1.4.0',
   toolName: 'generate_video',
   baseDescription: [
     'generate_video produces text-to-video clips and multimodal reference videos.',
@@ -315,17 +322,21 @@ const GENERATE_VIDEO_CONTRACT: PromptContract = {
     'or an exact-duration LTX clip. If the user did not explicitly ask for Seedance, choose the',
     'model/tool that can satisfy the requested duration exactly.',
     '',
-    'MINIMAX H3 2K OUTPUT: outputScale=2 is available only on the MiniMax H3 selectors. It renders on',
-    'the normal H3 canvas and delivers the clip at twice its width and height (1344x768 becomes',
-    '2688x1536) with the same length and audio, for +10 Spark per second (+6 at 480p). Set',
-    'outputScale=2 only when the user asks for 2K, 1440p-class or extra-sharp H3 output; keep',
-    'targetResolution at 768 or omit it, never set 1080p, 1440p or 4K for H3, and leave outputScale',
-    'unset otherwise. Do not set it for any other model.',
+    'MINIMAX H3 TWO-STAGE OUTPUT: 1080p and 2K MiniMax H3 delivery is its own selector, not an option.',
+    '"minimax-h3-fasth3-t2v-turbo-2stage" is the two-stage FastH3 engine: FastH3 renders the canvas,',
+    'then the worker enlarges it 2x and refines it, so the clip is delivered at twice the canvas width',
+    'and height with the same length and audio. targetResolution names the delivered class: 1080',
+    'renders a 544px short-edge canvas (960x544 becomes 1920x1088) for 14 Spark per second, 1440 or',
+    'omitted renders the 768p canvas for 2K (1344x768 becomes 2688x1536) for 14 Spark per second, and',
+    '720 renders a 384px canvas (672x384 becomes 1344x768) for about the regular FastH3 price of 4',
+    'Spark per second. The estimate prices every request. It takes the same prompt contract, durations',
+    'and LoRAs as "minimax-h3-fasth3-t2v-turbo". Choose it when the user asks for 1080p, 1440p or 2K',
+    'MiniMax H3 output, for two-stage output, or for the sharpest/best H3 quality; for ordinary 768p',
+    'FastH3 output keep the regular FastH3 selector at targetResolution 768. Never set 4K for H3.',
   ].join('\n'),
   parameterDocs: {
     prompt: 'Video prompt. Use double quotes ONLY for spoken dialogue. Describe visual text without quotes.',
     duration: 'Clip duration in seconds. Plan dialogue word count against the 3.75 words/second ceiling.',
-    outputScale: 'MiniMax H3 only: 2 = 2K delivery (twice the width and height, same length and audio, +10 Spark/s, +6 at 480p). Set only when the user asks for 2K, 1440p-class or extra-sharp H3 output; otherwise omit.',
   },
 };
 
