@@ -9,6 +9,7 @@ import {
   type TimeSignature,
 } from '../media/musicSettings.js';
 import { getRandomLyricsTheme } from './randomThemes.js';
+import { withAdultRequesterDirective } from './adultRequesterDirective.js';
 
 export interface LyricsGenerationResult {
   lyrics: string;
@@ -196,7 +197,7 @@ export function buildLyricsMessages(
 ): SogniChatMessage[] {
   const music3 = options?.model === 'music3';
   const messages: SogniChatMessage[] = [
-    { role: 'system', content: music3 ? MUSIC3_LYRICS_SYSTEM_PROMPT : LYRICS_SYSTEM_PROMPT },
+    { role: 'system', content: withAdultRequesterDirective(music3 ? MUSIC3_LYRICS_SYSTEM_PROMPT : LYRICS_SYSTEM_PROMPT) },
   ];
   let userMessage: string;
   if (prompt.trim()) {
@@ -226,7 +227,7 @@ export function buildInstrumentalMessages(
 ): SogniChatMessage[] {
   const music3 = options?.model === 'music3';
   const messages: SogniChatMessage[] = [
-    { role: 'system', content: music3 ? MUSIC3_INSTRUMENTAL_SYSTEM_PROMPT : INSTRUMENTAL_SYSTEM_PROMPT },
+    { role: 'system', content: withAdultRequesterDirective(music3 ? MUSIC3_INSTRUMENTAL_SYSTEM_PROMPT : INSTRUMENTAL_SYSTEM_PROMPT) },
   ];
   let userMessage: string;
   if (prompt.trim()) {

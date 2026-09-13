@@ -1,5 +1,6 @@
 import type { SogniChatMessage } from '../runtime/chatTypes.js';
 import type { ToolDefinition } from '../tools/definitions/types.js';
+import { withAdultRequesterDirective } from './adultRequesterDirective.js';
 
 export const ID_LORA_MAX_TOKENS = 1024;
 
@@ -63,7 +64,7 @@ export interface IdLoRaPromptParts {
 
 export function buildIdLoRaConversionMessages(ltxPrompt: string): SogniChatMessage[] {
   return [
-    { role: 'system', content: ID_LORA_SYSTEM_PROMPT },
+    { role: 'system', content: withAdultRequesterDirective(ID_LORA_SYSTEM_PROMPT) },
     {
       role: 'user',
       content: `Convert this LTX prompt to ID-LoRA format:\n\n${ltxPrompt.trim()}`,

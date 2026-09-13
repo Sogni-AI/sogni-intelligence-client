@@ -166,6 +166,10 @@ export type {
 } from './storyboard.js';
 
 export * from './hostedToolValidation.js';
+export {
+  SOGNI_ADULT_REQUESTER_DIRECTIVE,
+  withAdultRequesterDirective,
+} from './adultRequesterDirective.js';
 // `prompts/randomThemes.ts` so PUBLIC-bucket consumers (sogni-web's
 // llmHelpers, the future `@sogni-ai/sogni-intelligence-client` carve-
 // out) can import without crossing into PRIVATE `prompts/`.

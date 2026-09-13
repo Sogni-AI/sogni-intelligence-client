@@ -1,6 +1,7 @@
 import type { SogniChatMessage } from "../runtime/chatTypes.js";
 import type { ToolDefinition } from "../tools/definitions/types.js";
 import { getRandomTheme } from "./randomThemes.js";
+import { withAdultRequesterDirective } from "./adultRequesterDirective.js";
 
 export type ImagePromptingType =
   /** Legacy family key retained for direct callers; active Chroma profiles use `chroma`. */
@@ -290,7 +291,7 @@ export function buildImagePromptMessages(
   const messages: SogniChatMessage[] = [
     {
       role: "system",
-      content: buildSystemPrompt(input.promptingType, input.modelTitle),
+      content: withAdultRequesterDirective(buildSystemPrompt(input.promptingType, input.modelTitle)),
     },
   ];
   let userMessage: string;
@@ -682,7 +683,7 @@ AUTHORING RULES:
 
 ${imageAuthoringOutputInstruction(input.profile)}`;
   return [
-    { role: "system", content: system },
+    { role: "system", content: withAdultRequesterDirective(system) },
     {
       role: "user",
       content: [

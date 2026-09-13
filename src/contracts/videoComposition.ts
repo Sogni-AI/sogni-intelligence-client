@@ -2,6 +2,7 @@ import type { SogniChatContentPart, SogniChatMessage } from '../runtime/chatType
 import type { ToolDefinition } from '../tools/definitions/types.js';
 import { stripThinkBlocks } from '../tools/shared/llmHelpers.js';
 import { getRandomTheme } from './randomThemes.js';
+import { withAdultRequesterDirective } from './adultRequesterDirective.js';
 
 export const SCRIPT_MAX_TOKENS = 2048;
 
@@ -140,7 +141,7 @@ export function buildLtxScriptMessages(
   const { firstFrameDataUrl, lastFrameDataUrl } = options;
   const hasVisionImage = !!firstFrameDataUrl || !!lastFrameDataUrl;
   const systemContent = hasVisionImage ? LTX_SYSTEM_PROMPT + LTX_I2V_GUIDANCE : LTX_SYSTEM_PROMPT;
-  const messages: SogniChatMessage[] = [{ role: 'system', content: systemContent }];
+  const messages: SogniChatMessage[] = [{ role: 'system', content: withAdultRequesterDirective(systemContent) }];
 
   let userText: string;
   if (hasVisionImage) {
@@ -185,7 +186,7 @@ export function buildWanScriptMessages(params: GenerateWanPromptParams): SogniCh
   const hasVisionImage = !!firstFrameDataUrl || !!lastFrameDataUrl;
   const isI2V = hasVisionImage || !!firstFrameDescription;
   const systemPrompt = isI2V ? WAN_I2V_SYSTEM_PROMPT : WAN_T2V_SYSTEM_PROMPT;
-  const messages: SogniChatMessage[] = [{ role: 'system', content: systemPrompt }];
+  const messages: SogniChatMessage[] = [{ role: 'system', content: withAdultRequesterDirective(systemPrompt) }];
 
   let userText: string;
   if (hasVisionImage) {
@@ -247,7 +248,7 @@ export function buildCharacterReferenceVideoCompositionMessages(
   }
   content.push({ type: 'text', text: input.brief });
   return [
-    { role: 'system', content: CHARACTER_REFERENCE_VIDEO_COMPOSITION_SYSTEM_PROMPT },
+    { role: 'system', content: withAdultRequesterDirective(CHARACTER_REFERENCE_VIDEO_COMPOSITION_SYSTEM_PROMPT) },
     { role: 'user', content },
   ];
 }
