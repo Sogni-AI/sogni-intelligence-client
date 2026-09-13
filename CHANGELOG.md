@@ -1,3 +1,10 @@
+# [3.33.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.32.1...v3.33.0) (2026-09-13)
+
+
+### Features
+
+* **contracts:** add the adult requester directive to prompt shapers ([b55ee3f](https://github.com/Sogni-AI/sogni-intelligence-client/commit/b55ee3f546db7f23a3596123bbf4376bd24b02ca))
+
 ## [3.32.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.32.0...v3.32.1) (2026-09-12)
 
 
