@@ -370,6 +370,8 @@ const KREA2_MODEL_NAMES = new Set([
   "krea2-turbo-fp8-scaled",
   "dark-beast-krea2",
   "dark-beast-krea-2",
+  "dark-beast-krea2-v3",
+  "dark-beast-krea-2-v3",
   "dark-beast-krea2-fp8",
 ]);
 

@@ -355,6 +355,35 @@ async function runTests() {
     }
   })();
 
+  await test('Should resolve the displayed image model revision without dropping its fine-tune identity', () => {
+    for (const modelName of ['Dark Beast Krea 2 v3', 'dark-beast-krea2-v3']) {
+      const profile = resolveImagePromptAuthoringProfile(modelName, 'generate');
+      if (
+        !profile
+        || profile.promptingType !== 'krea2'
+        || profile.modelTitle !== 'Dark Beast Krea 2'
+        || profile.operation !== 'generate'
+      ) {
+        throw new Error(`Displayed image model lost its registered prompt contract: ${modelName}`);
+      }
+      const messages = buildImagePromptAuthoringMessages({
+        prompt: 'A silver crown resting on emerald velvet, candlelit cathedral background.',
+        profile,
+      });
+      if (!messages[0]?.content.includes('Dark Beast Krea 2')) {
+        throw new Error('Prompt authoring substituted a different fine-tune');
+      }
+      if (resolveImagePromptAuthoringProfile(modelName, 'edit') !== null) {
+        throw new Error('Generation display name incorrectly enabled an edit contract');
+      }
+    }
+    for (const unknown of ['krea-2-v3', 'Dark Beast Krea 2 v99', 'Dark Beast Krea 3']) {
+      if (resolveImagePromptAuthoringProfile(unknown) !== null) {
+        throw new Error(`An incomplete or unknown model name inherited a prompt contract: ${unknown}`);
+      }
+    }
+  })();
+
   await test('Should resolve registered image worker ids without family-prefix inheritance', () => {
     const cases = [
       ['chroma-v.46-flash_fp8', 'generate', 'chroma'],
