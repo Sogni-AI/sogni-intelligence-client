@@ -1,3 +1,15 @@
+# [4.1.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.0.3...v4.1.0) (2026-09-14)
+
+
+### Bug Fixes
+
+* **deps:** pin sogni-client 5.50.0 and protocol alpha.42 for the audio-guide selectors ([08494f6](https://github.com/Sogni-AI/sogni-intelligence-client/commit/08494f6ba765ed8ba45784ee4bf316f6e6348b73))
+
+
+### Features
+
+* **video:** add MiniMax H3 FastH3 audio-guide selectors to sound_to_video ([382f9e5](https://github.com/Sogni-AI/sogni-intelligence-client/commit/382f9e53f9207c35355e4f3722ab1840e5fe8d72))
+
 ## [4.0.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.0.2...v4.0.3) (2026-09-14)
 
 
