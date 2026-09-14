@@ -1,3 +1,10 @@
+## [4.0.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.0.1...v4.0.2) (2026-09-14)
+
+
+### Bug Fixes
+
+* **deps:** align media lifecycle consumers with current SDK ([395edc7](https://github.com/Sogni-AI/sogni-intelligence-client/commit/395edc74b87645b314099ed25dc68b867bb03c6e))
+
 ## [4.0.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.0.0...v4.0.1) (2026-09-14)
 
 
