@@ -8,6 +8,7 @@ import type {
   AvailableModel,
   ImageProjectParams as SogniImageProjectParams,
   VideoProjectParams as SogniVideoProjectParams,
+  SogniClient,
   AudioProjectParams as SogniAudioProjectParams,
   SupernetType,
   TokenType,
@@ -365,7 +366,8 @@ export interface ProjectResult {
 /**
  * Video cost estimate parameters
  */
-export interface VideoCostEstimateParams {
+export interface VideoCostEstimateParams
+  extends Omit<Parameters<SogniClient['projects']['estimateVideoCost']>[0], 'model' | 'duration' | 'fps' | 'numberOfMedia' | 'tokenType'> {
   /** Model ID to use */
   modelId: string;
 

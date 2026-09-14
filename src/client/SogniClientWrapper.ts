@@ -676,9 +676,11 @@ export class SogniClientWrapper extends EventEmitter {
         ? params.frames
         : this.calculateVideoFrames(params.modelId, duration, fps);
 
+    const { modelId, ...estimateParams } = params;
     return this.client!.projects.estimateVideoCost({
+      ...estimateParams,
       tokenType,
-      model: params.modelId,
+      model: modelId,
       width: params.width,
       height: params.height,
       duration,
@@ -686,9 +688,6 @@ export class SogniClientWrapper extends EventEmitter {
       fps,
       steps: params.steps,
       numberOfMedia,
-      ...(params.referenceImageCount !== undefined
-        ? { referenceImageCount: params.referenceImageCount }
-        : {}),
     });
   }
 

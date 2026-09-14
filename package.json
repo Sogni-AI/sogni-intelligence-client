@@ -167,7 +167,7 @@
     "dev": "tsc --watch",
     "prepare": "npm run codegen && husky",
     "prepublishOnly": "npm run build",
-    "test": "node --import tsx test/basic-tests.ts && node --import tsx --test test/replay-redaction.test.ts test/durable-workflow-content-filter.test.ts test/gpt-image-25.test.ts",
+    "test": "node --import tsx test/basic-tests.ts && node --import tsx --test test/replay-redaction.test.ts test/durable-workflow-content-filter.test.ts test/gpt-image-25.test.ts test/video-estimate-context.test.ts",
     "test:e2e": "node --import tsx test/e2e-test.ts",
     "test:e2e:llm": "SOGNI_E2E_SCOPE=llm node --import tsx test/e2e-test.ts",
     "typecheck:examples": "tsc --noEmit -p tsconfig.examples.json",
