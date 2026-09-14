@@ -27,6 +27,12 @@ export type VideoModelId =
   | "minimax-h3-fasth3-t2v-turbo-2stage"
   | "minimax-h3-fasth3-i2v-turbo-2stage"
   | "minimax-h3-fasth3-flf2v-turbo-2stage"
+  | "minimax-h3-fasth3-ia2v-turbo"
+  | "minimax-h3-fasth3-flfa2v-turbo"
+  | "minimax-h3-fasth3-a2v-turbo"
+  | "minimax-h3-fasth3-ia2v-turbo-2stage"
+  | "minimax-h3-fasth3-flfa2v-turbo-2stage"
+  | "minimax-h3-fasth3-a2v-turbo-2stage"
   | "seedance2"
   | "seedance2-mini"
   | "seedance2-5"
@@ -681,6 +687,132 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
   },
+  // FastH3 audio guide (Comfy worker 1.0.217+): the FastH3 graph with the
+  // uploaded audio pinned as a clean guide from frame 0 and muxed into the
+  // output, so the returned clip always carries that audio (no audio toggle).
+  // ia2v takes a first frame, flfa2v a first and a last frame, a2v audio only.
+  // Sampling, grid and canvas match FastH3; LoRAs are not qualified on these
+  // graphs. The two-stage forms follow the FastH3 two-stage canvas tiers.
+  "minimax-h3-fasth3-ia2v-turbo": {
+    model: "minimax-h3-fastvideo-int8_ia2v_turbo",
+    fps: 24,
+    steps: 4,
+    guidance: 1,
+    dimensionDivisor: 32,
+    minDimension: 32,
+    maxDimension: 1344,
+    sampler: "euler",
+    scheduler: "simple",
+    resolutionTiers: [768],
+    frameBase: 124,
+    frameStep: 17,
+    minFrames: 124,
+    maxFrames: 362,
+    maxPixels: 1_032_192,
+    nativeAudio: true,
+    supportsAudioToggle: false,
+    supportsNegativePrompt: false,
+  },
+  "minimax-h3-fasth3-flfa2v-turbo": {
+    model: "minimax-h3-fastvideo-int8_flfa2v_turbo",
+    fps: 24,
+    steps: 4,
+    guidance: 1,
+    dimensionDivisor: 32,
+    minDimension: 32,
+    maxDimension: 1344,
+    sampler: "euler",
+    scheduler: "simple",
+    resolutionTiers: [768],
+    frameBase: 124,
+    frameStep: 17,
+    minFrames: 124,
+    maxFrames: 362,
+    maxPixels: 1_032_192,
+    nativeAudio: true,
+    supportsAudioToggle: false,
+    supportsNegativePrompt: false,
+  },
+  "minimax-h3-fasth3-a2v-turbo": {
+    model: "minimax-h3-fastvideo-int8_a2v_turbo",
+    fps: 24,
+    steps: 4,
+    guidance: 1,
+    dimensionDivisor: 32,
+    minDimension: 32,
+    maxDimension: 1344,
+    sampler: "euler",
+    scheduler: "simple",
+    resolutionTiers: [768],
+    frameBase: 124,
+    frameStep: 17,
+    minFrames: 124,
+    maxFrames: 362,
+    maxPixels: 1_032_192,
+    nativeAudio: true,
+    supportsAudioToggle: false,
+    supportsNegativePrompt: false,
+  },
+  "minimax-h3-fasth3-ia2v-turbo-2stage": {
+    model: "minimax-h3-fastvideo-int8_ia2v_turbo_2stage",
+    fps: 24,
+    steps: 4,
+    guidance: 1,
+    dimensionDivisor: 32,
+    minDimension: 32,
+    maxDimension: 1344,
+    sampler: "euler",
+    scheduler: "simple",
+    resolutionTiers: [768, 544, 384],
+    frameBase: 124,
+    frameStep: 17,
+    minFrames: 124,
+    maxFrames: 362,
+    maxPixels: 1_032_192,
+    nativeAudio: true,
+    supportsAudioToggle: false,
+    supportsNegativePrompt: false,
+  },
+  "minimax-h3-fasth3-flfa2v-turbo-2stage": {
+    model: "minimax-h3-fastvideo-int8_flfa2v_turbo_2stage",
+    fps: 24,
+    steps: 4,
+    guidance: 1,
+    dimensionDivisor: 32,
+    minDimension: 32,
+    maxDimension: 1344,
+    sampler: "euler",
+    scheduler: "simple",
+    resolutionTiers: [768, 544, 384],
+    frameBase: 124,
+    frameStep: 17,
+    minFrames: 124,
+    maxFrames: 362,
+    maxPixels: 1_032_192,
+    nativeAudio: true,
+    supportsAudioToggle: false,
+    supportsNegativePrompt: false,
+  },
+  "minimax-h3-fasth3-a2v-turbo-2stage": {
+    model: "minimax-h3-fastvideo-int8_a2v_turbo_2stage",
+    fps: 24,
+    steps: 4,
+    guidance: 1,
+    dimensionDivisor: 32,
+    minDimension: 32,
+    maxDimension: 1344,
+    sampler: "euler",
+    scheduler: "simple",
+    resolutionTiers: [768, 544, 384],
+    frameBase: 124,
+    frameStep: 17,
+    minFrames: 124,
+    maxFrames: 362,
+    maxPixels: 1_032_192,
+    nativeAudio: true,
+    supportsAudioToggle: false,
+    supportsNegativePrompt: false,
+  },
   // Seedance 2.0 routes through Sogni Socket's vendor-job path to BytePlus.
   // The socket re-derives ratio from width/height and duration from
   // frames/fps for vendor models, so we use permissive constraints here
@@ -777,17 +909,47 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
 
 /**
  * MiniMax H3 two-stage FastH3: every spelling that names it. The family alias
- * picks t2v/i2v/flf2v the same way `minimax-h3-fasth3-turbo` does; the three
- * selectors map to the three socket ids.
+ * picks t2v/i2v/flf2v the same way `minimax-h3-fasth3-turbo` does; the six
+ * selectors (three video modes, three audio-guide modes) map to the six socket
+ * ids.
  */
 export const MINIMAX_H3_TWO_STAGE_MODEL_IDS: readonly string[] = Object.freeze([
   "minimax-h3-fasth3-turbo-2stage",
   "minimax-h3-fasth3-t2v-turbo-2stage",
   "minimax-h3-fasth3-i2v-turbo-2stage",
   "minimax-h3-fasth3-flf2v-turbo-2stage",
+  "minimax-h3-fasth3-ia2v-turbo-2stage",
+  "minimax-h3-fasth3-flfa2v-turbo-2stage",
+  "minimax-h3-fasth3-a2v-turbo-2stage",
   "minimax-h3-fastvideo-int8_t2v_turbo_2stage",
   "minimax-h3-fastvideo-int8_i2v_turbo_2stage",
   "minimax-h3-fastvideo-int8_flf2v_turbo_2stage",
+  "minimax-h3-fastvideo-int8_ia2v_turbo_2stage",
+  "minimax-h3-fastvideo-int8_flfa2v_turbo_2stage",
+  "minimax-h3-fastvideo-int8_a2v_turbo_2stage",
+]);
+
+/** The inputs a MiniMax H3 FastH3 audio-guide mode takes besides its audio. */
+export type MinimaxH3AudioGuideMode = "ia2v" | "flfa2v" | "a2v";
+
+/**
+ * The MiniMax H3 FastH3 audio-guide sound_to_video selectors, each followed by
+ * its two-stage form, mapped to their socket ids (Comfy worker 1.0.217+). The
+ * uploaded audio drives the picture from frame 0 and is kept in the output.
+ */
+export const MINIMAX_H3_AUDIO_GUIDE_SOCKET_MODEL_IDS: Readonly<Record<string, string>> = Object.freeze({
+  "minimax-h3-fasth3-ia2v-turbo": "minimax-h3-fastvideo-int8_ia2v_turbo",
+  "minimax-h3-fasth3-ia2v-turbo-2stage": "minimax-h3-fastvideo-int8_ia2v_turbo_2stage",
+  "minimax-h3-fasth3-flfa2v-turbo": "minimax-h3-fastvideo-int8_flfa2v_turbo",
+  "minimax-h3-fasth3-flfa2v-turbo-2stage": "minimax-h3-fastvideo-int8_flfa2v_turbo_2stage",
+  "minimax-h3-fasth3-a2v-turbo": "minimax-h3-fastvideo-int8_a2v_turbo",
+  "minimax-h3-fasth3-a2v-turbo-2stage": "minimax-h3-fastvideo-int8_a2v_turbo_2stage",
+});
+
+/** Every spelling of a MiniMax H3 FastH3 audio-guide model: the selectors and the socket ids. */
+export const MINIMAX_H3_AUDIO_GUIDE_MODEL_IDS: readonly string[] = Object.freeze([
+  ...Object.keys(MINIMAX_H3_AUDIO_GUIDE_SOCKET_MODEL_IDS),
+  ...Object.values(MINIMAX_H3_AUDIO_GUIDE_SOCKET_MODEL_IDS),
 ]);
 
 /** A two-stage clip is delivered at exactly this multiple of its canvas. */
@@ -857,6 +1019,57 @@ function normalizeMinimaxH3ModelSpelling(value: string): string {
 const NORMALIZED_MINIMAX_H3_TWO_STAGE_MODEL_IDS: ReadonlySet<string> = new Set(
   MINIMAX_H3_TWO_STAGE_MODEL_IDS.map(normalizeMinimaxH3ModelSpelling),
 );
+
+const MINIMAX_H3_AUDIO_GUIDE_MODE_PATTERN =
+  /^minimax-h3-(?:fasth3|fastvideo-int8)-(ia2v|flfa2v|a2v)-turbo(?:-2stage)?$/;
+
+/**
+ * The audio-guide mode of a MiniMax H3 FastH3 audio selector or socket id (any
+ * `_`/`-` spelling, two-stage included), or null for every other model.
+ */
+export function minimaxH3AudioGuideMode(modelId: string | null | undefined): MinimaxH3AudioGuideMode | null {
+  if (typeof modelId !== "string") return null;
+  const match = MINIMAX_H3_AUDIO_GUIDE_MODE_PATTERN.exec(normalizeMinimaxH3ModelSpelling(modelId));
+  return match ? (match[1] as MinimaxH3AudioGuideMode) : null;
+}
+
+/** True for a MiniMax H3 FastH3 audio-guide selector or socket id, two-stage included. */
+export function isMinimaxH3AudioGuideModelId(modelId: string | null | undefined): boolean {
+  return minimaxH3AudioGuideMode(modelId) !== null;
+}
+
+/**
+ * Why a MiniMax H3 FastH3 audio-guide request cannot run with the frames it
+ * names, or null when they fit its mode: ia2v needs a first frame and no last
+ * frame, flfa2v needs both, a2v takes no image. The socket refuses the same
+ * mismatches; callers use this to refuse before a paid request is built.
+ */
+export function minimaxH3AudioGuideFrameInputError(
+  modelId: string,
+  frames: { hasFirstFrame: boolean; hasLastFrame: boolean },
+): string | null {
+  const mode = minimaxH3AudioGuideMode(modelId);
+  if (!mode) return null;
+  if (mode === "flfa2v") {
+    if (!frames.hasFirstFrame || !frames.hasLastFrame) {
+      return `${modelId} (MiniMax H3 first/last frame + audio) needs a first frame (sourceImageIndex) and a last frame (endImageIndex).`;
+    }
+    return null;
+  }
+  if (mode === "ia2v") {
+    if (!frames.hasFirstFrame) {
+      return `${modelId} (MiniMax H3 image + audio) needs a first-frame image (sourceImageIndex).`;
+    }
+    if (frames.hasLastFrame) {
+      return `${modelId} (MiniMax H3 image + audio) takes no last frame; use minimax-h3-fasth3-flfa2v-turbo for first and last frames.`;
+    }
+    return null;
+  }
+  if (frames.hasFirstFrame || frames.hasLastFrame) {
+    return `${modelId} (MiniMax H3 audio only) takes no image; use minimax-h3-fasth3-ia2v-turbo for a first frame or minimax-h3-fasth3-flfa2v-turbo for first and last frames.`;
+  }
+  return null;
+}
 
 /** True for a two-stage FastH3 selector, family alias, or socket id (any `_`/`-` spelling). */
 export function isMinimaxH3TwoStageModelId(modelId: string | null | undefined): boolean {

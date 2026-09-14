@@ -7,6 +7,7 @@ import {
   generateVideoDefinition,
   generateImageDefinition,
   generateSpeechDefinition,
+  soundToVideoDefinition,
   extractDynamicPromptBranches,
   getModelOptions,
   isStoryboardKeyframeBatchPrompt,
@@ -386,6 +387,91 @@ Directly reuse <Audio 1> unchanged.`;
     }).ok,
     false,
   );
+  // MiniMax H3 FastH3 audio guide on sound_to_video: six selectors, never the
+  // default, with endImageIndex for the first/last-frame mode and refusals for
+  // argument sets the socket would refuse.
+  const audioGuideSelectors = [
+    'minimax-h3-fasth3-ia2v-turbo',
+    'minimax-h3-fasth3-ia2v-turbo-2stage',
+    'minimax-h3-fasth3-flfa2v-turbo',
+    'minimax-h3-fasth3-flfa2v-turbo-2stage',
+    'minimax-h3-fasth3-a2v-turbo',
+    'minimax-h3-fasth3-a2v-turbo-2stage',
+  ];
+  const soundToVideoProperties = soundToVideoDefinition.function.parameters.properties ?? {};
+  const soundToVideoModelEnum = (soundToVideoProperties.videoModel?.enum ?? []) as string[];
+  expect(
+    'sound_to_video lists the six MiniMax H3 audio selectors after the existing models',
+    soundToVideoModelEnum.slice(-6),
+    audioGuideSelectors,
+  );
+  expect(
+    'model registry: sound_to_video options match its videoModel enum',
+    getModelOptions('sound_to_video').map(option => option.key),
+    soundToVideoModelEnum,
+  );
+  const soundToVideoModelDescription = String(soundToVideoProperties.videoModel?.description ?? '');
+  const soundToVideoFunctionDescription = soundToVideoDefinition.function.description;
+  expect(
+    'sound_to_video keeps LTX 2.5 as the default and names H3 audio only on request',
+    [
+      soundToVideoModelDescription.includes('"ltx25-ia2v" (default with image)'),
+      soundToVideoModelDescription.includes('never pick them in place of the LTX 2.5 defaults'),
+      soundToVideoFunctionDescription.includes('use ltx25-ia2v by default'),
+      soundToVideoFunctionDescription.includes('only when the user asks for MiniMax H3 or FastH3'),
+      soundToVideoModelDescription.includes('124-362 frames'),
+      soundToVideoModelDescription.includes('audioStart picks the window'),
+      soundToVideoModelDescription.includes('have no 720p price class'),
+    ],
+    [true, true, true, true, true, true, true],
+  );
+  expect(
+    'sound_to_video declares endImageIndex as a number',
+    soundToVideoProperties.endImageIndex?.type,
+    'number',
+  );
+  const soundToVideoResult = (args: Record<string, unknown>) => {
+    const result = validateAndNormalizeHostedToolArguments([soundToVideoDefinition], 'sound_to_video', {
+      prompt: 'She reads the line to camera.',
+      ...args,
+    });
+    return result.ok ? 'ok' : result.errors.join(' | ');
+  };
+  expect(
+    'sound_to_video accepts each H3 audio mode with the frames it takes',
+    [
+      soundToVideoResult({ videoModel: 'minimax-h3-fasth3-ia2v-turbo', sourceImageIndex: -1, audioStart: 2 }),
+      soundToVideoResult({ videoModel: 'minimax-h3-fasth3-ia2v-turbo-2stage', targetResolution: 1080 }),
+      soundToVideoResult({ videoModel: 'minimax-h3-fasth3-flfa2v-turbo', sourceImageIndex: -1, endImageIndex: -2 }),
+      soundToVideoResult({ videoModel: 'minimax-h3-fasth3-flfa2v-turbo-2stage', sourceImageIndex: 0, endImageIndex: 1 }),
+      soundToVideoResult({ videoModel: 'minimax-h3-fasth3-a2v-turbo', duration: 15 }),
+      soundToVideoResult({ videoModel: 'minimax-h3-fasth3-a2v-turbo-2stage', generateAudio: true }),
+    ],
+    ['ok', 'ok', 'ok', 'ok', 'ok', 'ok'],
+  );
+  expect(
+    'sound_to_video refuses H3 audio argument sets the socket would refuse',
+    [
+      soundToVideoResult({ videoModel: 'minimax-h3-fasth3-flfa2v-turbo', sourceImageIndex: -1 }).includes('needs both "sourceImageIndex" (first frame) and "endImageIndex"'),
+      soundToVideoResult({ videoModel: 'minimax-h3-fasth3-flfa2v-turbo-2stage', endImageIndex: -2 }).includes('needs both'),
+      soundToVideoResult({ videoModel: 'minimax-h3-fasth3-ia2v-turbo', sourceImageIndex: -1, endImageIndex: -2 }).includes('"endImageIndex" is only supported'),
+      soundToVideoResult({ videoModel: 'ltx25-ia2v', sourceImageIndex: 0, endImageIndex: 1 }).includes('"endImageIndex" is only supported'),
+      soundToVideoResult({ videoModel: 'minimax-h3-fasth3-a2v-turbo', sourceImageIndex: -1 }).includes('is audio only'),
+      soundToVideoResult({ videoModel: 'minimax-h3-fasth3-a2v-turbo-2stage', endImageIndex: -1 }).includes('"endImageIndex" is only supported'),
+      soundToVideoResult({ videoModel: 'minimax-h3-fasth3-ia2v-turbo', generateAudio: false }).includes('always delivers the uploaded audio'),
+      soundToVideoResult({ videoModel: 'minimax-h3-fasth3-a2v-turbo', negativePrompt: 'blur' }).includes('no negative-prompt input'),
+    ],
+    [true, true, true, true, true, true, true, true],
+  );
+  expect(
+    'sound_to_video leaves non-H3 audio models unchanged',
+    [
+      soundToVideoResult({ videoModel: 'ltx25-a2v', generateAudio: false, negativePrompt: 'blur' }),
+      soundToVideoResult({ videoModel: 'ltx25-ia2v', sourceImageIndex: 0 }),
+    ],
+    ['ok', 'ok'],
+  );
+
   // edit_image gained LoRAs after the parity check was written against
   // generate_image by name, so it went unchecked until the check moved onto the
   // schema. Guard the regression rather than the one tool.

@@ -115,10 +115,15 @@ import {
   getLtx25StepsForQuality,
   getLtx25WorkflowModelIdForQuality,
   isKreaIdentityEditModel,
+  isMinimaxH3AudioGuideModelId,
   isMinimaxH3TwoStageModelId,
   LTX2VideoModels,
   LTX25_DEV_WORKFLOW_MODELS,
   LTX25_DISTILLED_WORKFLOW_MODELS,
+  MINIMAX_H3_AUDIO_GUIDE_MODEL_IDS,
+  MINIMAX_H3_AUDIO_GUIDE_SOCKET_MODEL_IDS,
+  minimaxH3AudioGuideFrameInputError,
+  minimaxH3AudioGuideMode,
   MINIMAX_H3_TWO_STAGE_DEFAULT_TARGET_RESOLUTION,
   MINIMAX_H3_TWO_STAGE_RESOLUTIONS,
   minimaxH3TwoStageCanvasShortEdge,
@@ -923,6 +928,76 @@ async function runTests() {
       rejectedInvalidCanvas = true;
     }
     if (!rejectedInvalidCanvas) throw new Error('Two-stage delivered size accepted a zero-width canvas');
+  })();
+
+  await test('Should expose the MiniMax H3 FastH3 audio-guide selectors on the FastH3 recipe', () => {
+    // Each audio mode is its FastH3 source graph plus the uploaded audio, so its
+    // request fields match that FastH3 selector except the audio toggle: the
+    // output always carries the upload. Two-stage forms keep the two-stage tiers.
+    const audioExpected = {
+      'minimax-h3-fasth3-ia2v-turbo': ['minimax-h3-fastvideo-int8_ia2v_turbo', 'minimax-h3-fasth3-i2v-turbo', 'ia2v'],
+      'minimax-h3-fasth3-flfa2v-turbo': ['minimax-h3-fastvideo-int8_flfa2v_turbo', 'minimax-h3-fasth3-flf2v-turbo', 'flfa2v'],
+      'minimax-h3-fasth3-a2v-turbo': ['minimax-h3-fastvideo-int8_a2v_turbo', 'minimax-h3-fasth3-t2v-turbo', 'a2v'],
+      'minimax-h3-fasth3-ia2v-turbo-2stage': ['minimax-h3-fastvideo-int8_ia2v_turbo_2stage', 'minimax-h3-fasth3-i2v-turbo-2stage', 'ia2v'],
+      'minimax-h3-fasth3-flfa2v-turbo-2stage': ['minimax-h3-fastvideo-int8_flfa2v_turbo_2stage', 'minimax-h3-fasth3-flf2v-turbo-2stage', 'flfa2v'],
+      'minimax-h3-fasth3-a2v-turbo-2stage': ['minimax-h3-fastvideo-int8_a2v_turbo_2stage', 'minimax-h3-fasth3-t2v-turbo-2stage', 'a2v'],
+    } as const;
+    if (JSON.stringify(Object.keys(MINIMAX_H3_AUDIO_GUIDE_SOCKET_MODEL_IDS).sort()) !== JSON.stringify(Object.keys(audioExpected).sort())) {
+      throw new Error(`Audio-guide selectors are wrong: ${JSON.stringify(MINIMAX_H3_AUDIO_GUIDE_SOCKET_MODEL_IDS)}`);
+    }
+    if (MINIMAX_H3_AUDIO_GUIDE_MODEL_IDS.length !== 12) {
+      throw new Error(`Expected six audio-guide selectors and six socket ids; got ${MINIMAX_H3_AUDIO_GUIDE_MODEL_IDS.length}`);
+    }
+    for (const [selector, [model, sourceSelector, mode]] of Object.entries(audioExpected)) {
+      const config = getVideoModelConfig(selector as keyof typeof audioExpected);
+      if (config.model !== model || MINIMAX_H3_AUDIO_GUIDE_SOCKET_MODEL_IDS[selector] !== model) {
+        throw new Error(`${selector} mapped to ${config.model}`);
+      }
+      const { model: _audioModel, supportsAudioToggle, ...audioFields } = config;
+      const { model: _sourceModel, supportsAudioToggle: _sourceToggle, ...sourceFields } = getVideoModelConfig(sourceSelector);
+      if (JSON.stringify(audioFields) !== JSON.stringify(sourceFields)) {
+        throw new Error(`${selector} request fields drifted from ${sourceSelector}`);
+      }
+      if (supportsAudioToggle !== false || config.nativeAudio !== true || config.supportsNegativePrompt !== false) {
+        throw new Error(`${selector} must always deliver its audio and take no negative prompt`);
+      }
+      for (const spelling of [selector, model, model.toUpperCase()]) {
+        if (!isMiniMaxH3VideoModel(spelling)) throw new Error(`${spelling} is not recognized as MiniMax H3`);
+        if (!isMinimaxH3AudioGuideModelId(spelling) || minimaxH3AudioGuideMode(spelling) !== mode) {
+          throw new Error(`${spelling} is not recognized as audio-guide mode ${mode}`);
+        }
+        if (isMinimaxH3TwoStageModelId(spelling) !== selector.endsWith('-2stage')) {
+          throw new Error(`${spelling} two-stage recognition is wrong`);
+        }
+      }
+    }
+    for (const notAudio of ['minimax-h3-fasth3-i2v-turbo', 'minimax-h3-fastvideo-int8_flf2v_turbo', 'ltx25-ia2v', 'ltx25-22b-int8_a2v_distilled', 'wan-s2v']) {
+      if (isMinimaxH3AudioGuideModelId(notAudio)) throw new Error(`${notAudio} must not be an audio-guide model`);
+    }
+    const audioTwoStageCanvases = [
+      calculateVideoDimensions(1344, 768, 1080, 'minimax-h3-fasth3-ia2v-turbo-2stage'),
+      calculateVideoDimensions(768, 1344, undefined, 'minimax-h3-fasth3-a2v-turbo-2stage'),
+      calculateVideoDimensions(1344, 768, 768, 'minimax-h3-fasth3-flfa2v-turbo'),
+    ];
+    if (JSON.stringify(audioTwoStageCanvases) !== JSON.stringify([{ width: 960, height: 544 }, { width: 768, height: 1344 }, { width: 1344, height: 768 }])) {
+      throw new Error(`Audio-guide canvases are wrong: ${JSON.stringify(audioTwoStageCanvases)}`);
+    }
+    if (calculateVideoFrames(5, 'minimax-h3-fasth3-ia2v-turbo') !== 124 || calculateVideoFrames(30, 'minimax-h3-fasth3-a2v-turbo') !== 362) {
+      throw new Error('Audio-guide frames must stay on the 124-362 H3 grid');
+    }
+    const frameErrors = [
+      ['minimax-h3-fasth3-ia2v-turbo', { hasFirstFrame: true, hasLastFrame: false }],
+      ['minimax-h3-fasth3-ia2v-turbo', { hasFirstFrame: false, hasLastFrame: false }],
+      ['minimax-h3-fasth3-ia2v-turbo-2stage', { hasFirstFrame: true, hasLastFrame: true }],
+      ['minimax-h3-fasth3-flfa2v-turbo', { hasFirstFrame: true, hasLastFrame: true }],
+      ['minimax-h3-fastvideo-int8_flfa2v_turbo', { hasFirstFrame: true, hasLastFrame: false }],
+      ['minimax-h3-fasth3-a2v-turbo', { hasFirstFrame: false, hasLastFrame: false }],
+      ['minimax-h3-fasth3-a2v-turbo-2stage', { hasFirstFrame: true, hasLastFrame: false }],
+      ['ltx25-ia2v', { hasFirstFrame: false, hasLastFrame: true }],
+    ].map(([modelId, frames]) => minimaxH3AudioGuideFrameInputError(modelId as string, frames as { hasFirstFrame: boolean; hasLastFrame: boolean }) !== null);
+    if (JSON.stringify(frameErrors) !== JSON.stringify([false, true, true, false, true, false, true, false])) {
+      throw new Error(`Audio-guide frame refusals are wrong: ${JSON.stringify(frameErrors)}`);
+    }
   })();
 
   await test('Should expose every real MiniMax H3 Turbo tool and video-only Ref2VA guidance', () => {

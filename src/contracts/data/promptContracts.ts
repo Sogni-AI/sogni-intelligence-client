@@ -782,7 +782,7 @@ const STITCH_VIDEO_CONTRACT: PromptContract = {
 // ---------------------------------------------------------------------------
 const SOUND_TO_VIDEO_CONTRACT: PromptContract = {
   contractId: 'sound_to_video_v1',
-  version: '1.0.0',
+  version: '1.1.0',
   toolName: 'sound_to_video',
   baseDescription: [
     'sound_to_video creates audio-synced video from an audio source. Works with uploaded audio',
@@ -806,9 +806,20 @@ const SOUND_TO_VIDEO_CONTRACT: PromptContract = {
     'animate_photo with ltx23 and voicePersonaName when an image/source frame should be',
     'animated. Do not call sound_to_video for a persona voice clip unless a separate uploaded',
     'audio track is the primary sync driver.',
+    '',
+    'MINIMAX H3 AUDIO GUIDE: only when the user asks for MiniMax H3 or FastH3 with an uploaded audio',
+    'track, use sound_to_video with videoModel "minimax-h3-fasth3-ia2v-turbo" (first-frame image via',
+    'sourceImageIndex), "minimax-h3-fasth3-flfa2v-turbo" (first frame via sourceImageIndex and last',
+    'frame via endImageIndex) or "minimax-h3-fasth3-a2v-turbo" (audio only, no image). The audio',
+    'drives the picture from frame 0 and stays in the output. Clips are 124-362 frames at a fixed',
+    '24 fps (about 5.2-15.1 seconds); audioStart picks the window. generateAudio=false, LoRAs and',
+    'negativePrompt are not supported. Add "-2stage" only for 1080p, 1440p or 2K H3 output (1080 or',
+    '1440 targetResolution); 720p-class audio output stays on the regular selector. Never use these',
+    'in place of the LTX 2.5 defaults when the user did not ask for MiniMax H3 or FastH3.',
   ].join('\n'),
   parameterDocs: {
     audioSource: 'Uploaded audio file or reference to a prior generate_music result. Auto-detected when omitted after generate_music.',
+    endImageIndex: 'Last frame for the MiniMax H3 FastH3 first/last frame + audio selectors only, indexed like animate_photo (-1 first upload, -2 second upload, non-negative generated results).',
   },
 };
 

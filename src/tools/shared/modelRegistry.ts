@@ -127,6 +127,12 @@ export const MODELS_BY_TOOL: Record<string, ModelOption[]> = {
     { key: 'ltx23-a2v', displayName: 'LTX 2.3 Audio Only' },
     { key: 'wan3.0-video', displayName: 'Wan 3 Image/Audio' },
     { key: 'wan3.0-spicy-video', displayName: 'Wan 3.0 Enhanced Image/Audio' },
+    { key: 'minimax-h3-fasth3-ia2v-turbo', displayName: 'MiniMax H3 FastH3 Turbo (Image + Audio to Video)' },
+    { key: 'minimax-h3-fasth3-ia2v-turbo-2stage', displayName: 'MiniMax H3 FastH3 Two-Stage (Image + Audio to Video)' },
+    { key: 'minimax-h3-fasth3-flfa2v-turbo', displayName: 'MiniMax H3 FastH3 Turbo (First/Last Frame + Audio to Video)' },
+    { key: 'minimax-h3-fasth3-flfa2v-turbo-2stage', displayName: 'MiniMax H3 FastH3 Two-Stage (First/Last Frame + Audio to Video)' },
+    { key: 'minimax-h3-fasth3-a2v-turbo', displayName: 'MiniMax H3 FastH3 Turbo (Audio to Video)' },
+    { key: 'minimax-h3-fasth3-a2v-turbo-2stage', displayName: 'MiniMax H3 FastH3 Two-Stage (Audio to Video)' },
   ],
   video_to_video: [
     { key: 'ltx25-v2v', displayName: 'LTX 2.5 V2V Control' },

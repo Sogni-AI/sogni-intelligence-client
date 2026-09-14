@@ -62,6 +62,19 @@ export {
   HAPPYHORSE_GENERATE_VIDEO_MODEL_DESCRIPTION,
   HAPPYHORSE_TOOL_REFERENCE_GUIDANCE,
 } from '../contracts/toolPromptMarkers.js';
+// MiniMax H3 FastH3 audio-guide sound_to_video guidance, re-exported so the
+// creative-agent patch layers reuse the exact wording instead of copying it.
+export {
+  MINIMAX_H3_AUDIO_GUIDE_SOUND_TO_VIDEO_FUNCTION_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_SOUND_TO_VIDEO_MODEL_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_END_IMAGE_INDEX_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_SOURCE_IMAGE_INDEX_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_AUDIO_START_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_DURATION_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_GENERATE_AUDIO_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_NEGATIVE_PROMPT_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_PROMPT_DESCRIPTION,
+} from '../contracts/toolPromptMarkers.js';
 export * from './shared/llmHelpers.js';
 export * from './shared/promptRefinementCache.js';
 export * from './shared/imageEncoding.js';

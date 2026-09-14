@@ -6,10 +6,33 @@
 import type { ToolDefinition } from '../types.js';
 import {
   LITERAL_SEEDANCE_PROMPT_OVERRIDE,
+  MINIMAX_H3_AUDIO_GUIDE_AUDIO_START_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_DURATION_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_END_IMAGE_INDEX_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_GENERATE_AUDIO_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_NEGATIVE_PROMPT_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_PROMPT_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_SOUND_TO_VIDEO_FUNCTION_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_SOUND_TO_VIDEO_MODEL_DESCRIPTION,
+  MINIMAX_H3_AUDIO_GUIDE_SOURCE_IMAGE_INDEX_DESCRIPTION,
   SEEDANCE_EXPAND_PROMPT_DESCRIPTION,
   SEEDANCE_TOOL_AUDIO_REFERENCE_GUIDANCE,
 } from '../../../contracts/toolPromptMarkers.js';
 import { ASPECT_RATIO_DESCRIPTION } from '../../../media/index.js';
+
+/**
+ * The MiniMax H3 FastH3 audio-guide selectors (Comfy worker 1.0.217+), each
+ * base selector followed by its two-stage form. `tools-shared-tests` asserts
+ * they are videoModel enum members and that none is a default.
+ */
+const MINIMAX_H3_AUDIO_GUIDE_SELECTORS = [
+  "minimax-h3-fasth3-ia2v-turbo",
+  "minimax-h3-fasth3-ia2v-turbo-2stage",
+  "minimax-h3-fasth3-flfa2v-turbo",
+  "minimax-h3-fasth3-flfa2v-turbo-2stage",
+  "minimax-h3-fasth3-a2v-turbo",
+  "minimax-h3-fasth3-a2v-turbo-2stage",
+] as const;
 
 const WAN3_VIDEO_MODEL_GUIDANCE =
   '"wan3.0-video" is Alibaba Wan 3 and "wan3.0-spicy-video" is MuleRouter w3.0-video. Both support 2-30s at 30 fps, optional native audio, prompt expansion, 480p/720p/1080p, adaptive/fixed ratios, and up to 10 image/5 video/5 audio references. Enhanced has no document/web context or watermark. Frame anchors cannot be mixed with loose references. Do not send negativePrompt; video references are loose conditioning, not edit or extend modes.';
@@ -47,7 +70,9 @@ AVOID: Vague prompts, too many competing visual elements, abstract descriptions 
 
 NON-SEEDANCE POSITIVE CONSTRAINTS: For ltx25-ia2v, ltx25-a2v, ltx23-ia2v, ltx23-a2v, and wan-s2v, prompt is a positive prompt. Translate user avoid/no/don't constraints into affirmative production constraints instead of copying negative phrasing. Preserve exact quoted visible text or dialogue when the user explicitly requests it; keep surrounding surfaces blank.
 
-BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary the visual interpretation while keeping audio sync intent consistent. This is one Sogni project with multiple jobs, so prefer it when all outputs share the same audio source/window, image source, model, duration, dimensions, and parameters and only prompt text varies. Example: "{abstract neon visualization|nature scene with swaying trees|urban street with rain} synced to the beat".`,
+BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary the visual interpretation while keeping audio sync intent consistent. This is one Sogni project with multiple jobs, so prefer it when all outputs share the same audio source/window, image source, model, duration, dimensions, and parameters and only prompt text varies. Example: "{abstract neon visualization|nature scene with swaying trees|urban street with rain} synced to the beat".
+
+${MINIMAX_H3_AUDIO_GUIDE_PROMPT_DESCRIPTION}`,
         },
         expandPrompt: {
           type: "boolean",
@@ -56,7 +81,8 @@ BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary
         negativePrompt: {
           type: "string",
           description:
-            "Advanced LTX 2.5/LTX 2.3/WAN only. The LTX A2V and IA2V workflows accept this separate negative prompt. Use it only when the user explicitly asks to set one. Do not set for Seedance.\n\nWan 3 has no negativePrompt request field; do not set this for wan3.0-video.",
+            "Advanced LTX 2.5/LTX 2.3/WAN only. The LTX A2V and IA2V workflows accept this separate negative prompt. Use it only when the user explicitly asks to set one. Do not set for Seedance.\n\nWan 3 has no negativePrompt request field; do not set this for wan3.0-video.\n\n" +
+            MINIMAX_H3_AUDIO_GUIDE_NEGATIVE_PROMPT_DESCRIPTION,
         },
         audioSourceIndex: {
           type: "number",
@@ -66,18 +92,25 @@ BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary
         sourceImageIndex: {
           type: "number",
           description:
-            "Optional index of an uploaded image to use as the starting frame (0-based). Required for lip-sync models (WAN S2V). For audio-only-to-video models (LTX 2.3 A2V), this is optional — omit it to generate video purely from text + audio.",
+            "Optional index of an uploaded image to use as the starting frame (0-based). Required for lip-sync models (WAN S2V). For audio-only-to-video models (LTX 2.3 A2V), this is optional — omit it to generate video purely from text + audio. " +
+            MINIMAX_H3_AUDIO_GUIDE_SOURCE_IMAGE_INDEX_DESCRIPTION,
+        },
+        endImageIndex: {
+          type: "number",
+          description: MINIMAX_H3_AUDIO_GUIDE_END_IMAGE_INDEX_DESCRIPTION,
         },
         audioStart: {
           type: "number",
           description:
-            'Start offset in seconds into the audio track. Use when the user says "start 20 seconds in", "skip the intro", "use the chorus at 1:30", etc. Default: 0 (beginning of audio). The video will be synced to the audio starting from this point.',
+            'Start offset in seconds into the audio track. Use when the user says "start 20 seconds in", "skip the intro", "use the chorus at 1:30", etc. Default: 0 (beginning of audio). The video will be synced to the audio starting from this point. ' +
+            MINIMAX_H3_AUDIO_GUIDE_AUDIO_START_DESCRIPTION,
           minimum: 0,
         },
         duration: {
           type: "number",
           description:
-            "Video duration in seconds. Default: 5. Per-model range: LTX/WAN 2.2 = 2-20s; Wan 3 = 2-30s; Seedance 2.0 and Mini = 4-15s; Seedance 2.5 = 4-30s. For music videos, use the maximum duration the selected model allows because the audio is usually longer than the video limit. Use when the user explicitly requests a specific length.",
+            "Video duration in seconds. Default: 5. Per-model range: LTX/WAN 2.2 = 2-20s; Wan 3 = 2-30s; Seedance 2.0 and Mini = 4-15s; Seedance 2.5 = 4-30s. For music videos, use the maximum duration the selected model allows because the audio is usually longer than the video limit. Use when the user explicitly requests a specific length. " +
+            MINIMAX_H3_AUDIO_GUIDE_DURATION_DESCRIPTION,
           minimum: 2,
           maximum: 30,
         },
@@ -114,18 +147,21 @@ BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary
         },
         videoModel: {
           type: "string",
-          enum: ["wan-s2v", "seedance2", "seedance2-mini", "seedance2-5", "ltx25-ia2v", "ltx25-a2v", "ltx23-ia2v", "ltx23-a2v", "wan3.0-video", "wan3.0-spicy-video"],
+          enum: ["wan-s2v", "seedance2", "seedance2-mini", "seedance2-5", "ltx25-ia2v", "ltx25-a2v", "ltx23-ia2v", "ltx23-a2v", "wan3.0-video", "wan3.0-spicy-video", ...MINIMAX_H3_AUDIO_GUIDE_SELECTORS],
           description:
             '"ltx25-ia2v" (default with image) and "ltx25-a2v" (default without image): LTX 2.5 image+audio and audio-only modes; Fast, HQ, and Pro currently use the release-validated official Distilled INT8 workflows. The Dev checkpoints are not publicly routed until upstream publishes and Sogni validates official ComfyUI Dev recipes. ' +
             'Video model. "ltx23-ia2v" (rollback with image): LTX 2.3 image+audio to video, audio-reactive with a reference image; Fast/HQ use the distilled 8-step worker and Default Media Quality Pro uses the non-distilled dev worker. "ltx23-a2v" (rollback without image): LTX 2.3 audio-only to video, no image needed, creates video purely from text prompt + audio with the same quality-tier routing. "wan-s2v": WAN 2.2 sound-to-video, best for lip-sync with a face image, fast 4-step. "seedance2": full Seedance 2.0 audio-reference video, 4-15s. "seedance2-mini": Seedance 2.0 Mini, 720p cap, fastest/lower-cost Seedance option. Seedance quality is selected only by this model value: pick "seedance2-mini" for faster/lower-cost drafts or explicit Mini requests, and pick "seedance2" for full-quality Seedance or 1080p/4K. Do not infer the Seedance model from Default Media Quality Fast/HQ/Pro. "seedance2-5": Seedance 2.5, the newest Seedance generation — 480p, 720p, and 1080p (4K is unsupported), 4-30s per clip at a fixed 24 fps, native audio, first-and-last-frame conditioning, and a much larger reference budget than the 2.0 family: up to 30 images, 10 videos, and 10 audios, with up to 50 reference media files total, subject to those per-modality caps. Choose "seedance2-5" when the user asks for Seedance 2.5, wants a single continuous Seedance clip longer than 15s (2.5 renders up to 30s in one call instead of being split and stitched), or wants a first-and-last-frame Seedance transition. Keep "seedance2" for 4K requests; Seedance 2.5 supports up to 1080p. ' +
             SEEDANCE_TOOL_AUDIO_REFERENCE_GUIDANCE +
             ' Omit to auto-select based on whether an image is present. ' +
-            WAN3_VIDEO_MODEL_GUIDANCE,
+            WAN3_VIDEO_MODEL_GUIDANCE +
+            ' ' +
+            MINIMAX_H3_AUDIO_GUIDE_SOUND_TO_VIDEO_MODEL_DESCRIPTION,
         },
         generateAudio: {
           type: "boolean",
           description:
-            "Whether the returned video should include audio. Omit to include audio by default; set false when the user asks for silent output or no audio. The reference audio is still required and still drives generation even when the returned video has no audio track.",
+            "Whether the returned video should include audio. Omit to include audio by default; set false when the user asks for silent output or no audio. The reference audio is still required and still drives generation even when the returned video has no audio track. " +
+            MINIMAX_H3_AUDIO_GUIDE_GENERATE_AUDIO_DESCRIPTION,
         },
         numberOfVariations: {
           type: "number",
@@ -150,4 +186,5 @@ BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary
 };
 
 definition.function.description +=
-  ' Use videoModel="wan3.0-video" when the user explicitly requests Wan 3 audio-driven video.';
+  ' Use videoModel="wan3.0-video" when the user explicitly requests Wan 3 audio-driven video. ' +
+  MINIMAX_H3_AUDIO_GUIDE_SOUND_TO_VIDEO_FUNCTION_DESCRIPTION;

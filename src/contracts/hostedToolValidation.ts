@@ -1,3 +1,5 @@
+import { minimaxH3AudioGuideMode } from '../media/videoSettings.js';
+
 export interface HostedToolSchemaProperty {
   type?: string | string[];
   const?: unknown;
@@ -509,6 +511,44 @@ export function validateAndNormalizeHostedToolArguments(
       ) {
         context.errors.push('MiniMax H3 sourceAudioPolicy="reference_only" requires the official "audio reference" summary task');
       }
+    }
+  }
+
+  // MiniMax H3 FastH3 audio guide. The frames an audio mode takes are fixed by
+  // its graph, so an argument set that names a different shape would be refused
+  // by the socket after the request was built. endImageIndex exists only for
+  // the first/last-frame audio mode. A missing first frame on image + audio is
+  // left to the host, which may resolve the latest or uploaded image.
+  if (toolName === 'sound_to_video') {
+    const audioGuideMode = minimaxH3AudioGuideMode(
+      typeof cleanedRecord.videoModel === 'string' ? cleanedRecord.videoModel : undefined,
+    );
+    const hasSourceImageIndex = cleanedRecord.sourceImageIndex !== undefined;
+    const hasEndImageIndex = cleanedRecord.endImageIndex !== undefined;
+    if (hasEndImageIndex && audioGuideMode !== 'flfa2v') {
+      context.errors.push(
+        'Argument "endImageIndex" is only supported by videoModel "minimax-h3-fasth3-flfa2v-turbo" and "minimax-h3-fasth3-flfa2v-turbo-2stage"',
+      );
+    }
+    if (audioGuideMode === 'flfa2v' && (!hasSourceImageIndex || !hasEndImageIndex)) {
+      context.errors.push(
+        `videoModel "${String(cleanedRecord.videoModel)}" needs both "sourceImageIndex" (first frame) and "endImageIndex" (last frame)`,
+      );
+    }
+    if (audioGuideMode === 'a2v' && hasSourceImageIndex) {
+      context.errors.push(
+        `videoModel "${String(cleanedRecord.videoModel)}" is audio only and takes no "sourceImageIndex"; use "minimax-h3-fasth3-ia2v-turbo" for a first-frame image`,
+      );
+    }
+    if (audioGuideMode && cleanedRecord.generateAudio === false) {
+      context.errors.push(
+        `videoModel "${String(cleanedRecord.videoModel)}" always delivers the uploaded audio; omit "generateAudio" or set it to true`,
+      );
+    }
+    if (audioGuideMode && cleanedRecord.negativePrompt !== undefined) {
+      context.errors.push(
+        `videoModel "${String(cleanedRecord.videoModel)}" has no negative-prompt input; remove "negativePrompt"`,
+      );
     }
   }
 

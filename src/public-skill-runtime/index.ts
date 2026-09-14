@@ -1143,6 +1143,7 @@ export const VIDEO_EDITING_SKILL: SkillManifest = {
     'Preserve per-clip retry and batch progress semantics. Use one Dynamic Prompt project for prompt-only fan-out, and avoid serial waterfall calls for independent clips.',
     'animate_photo errors with all_failed must surface to the user; do not auto-retry from inside the chat loop.',
     'Use upscale_video for a promptless 1080p/1440p resolution increase of an existing video; it keeps every frame, the frame rate, and the audio. Do not substitute video_to_video unless the user explicitly asks a generative model such as Seedance to re-render the clip.',
+    'MiniMax H3 audio guide: sound_to_video takes minimax-h3-fasth3-ia2v-turbo (first-frame image + audio), minimax-h3-fasth3-flfa2v-turbo (first and last frame + audio, with endImageIndex) and minimax-h3-fasth3-a2v-turbo (audio only), each with a -2stage form for 1080p or 2K output. The uploaded audio drives the picture from frame 0 and stays in the output; clips are 5.2-15.1 seconds at 24 fps, audioStart picks the window, and generateAudio false, LoRAs and negativePrompt are refused. Use them only when the user asks for MiniMax H3 or FastH3; the LTX 2.5 audio selectors stay the default.',
   ],
 };
 
