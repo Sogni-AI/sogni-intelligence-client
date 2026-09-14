@@ -1,3 +1,11 @@
+## [4.0.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.0.0...v4.0.1) (2026-09-14)
+
+
+### Bug Fixes
+
+* **deps:** use the current SDK and protocol releases ([ab03230](https://github.com/Sogni-AI/sogni-intelligence-client/commit/ab032302b20ca0967c60f5c190359b5f6e9e095c))
+* **estimates:** preserve video input billing context ([064d420](https://github.com/Sogni-AI/sogni-intelligence-client/commit/064d420508ee5dba3e1028bd34e489c072f44569))
+
 # [4.0.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.33.0...v4.0.0) (2026-09-14)
 
 
