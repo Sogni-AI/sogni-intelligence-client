@@ -335,6 +335,21 @@ Directly reuse <Audio 1> unchanged.`;
     }),
     [[true, true, true], [true, true, true]],
   );
+  // Two-stage is priced by GPU time: 1080p 10, 2K 16, and 720p FastH3's own 4
+  // Spark per second (socket, 2026-09-13).
+  expect(
+    'two-stage videoModel docs quote the 720p, 1080p and 2K prices',
+    [generateVideoDefinition, animatePhotoDefinition].map(definition => {
+      const videoModel = String(definition.function.parameters.properties?.videoModel?.description ?? '');
+      return [
+        videoModel.includes('(960x544 is delivered at 1920x1088) for 10 Spark per second'),
+        videoModel.includes('(1344x768 is delivered at 2688x1536) for 16 Spark per second'),
+        videoModel.includes('(672x384 is delivered at 1344x768) for the regular FastH3 price of 4 Spark per second'),
+        videoModel.includes('14 Spark per second'),
+      ];
+    }),
+    [[true, true, true, false], [true, true, true, false]],
+  );
   expect(
     'generate_video accepts the FastH3 two-stage T2V selector with an H3 LoRA',
     validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
