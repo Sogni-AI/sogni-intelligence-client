@@ -1,3 +1,32 @@
+# [4.0.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.33.0...v4.0.0) (2026-09-14)
+
+
+* feat(video)!: replace the MiniMax H3 outputScale option with two-stage selectors ([b6451c8](https://github.com/Sogni-AI/sogni-intelligence-client/commit/b6451c8f52bec8599bdf4b3e906dc34f2a266dc6))
+
+
+### Bug Fixes
+
+* **contracts:** recognize the Dark Beast Krea 2 v3 display name ([6204f5d](https://github.com/Sogni-AI/sogni-intelligence-client/commit/6204f5da4f93d8d94a0ffc187bbad20fdeeceba0))
+
+
+### Features
+
+* **video:** add seedance 2.5 export options ([08b4077](https://github.com/Sogni-AI/sogni-intelligence-client/commit/08b40776111995fea34cdc5e153de2d8c46237f1))
+* **video:** integrate the published FastH3 two-stage contracts ([a97293f](https://github.com/Sogni-AI/sogni-intelligence-client/commit/a97293f3cad8c1999915a9b1aa69b052a9541087))
+* **video:** quote MiniMax H3 two-stage 720p, 1080p and 2K at their GPU-time prices ([fdd2e9c](https://github.com/Sogni-AI/sogni-intelligence-client/commit/fdd2e9cc1ef14cec67e8cdb829bf430312d2873a))
+
+
+### BREAKING CHANGES
+
+* generate_video and animate_photo no longer declare outputScale, and media no
+longer exports MINIMAX_H3_OUTPUT_SCALES, MinimaxH3OutputScale, MINIMAX_H3_2K_OUTPUT_SCALE,
+supportsMinimaxH3OutputScale2K or VideoModelConfig.supportsOutputScale2K. MiniMax H3 two-stage
+output is the -2stage videoModel selectors; size it with minimaxH3TwoStageCanvasShortEdge and
+minimaxH3TwoStageDeliveredSize.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UrLK84jMe4D4LaSfsce4Cy
+
 # [3.33.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v3.32.1...v3.33.0) (2026-09-13)
 
 
