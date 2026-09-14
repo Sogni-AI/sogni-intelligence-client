@@ -1,3 +1,10 @@
+## [4.0.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.0.2...v4.0.3) (2026-09-14)
+
+
+### Bug Fixes
+
+* **video:** drop the retired 720p two-stage socket ids ([4dca23d](https://github.com/Sogni-AI/sogni-intelligence-client/commit/4dca23d4bfda3417d0531d3eae54a9968a19cc57))
+
 ## [4.0.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.0.1...v4.0.2) (2026-09-14)
 
 
