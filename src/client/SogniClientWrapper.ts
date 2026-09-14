@@ -804,6 +804,7 @@ export class SogniClientWrapper extends EventEmitter {
           jobData.imageUrl = job.resultUrl || undefined;
         } else if (isVideoProjectConfig(preparedConfig)) {
           jobData.videoUrl = job.resultUrl || undefined;
+          jobData.lastFrameUrl = job.lastFrameUrl || undefined;
         } else if (isAudioProjectConfig(preparedConfig)) {
           jobData.audioUrl = job.resultUrl || undefined;
         }
@@ -863,6 +864,8 @@ export class SogniClientWrapper extends EventEmitter {
         result.imageUrls = mediaUrls;
       } else if (isVideoProjectConfig(preparedConfig)) {
         result.videoUrls = mediaUrls;
+        const lastFrameUrls = project.jobs.map(job => job.lastFrameUrl).filter((url): url is string => !!url);
+        if (lastFrameUrls.length) result.lastFrameUrls = lastFrameUrls;
       } else if (isAudioProjectConfig(preparedConfig)) {
         result.audioUrls = mediaUrls;
       }

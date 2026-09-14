@@ -700,14 +700,14 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     minDimension: 1,
     maxDimension: 1280,
   },
-  // Seedance 2.5 is 480p/720p only (maxDimension 1280) but renders up to 30s
+  // Seedance 2.5 supports up to 1080p (2206px ultrawide) and renders up to 30s
   // per call, so its frame ceiling is double the 2.0 family's.
   "seedance2-5": {
     model: "seedance-2-5",
     fps: 24,
     dimensionDivisor: 1,
     minDimension: 1,
-    maxDimension: 1280,
+    maxDimension: 2206,
     minFrames: 97,
     maxFrames: 721,
   },

@@ -2089,7 +2089,7 @@ export const VIDEO_MODEL_REGISTRY = Object.freeze({
     maxFrames: 361,
     supportsNativeAudio: true
   },
-  // Seedance 2.5: 480p/720p only like Mini, but 4-30s instead of 4-15s,
+  // Seedance 2.5: 480p/720p/1080p and 4-30s instead of 4-15s,
   // so maxFrames is 30 * 24 + 1 rather than 15 * 24 + 1.
   [SEEDANCE_WORKFLOW_MODELS.t2v25]: {
     workflow: 't2v',
@@ -2097,7 +2097,7 @@ export const VIDEO_MODEL_REGISTRY = Object.freeze({
     defaultWidth: 1280,
     defaultHeight: 720,
     minDimension: 1,
-    maxDimension: 1280,
+    maxDimension: 2206,
     dimensionMultiple: 1,
     fps: 24,
     frameStep: 1,

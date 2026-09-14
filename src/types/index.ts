@@ -346,6 +346,9 @@ export interface ProjectResult {
   /** Array of generated video URLs (if waitForCompletion is true and project is video type) */
   videoUrls?: string[];
 
+  /** Exported last-frame images for completed videos when requested. */
+  lastFrameUrls?: string[];
+
   /** Array of generated audio URLs (if waitForCompletion is true and project is audio type) */
   audioUrls?: string[];
 
@@ -640,6 +643,9 @@ export interface JobCompletedData {
 
   /** Video URL (if available for video projects) */
   videoUrl?: string;
+
+  /** Exported Seedance last frame, when requested. */
+  lastFrameUrl?: string;
 
   /** Audio URL (if available for audio projects) */
   audioUrl?: string;

@@ -100,12 +100,24 @@ BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary
           description:
             "Alibaba wan3.0-video only. One public HTTPS webpage URL for additional audio-driven context. Mutually exclusive with referenceFileUrl.",
         },
+        outputFormat: {
+          "type": "string",
+          "enum": [
+            "mp4",
+            "mov"
+          ],
+          "description": "Video container. Defaults to mp4. MOV is supported only by Seedance 2.5; choose it when the user requests MOV for editing."
+        },
+        returnLastFrame: {
+          "type": "boolean",
+          "description": "Seedance 2.5 only. Set true to export a separate image of the final frame alongside the video. The result includes lastFrameUrl, which can be used as the first-frame image for a subsequent clip. Defaults to false; this does not extend the video automatically."
+        },
         videoModel: {
           type: "string",
           enum: ["wan-s2v", "seedance2", "seedance2-mini", "seedance2-5", "ltx25-ia2v", "ltx25-a2v", "ltx23-ia2v", "ltx23-a2v", "wan3.0-video", "wan3.0-spicy-video"],
           description:
             '"ltx25-ia2v" (default with image) and "ltx25-a2v" (default without image): LTX 2.5 image+audio and audio-only modes; Fast, HQ, and Pro currently use the release-validated official Distilled INT8 workflows. The Dev checkpoints are not publicly routed until upstream publishes and Sogni validates official ComfyUI Dev recipes. ' +
-            'Video model. "ltx23-ia2v" (rollback with image): LTX 2.3 image+audio to video, audio-reactive with a reference image; Fast/HQ use the distilled 8-step worker and Default Media Quality Pro uses the non-distilled dev worker. "ltx23-a2v" (rollback without image): LTX 2.3 audio-only to video, no image needed, creates video purely from text prompt + audio with the same quality-tier routing. "wan-s2v": WAN 2.2 sound-to-video, best for lip-sync with a face image, fast 4-step. "seedance2": full Seedance 2.0 audio-reference video, 4-15s. "seedance2-mini": Seedance 2.0 Mini, 720p cap, fastest/lower-cost Seedance option. Seedance quality is selected only by this model value: pick "seedance2-mini" for faster/lower-cost drafts or explicit Mini requests, and pick "seedance2" for full-quality Seedance or 1080p/4K. Do not infer the Seedance model from Default Media Quality Fast/HQ/Pro. "seedance2-5": Seedance 2.5, the newest Seedance generation — 480p and 720p ONLY (it cannot render 1080p or 4K), 4-30s per clip at a fixed 24 fps, native audio, first-and-last-frame conditioning, and a much larger reference budget than the 2.0 family: up to 30 images, 10 videos, and 10 audios, with up to 50 reference media files total, subject to those per-modality caps. Choose "seedance2-5" when the user asks for Seedance 2.5, wants a single continuous Seedance clip longer than 15s (2.5 renders up to 30s in one call instead of being split and stitched), or wants a first-and-last-frame Seedance transition. Keep "seedance2" for 1080p/4K requests, which Seedance 2.5 cannot satisfy. ' +
+            'Video model. "ltx23-ia2v" (rollback with image): LTX 2.3 image+audio to video, audio-reactive with a reference image; Fast/HQ use the distilled 8-step worker and Default Media Quality Pro uses the non-distilled dev worker. "ltx23-a2v" (rollback without image): LTX 2.3 audio-only to video, no image needed, creates video purely from text prompt + audio with the same quality-tier routing. "wan-s2v": WAN 2.2 sound-to-video, best for lip-sync with a face image, fast 4-step. "seedance2": full Seedance 2.0 audio-reference video, 4-15s. "seedance2-mini": Seedance 2.0 Mini, 720p cap, fastest/lower-cost Seedance option. Seedance quality is selected only by this model value: pick "seedance2-mini" for faster/lower-cost drafts or explicit Mini requests, and pick "seedance2" for full-quality Seedance or 1080p/4K. Do not infer the Seedance model from Default Media Quality Fast/HQ/Pro. "seedance2-5": Seedance 2.5, the newest Seedance generation — 480p, 720p, and 1080p (4K is unsupported), 4-30s per clip at a fixed 24 fps, native audio, first-and-last-frame conditioning, and a much larger reference budget than the 2.0 family: up to 30 images, 10 videos, and 10 audios, with up to 50 reference media files total, subject to those per-modality caps. Choose "seedance2-5" when the user asks for Seedance 2.5, wants a single continuous Seedance clip longer than 15s (2.5 renders up to 30s in one call instead of being split and stitched), or wants a first-and-last-frame Seedance transition. Keep "seedance2" for 4K requests; Seedance 2.5 supports up to 1080p. ' +
             SEEDANCE_TOOL_AUDIO_REFERENCE_GUIDANCE +
             ' Omit to auto-select based on whether an image is present. ' +
             WAN3_VIDEO_MODEL_GUIDANCE,

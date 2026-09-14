@@ -87,11 +87,23 @@ BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary
           description:
             "Advanced non-Seedance only. Use this field only when the user explicitly asks to set a separate negative prompt. For ordinary avoid/no/don't constraints on LTX 2.3 or WAN 2.2, translate them into affirmative production constraints inside prompt instead; do not move them here. Do not set when controlMode is seedance-v2v or videoModel is seedance2/seedance2-mini/seedance2-5.",
         },
+        outputFormat: {
+          "type": "string",
+          "enum": [
+            "mp4",
+            "mov"
+          ],
+          "description": "Video container. Defaults to mp4. MOV is supported only by Seedance 2.5; choose it when the user requests MOV for editing."
+        },
+        returnLastFrame: {
+          "type": "boolean",
+          "description": "Seedance 2.5 only. Set true to export a separate image of the final frame alongside the video. The result includes lastFrameUrl, which can be used as the first-frame image for a subsequent clip. Defaults to false; this does not extend the video automatically."
+        },
         videoModel: {
           type: "string",
           enum: ["ltx25-v2v", "ltx23-v2v", "wan22-animate", "seedance2", "seedance2-mini", "seedance2-5"],
           description:
-            'Model selector for this video-to-video request. Usually omit: non-Seedance controls default to "ltx25-v2v"; use "ltx23-v2v" only for rollback. LTX 2.5 Fast, HQ, and Pro currently use the release-validated official Distilled workflow for canny, pose, depth, detailer, inpaint, and outpaint. Dev is not publicly routed until upstream publishes and Sogni validates an official ComfyUI Dev recipe. For controlMode="seedance-v2v", Seedance quality is selected only by model: use "seedance2-mini" for faster/lower-cost drafts and use "seedance2" for full-quality Seedance or 1080p/4K. "seedance2-5" supports 480p/720p, 4-30s at 24 fps, native audio, and first/last-frame conditioning; keep "seedance2" for 1080p/4K.',
+            'Model selector for this video-to-video request. Usually omit: non-Seedance controls default to "ltx25-v2v"; use "ltx23-v2v" only for rollback. LTX 2.5 Fast, HQ, and Pro currently use the release-validated official Distilled workflow for canny, pose, depth, detailer, inpaint, and outpaint. Dev is not publicly routed until upstream publishes and Sogni validates an official ComfyUI Dev recipe. For controlMode="seedance-v2v", Seedance quality is selected only by model: use "seedance2-mini" for faster/lower-cost drafts and use "seedance2" for full-quality Seedance or 1080p/4K. "seedance2-5" supports 480p/720p/1080p, 4-30s at 24 fps, native audio, and first/last-frame conditioning; keep "seedance2" for 4K.',
         },
         generateAudio: {
           type: "boolean",
@@ -101,7 +113,7 @@ BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary
         targetResolution: {
           type: "number",
           description:
-            'Seedance V2V only. Short-side output resolution target in pixels. Use when the user asks for a bare named resolution such as "480p", "720p", "1080p", "2160p", or "4K" without exact dimensions. Seedance V2V full supports 4K; Seedance V2V Mini, Fast, and Seedance 2.5 support 480p and 720p only, so never set 1080p or 4K for "seedance2-5". Preserve the source video shape instead of forcing landscape pixels.',
+            'Seedance V2V only. Short-side output resolution target in pixels. Use when the user asks for a bare named resolution such as "480p", "720p", "1080p", "2160p", or "4K" without exact dimensions. Seedance V2V full supports 4K; Seedance V2V Mini and Fast support 480p and 720p only; Seedance 2.5 also supports 1080p, so never set 4K for "seedance2-5". Preserve the source video shape instead of forcing landscape pixels.',
         },
         sourceImageIndex: {
           type: "number",
