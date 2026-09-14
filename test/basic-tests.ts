@@ -119,7 +119,6 @@ import {
   LTX2VideoModels,
   LTX25_DEV_WORKFLOW_MODELS,
   LTX25_DISTILLED_WORKFLOW_MODELS,
-  MINIMAX_H3_TWO_STAGE_720P_SOCKET_MODEL_IDS,
   MINIMAX_H3_TWO_STAGE_DEFAULT_TARGET_RESOLUTION,
   MINIMAX_H3_TWO_STAGE_RESOLUTIONS,
   minimaxH3TwoStageCanvasShortEdge,
@@ -838,14 +837,11 @@ async function runTests() {
     if (isMinimaxH3TwoStageModelId('minimax-h3-fasth3-turbo') || isMinimaxH3TwoStageModelId('minimax-h3-t2v-turbo')) {
       throw new Error('Single-stage H3 selectors must not be recognized as two-stage');
     }
-    // The socket records 720p two-stage work under its own ids; they are H3 ids
-    // but never selectors, so they must not pick up two-stage sizing.
-    if (MINIMAX_H3_TWO_STAGE_720P_SOCKET_MODEL_IDS.length !== 3) {
-      throw new Error(`Expected the three 720p two-stage socket ids; got ${JSON.stringify(MINIMAX_H3_TWO_STAGE_720P_SOCKET_MODEL_IDS)}`);
-    }
-    for (const socketId of MINIMAX_H3_TWO_STAGE_720P_SOCKET_MODEL_IDS) {
-      if (!isMiniMaxH3VideoModel(socketId)) throw new Error(`${socketId} is not a MiniMax H3 model`);
-      if (isMinimaxH3TwoStageModelId(socketId)) throw new Error(`${socketId} must not be recognized as a two-stage selector`);
+    // The retired `_2stage_720p` ids are not H3 ids: every canvas class uses the
+    // canonical `_2stage` id.
+    for (const retiredId of ['t2v', 'i2v', 'flf2v'].map((mode) => `minimax-h3-fastvideo-int8_${mode}_turbo_2stage_720p`)) {
+      if (isMiniMaxH3VideoModel(retiredId)) throw new Error(`${retiredId} must not be recognized as a MiniMax H3 model`);
+      if (isMinimaxH3TwoStageModelId(retiredId)) throw new Error(`${retiredId} must not be recognized as a two-stage selector`);
     }
     const delivered2K = minimaxH3TwoStageDeliveredSize(1344, 768);
     const delivered1080p = minimaxH3TwoStageDeliveredSize(960, 544);

@@ -790,21 +790,6 @@ export const MINIMAX_H3_TWO_STAGE_MODEL_IDS: readonly string[] = Object.freeze([
   "minimax-h3-fastvideo-int8_flf2v_turbo_2stage",
 ]);
 
-/**
- * The socket ids 720p two-stage FastH3 work is recorded under: 768p output
- * rendered from a 384 px short-edge canvas (672x384 delivered at 1344x768), for
- * FastH3's own price. Nothing sends them: a two-stage selector at
- * targetResolution 720 sends its `_2stage` id with the 384 px canvas, and the
- * socket records that request under the matching id here. They are MiniMax H3
- * ids for recognition only, not selectors, so `isMinimaxH3TwoStageModelId`
- * does not match them and no request is routed to them.
- */
-export const MINIMAX_H3_TWO_STAGE_720P_SOCKET_MODEL_IDS: readonly string[] = Object.freeze([
-  "minimax-h3-fastvideo-int8_t2v_turbo_2stage_720p",
-  "minimax-h3-fastvideo-int8_i2v_turbo_2stage_720p",
-  "minimax-h3-fastvideo-int8_flf2v_turbo_2stage_720p",
-]);
-
 /** A two-stage clip is delivered at exactly this multiple of its canvas. */
 export const MINIMAX_H3_TWO_STAGE_DELIVERED_SCALE = 2 as const;
 
