@@ -1,3 +1,10 @@
+## [4.1.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.1.0...v4.1.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* **deps:** use SDK terminal project recovery ([7fca408](https://github.com/Sogni-AI/sogni-intelligence-client/commit/7fca4087575d0f6d82d964d69f6374954e3e101d))
+
 # [4.1.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.0.3...v4.1.0) (2026-09-14)
 
 
