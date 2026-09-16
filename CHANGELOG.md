@@ -1,3 +1,10 @@
+## [4.2.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.2.0...v4.2.1) (2026-09-16)
+
+
+### Bug Fixes
+
+* **chat:** retain model artifacts across durable run events ([1542934](https://github.com/Sogni-AI/sogni-intelligence-client/commit/154293486e45917bf1202b04d7448f249afdf520))
+
 # [4.2.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.1.1...v4.2.0) (2026-09-16)
 
 
