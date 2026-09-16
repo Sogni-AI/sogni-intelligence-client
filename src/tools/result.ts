@@ -76,7 +76,7 @@ export function mapLegacyToolErrorCategory(category: LegacyToolErrorCategory): T
 /** Output asset produced by a successful tool run. */
 export interface ToolResultAsset {
   asset_id: string;
-  type: 'image' | 'video' | 'audio';
+  type: 'image' | 'video' | 'audio' | 'model';
   url?: string;
   width?: number;
   height?: number;

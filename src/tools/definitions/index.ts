@@ -1,4 +1,7 @@
 import { definition as generateImageDefinition } from './generate-image/definition.js';
+import { definition as imageTo3dDefinition } from './image-to-3d/definition.js';
+import { definition as removeBackgroundDefinition } from './remove-background/definition.js';
+import { definition as segmentImageDefinition } from './segment-image/definition.js';
 import { definition as generateVideoDefinition } from './generate-video/definition.js';
 import { definition as generateMusicDefinition } from './generate-music/definition.js';
 import { definition as generateSpeechDefinition } from './generate-speech/definition.js';
@@ -31,6 +34,9 @@ import {
 import type { ToolDefinition } from './types.js';
 
 export {
+  imageTo3dDefinition,
+  removeBackgroundDefinition,
+  segmentImageDefinition,
   addSubtitlesDefinition,
   animatePhotoDefinition,
   applyStyleDefinition,
@@ -58,6 +64,9 @@ export {
 };
 
 export const generationToolDefinitions = [
+  imageTo3dDefinition,
+  removeBackgroundDefinition,
+  segmentImageDefinition,
   generateImageDefinition,
   generateVideoDefinition,
   generateMusicDefinition,

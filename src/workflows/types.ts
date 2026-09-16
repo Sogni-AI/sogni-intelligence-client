@@ -230,7 +230,7 @@ export interface StageCondition {
 // Artifacts (stage outputs with version history)
 // ---------------------------------------------------------------------------
 
-export type ArtifactKind = 'image' | 'video' | 'audio' | 'text' | 'structured';
+export type ArtifactKind = 'image' | 'video' | 'audio' | 'model' | 'text' | 'structured';
 
 export interface Artifact {
   name: string;

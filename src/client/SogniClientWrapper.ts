@@ -6,6 +6,7 @@
 import { EventEmitter } from 'events';
 import { SogniClient, Project, Job, ChatStream } from '@sogni-ai/sogni-client';
 import { VIDEO_UPSCALE_MODEL_ID } from '../media/videoUpscale.js';
+import { isMinimaxH3TwoStageModelId } from '../media/videoSettings.js';
 import type {
   SogniClientConfig,
   SogniAttributionConfig,
@@ -1006,6 +1007,9 @@ export class SogniClientWrapper extends EventEmitter {
     }
 
     const normalized: VideoProjectConfig = { ...config };
+    // Two-stage jobs describe the base canvas, but re-encode the same image
+    // for refinement at twice that size. Keep the detail needed by both stages.
+    const referenceScale = isMinimaxH3TwoStageModelId(config.modelId) ? 2 : 1;
 
     // I2V/FLF inputs are canvas anchors and must stay dimensionally aligned with
     // the output. R2V inputs are loose conditioning references: their aspect
@@ -1047,7 +1051,7 @@ export class SogniClientWrapper extends EventEmitter {
       const originalHeight = height;
       const normalizedDims = this.normalizeVideoDimensions(width, height, config.modelId);
       if (normalizedDims.adjusted) {
-        console.log(
+        console.error(
           `[SogniClientWrapper] Adjusted video dimensions from ${originalWidth}x${originalHeight} to ${normalizedDims.width}x${normalizedDims.height} to meet ${config.modelId} video requirements.`
         );
       }
@@ -1058,24 +1062,30 @@ export class SogniClientWrapper extends EventEmitter {
     if (baseBuffer && width && height) {
       const baseFit: 'inside' | 'cover' =
         baseKey === 'referenceImageEnd' && !!config.referenceImage ? 'cover' : 'inside';
-      const fittedBase = await this.resizeImageBuffer(baseBuffer, width, height, baseFit);
+      const fittedBase = await this.resizeImageBuffer(
+        baseBuffer, width * referenceScale, height * referenceScale, baseFit,
+      );
       // `fit: inside` preserves the source aspect ratio, so Sharp may emit an
       // actual size that no longer follows the model's grid. For example,
       // fitting 1472x1024 inside H3's 1344x768 box yields 1104x768; 1104 is not
       // divisible by H3's required 32px step. Re-normalize the *actual* fitted
       // size and, only when needed, make a tiny center crop from the original
       // so the final reference and project dimensions are guaranteed valid.
-      const fittedDims = this.normalizeVideoDimensions(fittedBase.width, fittedBase.height, config.modelId);
+      const fittedDims = this.normalizeVideoDimensions(
+        fittedBase.width / referenceScale, fittedBase.height / referenceScale, config.modelId,
+      );
       const resizedBase = fittedDims.adjusted
-        ? await this.resizeImageBuffer(baseBuffer, fittedDims.width, fittedDims.height, 'cover')
+        ? await this.resizeImageBuffer(
+          baseBuffer, fittedDims.width * referenceScale, fittedDims.height * referenceScale, 'cover',
+        )
         : fittedBase;
       if (resizedBase.wasResized) {
-        console.log(
+        console.error(
           `[SogniClientWrapper] Resized ${baseKey} from ${resizedBase.originalWidth}x${resizedBase.originalHeight} to ${resizedBase.width}x${resizedBase.height} to meet video requirements.`
         );
       }
-      width = resizedBase.width;
-      height = resizedBase.height;
+      width = resizedBase.width / referenceScale;
+      height = resizedBase.height / referenceScale;
       if (baseKey === 'referenceImage') {
         normalized.referenceImage = resizedBase.buffer;
       } else if (baseKey === 'referenceImageEnd') {
@@ -1092,9 +1102,9 @@ export class SogniClientWrapper extends EventEmitter {
     if (config.referenceImage && config.referenceImageEnd && hasReferenceImageEnd && width && height && baseKey === 'referenceImage') {
       const endBuffer = await this.mediaToBuffer(config.referenceImageEnd as InputMedia);
       if (endBuffer) {
-        const resizedEnd = await this.resizeImageBuffer(endBuffer, width, height, 'cover');
-        if (resizedEnd.wasResized || resizedEnd.width !== width || resizedEnd.height !== height) {
-          console.log(
+        const resizedEnd = await this.resizeImageBuffer(endBuffer, width * referenceScale, height * referenceScale, 'cover');
+        if (resizedEnd.wasResized || resizedEnd.width !== width * referenceScale || resizedEnd.height !== height * referenceScale) {
+          console.error(
             `[SogniClientWrapper] Resized referenceImageEnd from ${resizedEnd.originalWidth}x${resizedEnd.originalHeight} to ${resizedEnd.width}x${resizedEnd.height} to match referenceImage.`
           );
         }

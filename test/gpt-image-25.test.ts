@@ -11,7 +11,12 @@ import { resolveRegisteredImageReferenceModelId } from '../src/utils/imageRefere
 import { getModelOptions } from '../src/tools/shared/modelRegistry.js';
 import { definition as generate } from '../src/tools/definitions/generate-image/definition.js';
 import { definition as edit } from '../src/tools/definitions/edit-image/definition.js';
-import { buildStoryboardProject, compileForModel, storyboardAdapterRegistry } from '../src/public-skill-runtime/index.js';
+import {
+  buildStoryboardProject,
+  buildStoryboardVideoHostedToolSequenceInput,
+  compileForModel,
+  storyboardAdapterRegistry,
+} from '../src/public-skill-runtime/index.js';
 
 const sunburst = 'gpt-image-2.5-sunburst';
 const flare = 'gpt-image-2.5-flare';
@@ -106,4 +111,43 @@ test('a model switch keeps only the GPT Image options the new model supports', (
     mask_image_url: 'https://example.com/mask.png',
   });
   assert.deepEqual(applyGenerationJobOverridesToArgs(args, { modelKey: 'qwen-lightning' }), { model: 'qwen-lightning' });
+});
+
+test('storyboard production defaults to Sunburst reference stills and Seedance 2.5 at 1080p', () => {
+  const storyline = [
+    '| Beat | Time | Purpose | Visual/Action | Camera/Motion | Dialogue/VO | Audio/SFX | Transition |',
+    '| --- | --- | --- | --- | --- | --- | --- | --- |',
+    '| 01 | 0s-10s | Setup | Ivory mug on a wooden table. | Slow push-in. | [no dialogue] | Room tone. | Cut. |',
+    '| 02 | 10s-20s | Product | Artist lifts the mug. | Medium portrait. | [no dialogue] | Gentle music. | End. |',
+  ].join('\n');
+  const plan = buildStoryboardVideoHostedToolSequenceInput({
+    storyline,
+    userIntentText: 'Create a 20-second vertical storyboard video from these two approved scenes.',
+    frameCount: 2,
+  });
+
+  assert.equal(plan.image.model, sunburst);
+  assert.equal(plan.video.model, 'seedance2-5');
+  assert.deepEqual([plan.video.width, plan.video.height, plan.video.duration], [1080, 1920, 20]);
+  assert.equal(plan.input.steps[0]?.arguments.model, sunburst);
+  assert.equal(plan.input.steps[1]?.arguments.videoModel, 'seedance2-5');
+  assert.equal(plan.input.steps[1]?.arguments.targetResolution, 1080);
+  assert.equal('width' in plan.input.steps[1]!.arguments, false);
+  assert.equal('height' in plan.input.steps[1]!.arguments, false);
+
+  const genericSeedance = compileForModel('seedance', plan.storyboardProject, {
+    stage: 'scene_clip',
+    scene: plan.storyboardProject.scenes[0],
+  });
+  assert.equal(genericSeedance.args.videoModel, 'seedance2-5');
+  assert.equal(genericSeedance.args.targetResolution, 1080);
+  assert.equal(genericSeedance.args.duration, 10);
+
+  const legacySeedance = compileForModel('seedance2', plan.storyboardProject, {
+    stage: 'scene_clip',
+    scene: { ...plan.storyboardProject.scenes[0], durationSec: 20 },
+  });
+  assert.equal(legacySeedance.args.videoModel, 'seedance2');
+  assert.equal(legacySeedance.args.targetResolution, undefined);
+  assert.equal(legacySeedance.args.duration, 15);
 });

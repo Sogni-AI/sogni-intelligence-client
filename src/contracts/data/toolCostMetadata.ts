@@ -89,6 +89,9 @@ export const TOOL_COST_METADATA: ReadonlyArray<ToolCostMetadata> = [
     userVisibleCost: 'Pixel-based image upscaling',
     description: 'Deterministic RTX VSR enlargement without generative changes.',
   },
+  { tool: 'image_to_3d', costClass: 'image.standard', riskLevel: 'paid', userVisibleCost: 'Priced by reconstruction settings', description: 'Pixal3D reconstruction from one or more source views.' },
+  { tool: 'remove_background', costClass: 'image.standard', riskLevel: 'paid', userVisibleCost: 'Priced per source image', description: 'BiRefNet foreground cutout or soft mask.' },
+  { tool: 'segment_image', costClass: 'image.standard', riskLevel: 'paid', userVisibleCost: 'Priced per source image', description: 'SAM 3 object selection on the original image.' },
   {
     tool: 'upscale_video',
     costClass: 'video.standard',

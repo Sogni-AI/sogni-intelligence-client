@@ -38,7 +38,7 @@ export const KREA2_LORA_CATALOG_REFERENCE =
   'body horror), krea2-filter-bypass-2 and krea2-filter-bypass-3 (restore expressions, anatomy ' +
   'and poses the base model flattens; try the 2-vector first). ' +
   'Exact per-LoRA ranges, maturity flags and the full contract: ' +
-  'GET /v1/loras/comfy?modelId=<model>. Do not invent ids.';
+  'GET /v1/loras/comfy?modelId=<model>. Personal imports use authenticated GET /v1/loras/personal/catalog: use an owned ready personal- id, its modelIds, strength range and requirements. Never invent ids or silently omit a requested personal LoRA.';
 
 /** Shared `loraStrengths` guidance: bipolarity, defaults, and usable bands. */
 export const LORA_STRENGTHS_GUIDANCE =
@@ -93,7 +93,7 @@ export const H3_VIDEO_LORA_CATALOG_REFERENCE =
   + 'movement — weight shifts, strides, turns and gestures that follow through — for dance, '
   + 'sport, walking and other full-body shots. Both AdaptiveVision LoRAs work best with short, '
   + 'simple prompt sentences and are not validated on reference-to-video. h3-mystic-xxx-v4 is an '
-  + 'uncensored adult fine-tune. Do not invent ids.';
+  + 'uncensored adult fine-tune. Personal imports are discovered through authenticated GET /v1/loras/personal/catalog; use only owned ready ids with the selected model in modelIds, and respect their strength range and requirements. Do not invent ids.';
 
 /** Shared video `loraStrengths` guidance: positive-only, and what pushing it costs. */
 export const H3_VIDEO_LORA_STRENGTHS_GUIDANCE =

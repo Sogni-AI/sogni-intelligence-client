@@ -10,7 +10,7 @@
  */
 
 /** Coarse kind of an artifact. */
-export type ArtifactKind = 'image' | 'video' | 'audio' | 'text' | 'workflow' | 'collection';
+export type ArtifactKind = 'image' | 'video' | 'audio' | 'model' | 'text' | 'workflow' | 'collection';
 
 /**
  * Typed lineage relations. Every edge captures *how* a child artifact
@@ -131,6 +131,7 @@ const ARTIFACT_KINDS: ReadonlySet<ArtifactKind> = new Set([
   'text',
   'workflow',
   'collection',
+  'model',
 ]);
 
 const ARTIFACT_RELATIONS: ReadonlySet<ArtifactRelation> = new Set([

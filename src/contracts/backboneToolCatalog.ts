@@ -6,6 +6,9 @@
  */
 
 export const BACKBONE_GENERATION_TOOL_NAMES = [
+  "image_to_3d",
+  "remove_background",
+  "segment_image",
   "generate_image",
   "generate_video",
   "generate_music",

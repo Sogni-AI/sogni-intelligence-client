@@ -293,7 +293,7 @@ export interface ChatRunArtifactRef {
   /** Final asset URL/data-uri when available. */
   url?: string;
   /** Media type for routing UIs. */
-  mediaType?: 'image' | 'video' | 'audio';
+  mediaType?: 'image' | 'video' | 'audio' | 'model';
   /** Optional partial-failure metadata so paid artifacts remain visible. */
   partial?: boolean;
   /**

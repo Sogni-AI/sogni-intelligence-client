@@ -83,6 +83,9 @@ export * from './shared/visionDescriptionCache.js';
 export * from './shared/downloadFilename.js';
 export {
   addSubtitlesDefinition,
+  imageTo3dDefinition,
+  removeBackgroundDefinition,
+  segmentImageDefinition,
   animatePhotoDefinition,
   applyStyleDefinition,
   changeAngleDefinition,

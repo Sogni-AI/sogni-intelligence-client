@@ -65,6 +65,7 @@ Limit 4096 characters, roughly five minutes of speech. A longer script is refuse
           description:
             'Which audio holds the voice to clone, using the same numbering every other tool uses for audio: negative indices are uploads (-1 = first/primary upload, -2 = second upload, and so on) and 0-based non-negative indices are audio generated earlier in this conversation. A clip the user just uploaded is -1. Required when model="clone" and ignored otherwise. The clip should be three to thirty seconds of one person speaking cleanly, with no music, no second speaker and no heavy room echo; anything past thirty seconds is trimmed.',
         },
+        voice_source_url: { type: 'string', description: 'REST alternative to voiceSourceIndex: retrievable original recording for clone mode.' },
         voiceTranscript: {
           type: 'string',
           description:
@@ -89,6 +90,9 @@ Limit 4096 characters, roughly five minutes of speech. A longer script is refuse
           description:
             'Language of the script. Default "auto", which infers it from the text and is the only setting that reads a code-switched line correctly. Pin a language only when auto mis-reads a name, a loanword, or a passage that is ambiguous between two of them. Cloning is cross-lingual: an English reference clip can read Japanese in the same voice.',
         },
+        creativity: { type: 'number', minimum: 0.1, maximum: 2, description: 'Speech delivery variation from 0.1 to 2; default 0.9.' },
+        outputFormat: { type: 'string', enum: ['wav', 'mp3', 'flac'], description: 'Audio file format; default wav.' },
+        seed: { type: 'integer', minimum: 0, maximum: 4294967295, description: 'Optional seed for reproducible delivery.' },
         numberOfVariations: {
           type: 'number',
           description:

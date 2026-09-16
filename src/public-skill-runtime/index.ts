@@ -1235,7 +1235,7 @@ export const ALL_BUILT_IN_SKILLS: readonly SkillManifest[] = [
 
 export interface ToolResultAsset {
   asset_id: string;
-  type: 'image' | 'video' | 'audio';
+  type: 'image' | 'video' | 'audio' | 'model';
   url?: string;
   width?: number;
   height?: number;
@@ -1461,17 +1461,31 @@ function compactSceneVideoPrompt(project: StoryboardProject, scene: SceneSpec, r
   return lines.join('\n');
 }
 
+function publicSeedanceVideoModelFromInput(
+  input: PublicStoryboardAdapterCompileInput,
+): 'seedance2-mini' | 'seedance2' | 'seedance2-5' {
+  const requestedModelId = String(input.options?.requestedModelId ?? '').trim().toLowerCase();
+  if (!requestedModelId || requestedModelId === 'seedance') return 'seedance2-5';
+  const resolved = resolveVideoModelAlias(requestedModelId, 't2v');
+  if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25) return 'seedance2-5';
+  if (resolved === SEEDANCE_WORKFLOW_MODELS.t2vMini) return 'seedance2-mini';
+  if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v) return 'seedance2';
+  throw new Error(`No Seedance storyboard execution contract is registered for model "${requestedModelId}".`);
+}
+
 const PUBLIC_SEEDANCE_ADAPTER: PublicStoryboardAdapter = {
   modelId: 'seedance',
   name: 'Seedance 2.x',
   supportedStages: ['storyboard_image', 'scene_clip'],
   compile(storyboard, input) {
+    const videoModel = publicSeedanceVideoModelFromInput(input);
     if (input.stage === 'storyboard_image') {
       return {
         stage: 'storyboard_image',
         prompt: compileStoryboardImagePromptFromProject(storyboard),
         args: {
-          videoModel: 'seedance2-mini',
+          videoModel,
+          ...(videoModel === 'seedance2-5' ? { targetResolution: 1080 } : {}),
           aspectRatio: storyboard.targetVideoAspectRatio,
           skipPromptProcessing: true,
           expandPrompt: false,
@@ -1481,12 +1495,14 @@ const PUBLIC_SEEDANCE_ADAPTER: PublicStoryboardAdapter = {
     if (input.stage === 'scene_clip') {
       const scene = requireStoryboardScene('SEEDANCE_ADAPTER', input);
       const referenceTag = input.primaryReferenceTag ?? formatModelRef('seedance', 1, 'image');
-      const duration = clampSeedanceStoryboardDuration(scene.durationSec ?? 5);
+      const maxDuration = videoModel === 'seedance2-5' ? 30 : 15;
+      const duration = Math.max(4, Math.min(maxDuration, Math.round(scene.durationSec ?? 5)));
       return {
         stage: 'scene_clip',
         prompt: compileSeedanceSceneClipPromptFromProject(storyboard, scene, referenceTag),
         args: {
-          videoModel: 'seedance2-mini',
+          videoModel,
+          ...(videoModel === 'seedance2-5' ? { targetResolution: 1080 } : {}),
           duration,
           aspectRatio: storyboard.targetVideoAspectRatio,
           skipPromptProcessing: true,
@@ -1497,7 +1513,7 @@ const PUBLIC_SEEDANCE_ADAPTER: PublicStoryboardAdapter = {
     throw new StoryboardAdapterUnsupportedStageError('seedance', input.stage);
   },
   getSystemPromptGuidance() {
-    return `SEEDANCE STORYBOARD REFERENCES: If exactly one uploaded image is an ordered storyboard/sequence sheet and the user asks for a Seedance video with only a sparse/casual prompt, use generate_video with referenceImageIndices=[-1], prompt="${SEEDANCE_STORYBOARD_REFERENCE_PROMPT}", videoModel="seedance2", skipPromptProcessing=true, and expandPrompt=false. Also use videoModel="seedance2" when a generated storyboard image becomes the Seedance reference, regardless of requested resolution, unless the user explicitly asks for a draft or Mini. Do not use this fallback when the user provides a literal prompt, their own script, shot list, timecoded beats, VO/SFX notes, or other substantive video instructions.`;
+    return `SEEDANCE STORYBOARD REFERENCES: If exactly one uploaded image is an ordered storyboard/sequence sheet and the user asks for a Seedance video with only a sparse/casual prompt, use generate_video with referenceImageIndices=[-1], prompt="${SEEDANCE_STORYBOARD_REFERENCE_PROMPT}", videoModel="seedance2-5", targetResolution=1080, skipPromptProcessing=true, and expandPrompt=false. Also use videoModel="seedance2-5" with targetResolution=1080 when a generated storyboard image becomes the Seedance reference, unless the user explicitly asks for another Seedance model or resolution. Do not use this fallback when the user provides a literal prompt, their own script, shot list, timecoded beats, VO/SFX notes, or other substantive video instructions.`;
   },
 };
 
@@ -1710,7 +1726,13 @@ export function compileForModel(
 ): PublicStoryboardAdapterCompileResult {
   const adapter = storyboardAdapterRegistry.getAdapter(modelId);
   if (!adapter) throw new Error(`No storyboard adapter registered for model_id "${modelId}".`);
-  return adapter.compile(storyboard, input);
+  return adapter.compile(storyboard, {
+    ...input,
+    options: {
+      ...input.options,
+      requestedModelId: modelId,
+    },
+  });
 }
 
 const PUBLIC_SEEDANCE_PRIMARY_IMAGE_REF = formatModelRef('seedance', 1, 'image');
@@ -3862,7 +3884,7 @@ export interface StoryboardHostedWorkflowDependency {
     | 'overlay_items'
     | 'asset_ref';
   sourceArtifactIndex?: number;
-  mediaType?: 'image' | 'video' | 'audio';
+  mediaType?: 'image' | 'video' | 'audio' | 'model';
   required?: boolean;
 }
 
@@ -8907,8 +8929,13 @@ function dimensionsForShortSideAspectRatio(
     return { width: 1280, height: 720 };
   }
   const multiple = 16;
-  const side = Math.max(multiple, Math.round(shortSide / multiple) * multiple);
-  const roundLongSide = (value: number) => Math.max(multiple, Math.round(value / multiple) * multiple);
+  const exactProviderResolution = shortSide === 1080;
+  const side = exactProviderResolution
+    ? shortSide
+    : Math.max(multiple, Math.round(shortSide / multiple) * multiple);
+  const roundLongSide = (value: number) => exactProviderResolution
+    ? Math.max(1, Math.round(value))
+    : Math.max(multiple, Math.round(value / multiple) * multiple);
   if (ratioWidth >= ratioHeight) {
     return {
       width: roundLongSide(side * ratioWidth / ratioHeight),
@@ -9094,10 +9121,17 @@ export function buildStoryboardVideoHostedToolSequenceInput(
   const defaultImageDimensions = defaultStoryboardImageDimensions(layout);
   const imageWidth = options.imageWidth ?? defaultImageDimensions.width;
   const imageHeight = options.imageHeight ?? defaultImageDimensions.height;
-  const videoDuration = clampSeedanceStoryboardDuration(options.videoDurationSec ?? project.durationSec);
+  const imageModel = options.imageModel ?? 'gpt-image-2.5-sunburst';
+  const imageQuality = options.imageQuality ?? 'high';
+  const imageOutputFormat = options.imageOutputFormat ?? 'png';
+  const videoModel = options.videoModel ?? 'seedance2-5';
+  const videoMaximumDuration = videoModel === 'seedance2-5' ? 30 : 15;
+  const requestedVideoDuration = options.videoDurationSec ?? project.durationSec ?? 5;
+  const videoDuration = Math.max(4, Math.min(videoMaximumDuration, Math.round(requestedVideoDuration)));
+  const videoTargetResolution = options.videoTargetResolution ?? (videoModel === 'seedance2-mini' ? 720 : 1080);
   const videoDimensions = dimensionsForShortSideAspectRatio(
     project.targetVideoAspectRatio,
-    options.videoTargetResolution ?? 720,
+    videoTargetResolution,
   );
   const storyboardImagePrompt = compileVideoStoryboardImagePrompt(compileOptions);
   const seedanceVideoPrompt = compileSeedanceStoryboardPromptFromProject(project, {
@@ -9115,10 +9149,6 @@ export function buildStoryboardVideoHostedToolSequenceInput(
     ].join(' '));
   }
   const title = options.title || `${project.title} storyboard video`;
-  const imageModel = options.imageModel ?? 'gpt-image-2';
-  const imageQuality = options.imageQuality ?? 'high';
-  const imageOutputFormat = options.imageOutputFormat ?? 'png';
-  const videoModel = options.videoModel ?? 'seedance2';
   const generateAudio = options.generateAudio ?? true;
   const input: StoryboardHostedWorkflowInput = {
     title,
@@ -9142,8 +9172,7 @@ export function buildStoryboardVideoHostedToolSequenceInput(
         arguments: {
           prompt: seedanceVideoPrompt,
           videoModel,
-          width: videoDimensions.width,
-          height: videoDimensions.height,
+          targetResolution: videoTargetResolution,
           duration: videoDuration,
           fps: 24,
           numberOfVariations: 1,

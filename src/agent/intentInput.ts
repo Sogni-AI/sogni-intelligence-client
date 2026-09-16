@@ -27,7 +27,7 @@
  */
 
 /** Coarse media/asset kind the planner uses for routing. */
-export type ArtifactType = 'image' | 'video' | 'audio' | 'text' | 'workflow' | 'collection';
+export type ArtifactType = 'image' | 'video' | 'audio' | 'model' | 'text' | 'workflow' | 'collection';
 
 /**
  * Reference to the single pending action awaiting resolution at the time
@@ -269,6 +269,7 @@ const ARTIFACT_TYPES: ReadonlySet<ArtifactType> = new Set([
   'text',
   'workflow',
   'collection',
+  'model',
 ]);
 
 const TURN_ROLES: ReadonlySet<IntentInputRecentTurn['role']> = new Set([

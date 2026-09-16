@@ -416,11 +416,12 @@ const EDIT_IMAGE_CONTRACT: PromptContract = {
     'Use generate_video with Seedance references for one continuous clip unless the user explicitly',
     'asks for separate image keyframes or a storyboard sheet output.',
     '',
-    'DIRECT UPLOADED GPT IMAGE 2 STORYBOARD SHEETS: If the user uploaded reference images and',
-    'asks for one finished GPT Image 2 storyboard/keyframe sheet now, call edit_image directly',
-    'with sourceImageIndex=-1, model="gpt-image-2", numberOfVariations=1, and the requested',
-    'canvas/aspect settings. If the user did not explicitly specify a storyboard page/canvas/sheet',
-    'shape, default the GPT Image 2 storyboard sheet pixel dimensions to a balanced grid that hosts',
+    'DIRECT UPLOADED GPT IMAGE STORYBOARD SHEETS: If the user uploaded reference images and',
+    'asks for one finished GPT Image storyboard/keyframe sheet now, call edit_image directly',
+    'with sourceImageIndex=-1, model="gpt-image-2.5-sunburst", numberOfVariations=1, and the requested',
+    'canvas/aspect settings. Preserve another explicit GPT Image model named by the user.',
+    'If the user did not explicitly specify a storyboard page/canvas/sheet',
+    'shape, default the GPT Image 2.5 storyboard sheet pixel dimensions to a balanced grid that hosts',
     'the target cell aspect ratio natively (e.g., 12 cells with 9:16 portrait video target -> ~3:4',
     'portrait sheet around 1728x2304; 12 cells with 16:9 landscape video target -> ~4:3 landscape',
     'sheet around 2304x1728; 6 cells with 9:16 target -> ~27:32 portrait sheet around 1840x2176). Do',
@@ -558,10 +559,11 @@ const GENERATE_IMAGE_CONTRACT: PromptContract = {
     'clearly adult and consensual, PG-13/non-explicit, and avoid minor-coded styling or school-coded',
     'settings while still optimizing visual magnet, persona, caption bait, and replay/comment value.',
     '',
-    'GPT IMAGE 2 STORYBOARD SHEET → SEEDANCE AUTO-PROCEED: If the user asks to run the whole',
-    'GPT Image 2 storyboard/keyframe sheet plus Seedance workflow without approval, the FIRST',
+    'GPT IMAGE STORYBOARD SHEET → SEEDANCE AUTO-PROCEED: If the user asks to run the whole',
+    'GPT Image storyboard/keyframe sheet plus Seedance workflow without approval, the FIRST',
     'generate_image call must create ONE composite storyboard/keyframe sheet, not loose concept',
-    'art and not separate keyframes. Use model="gpt-image-2", numberOfVariations=1, and a',
+    'art and not separate keyframes. Default to model="gpt-image-2.5-sunburst" and preserve another',
+    'explicit GPT Image model named by the user. Use numberOfVariations=1 and a',
     'compiled storyboard prompt that literally includes: "Create exactly N sequential video',
     'storyboard frames as one composite storyboard image", "Target final video aspect ratio: X",',
     'a `SCENES:` section, and exactly N concrete scene entries named `SCENE_01`, `SCENE_02`,',
@@ -1757,7 +1759,18 @@ const COMPOSE_WORKFLOW_TEMPLATE_CONTRACT: PromptContract = {
  * service, public-skill-runtime) register these on a ContractRegistry at
  * session boot.
  */
+const IMAGE_UTILITY_CONTRACTS: ReadonlyArray<PromptContract> = [
+  { contractId: 'image_to_3d_v1', version: '1.0.0', toolName: 'image_to_3d',
+    baseDescription: 'Reconstruct a downloadable GLB from an original front image, optionally with left, back and right views of the same subject at consistent height and framing. Pass each view in its named slot; never invent views or substitute screenshots. Choose mesh and texture budgets for the intended use. The output is a 3D model, so do not send it to image or video tools.',
+    parameterDocs: { sourceImageIndex: 'Front view; negative indices select uploads.', leftViewImageIndex: 'Subject own left side toward camera (subject faces screen-left).', backViewImageIndex: 'Subject seen from behind.', rightViewImageIndex: 'Subject own right side toward camera (subject faces screen-right).' } },
+  { contractId: 'remove_background_v1', version: '1.0.0', toolName: 'remove_background',
+    baseDescription: 'Use BiRefNet to remove an existing image background while preserving the original foreground. No prompt is needed. Return a transparent PNG by default, or an alpha mask when applyMask=false.', parameterDocs: { sourceImageIndex: 'Original image to isolate.', applyMask: 'Default true: transparent cutout; false: mask.' } },
+  { contractId: 'segment_image_v1', version: '1.0.0', toolName: 'segment_image',
+    baseDescription: 'Select objects with SAM 3 using an object description, normalized original-image points, or boxes. Text can combine with boxes. Points can combine with at most one positive box and never with text. Output a binary mask by default or an original-pixel cutout with applyMask=true; do not repaint the source.', parameterDocs: { sourceImageIndex: 'Original image to select from.', maxInstances: 'Keep the strongest N selections (1–16).', applyMask: 'True returns a cutout; false returns a mask.' } },
+];
+
 export const PROMPT_CONTRACTS: ReadonlyArray<PromptContract> = [
+  ...IMAGE_UTILITY_CONTRACTS,
   RESTORE_PHOTO_CONTRACT,
   UPSCALE_IMAGE_CONTRACT,
   UPSCALE_VIDEO_CONTRACT,
