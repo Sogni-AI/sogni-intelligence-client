@@ -1,3 +1,15 @@
+# [4.2.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.1.1...v4.2.0) (2026-09-16)
+
+
+### Bug Fixes
+
+* **deps:** consume the published personal media contracts ([5df08d9](https://github.com/Sogni-AI/sogni-intelligence-client/commit/5df08d904ae1e91de648da0adc41d601fa8a554f))
+
+
+### Features
+
+* **tools:** integrate personal LoRAs and hosted media utilities ([cb3ac54](https://github.com/Sogni-AI/sogni-intelligence-client/commit/cb3ac54b86a005eae50b9839bc007c72c53c82d8))
+
 ## [4.1.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.1.0...v4.1.1) (2026-09-15)
 
 
