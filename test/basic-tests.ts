@@ -3472,8 +3472,13 @@ async function runTests() {
     }
 
     const all = SogniTools.all;
-    if (!Array.isArray(all) || all.length !== 27) {
-      throw new Error(`SogniTools.all expected 27 tools, got ${all.length}`);
+    if (!Array.isArray(all) || all.length !== 30) {
+      throw new Error(`SogniTools.all expected 30 tools, got ${all.length}`);
+    }
+    for (const name of ['image_to_3d', 'remove_background', 'segment_image']) {
+      if (!all.some((tool) => tool.function.name === name)) {
+        throw new Error(`SogniTools.all must include the ${name} contract`);
+      }
     }
     if (!all.some((tool) => tool.function.name === 'generate_speech')) {
       throw new Error('SogniTools.all must include the generate_speech contract');
