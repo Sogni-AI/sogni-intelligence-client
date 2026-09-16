@@ -319,7 +319,7 @@ export interface ChatRunMediaItem {
 }
 
 export function isChatRunMediaType(value: unknown): value is ChatRunMediaItem['mediaType'] {
-  return value === 'image' || value === 'video' || value === 'audio';
+  return value === 'image' || value === 'video' || value === 'audio' || value === 'model';
 }
 
 export interface DurableMediaViolation {
@@ -975,4 +975,3 @@ export {
   sanitizeCostApprovalOverride,
   applyCostApprovalOverridesToToolArguments,
 } from './costApproval.js';
-
