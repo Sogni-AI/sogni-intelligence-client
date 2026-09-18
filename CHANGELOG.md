@@ -1,3 +1,10 @@
+# [4.3.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.2.1...v4.3.0) (2026-09-18)
+
+
+### Features
+
+* **video:** add the two-stage Reference to Video selectors ([b77eed6](https://github.com/Sogni-AI/sogni-intelligence-client/commit/b77eed64000c79911c864ee53e9cf90940c63bd1))
+
 ## [4.2.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.2.0...v4.2.1) (2026-09-16)
 
 
