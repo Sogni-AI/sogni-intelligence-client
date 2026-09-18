@@ -33,6 +33,8 @@ export type VideoModelId =
   | "minimax-h3-fasth3-ia2v-turbo-2stage"
   | "minimax-h3-fasth3-flfa2v-turbo-2stage"
   | "minimax-h3-fasth3-a2v-turbo-2stage"
+  | "minimax-h3-r2v-2stage"
+  | "minimax-h3-r2v-balanced-2stage"
   | "seedance2"
   | "seedance2-mini"
   | "seedance2-5"
@@ -559,6 +561,53 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
   },
+  // MiniMax H3 reference-to-video two-stage (Comfy worker 1.0.218+): the tier
+  // renders its Ref2VA canvas, then the worker enlarges it 2x and refines it,
+  // so the clip is delivered at twice the canvas with the same frames, audio
+  // and references. Request shape, references and LoRAs match the one-stage
+  // R2V selector of the same tier (Standard 20 steps res_multistep/simple,
+  // Balanced 8 steps Euler/simple); only the canvas tiers differ, and
+  // targetResolution names the delivered class (MINIMAX_H3_TWO_STAGE_RESOLUTIONS).
+  "minimax-h3-r2v-2stage": {
+    model: "minimax-h3-ref2va-fp8_r2v_2stage",
+    fps: 24,
+    steps: 20,
+    guidance: 1,
+    dimensionDivisor: 32,
+    minDimension: 32,
+    maxDimension: 1344,
+    sampler: "res_multistep",
+    scheduler: "simple",
+    resolutionTiers: [768, 544, 384],
+    frameBase: 124,
+    frameStep: 17,
+    minFrames: 124,
+    maxFrames: 362,
+    maxPixels: 1_032_192,
+    nativeAudio: true,
+    supportsAudioToggle: true,
+    supportsNegativePrompt: false,
+  },
+  "minimax-h3-r2v-balanced-2stage": {
+    model: "minimax-h3-ref2va-fp8_r2v_balanced_2stage",
+    fps: 24,
+    steps: 8,
+    guidance: 1,
+    dimensionDivisor: 32,
+    minDimension: 32,
+    maxDimension: 1344,
+    sampler: "euler",
+    scheduler: "simple",
+    resolutionTiers: [768, 544, 384],
+    frameBase: 124,
+    frameStep: 17,
+    minFrames: 124,
+    maxFrames: 362,
+    maxPixels: 1_032_192,
+    nativeAudio: true,
+    supportsAudioToggle: true,
+    supportsNegativePrompt: false,
+  },
   // FastH3 is the FastVideo VSA four-step recipe. It is separate from the
   // existing LightX2V Turbo selectors and is qualified only with Euler/simple.
   "minimax-h3-fasth3-t2v-turbo": {
@@ -908,10 +957,11 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
 };
 
 /**
- * MiniMax H3 two-stage FastH3: every spelling that names it. The family alias
+ * MiniMax H3 two-stage: every spelling that names it. The FastH3 family alias
  * picks t2v/i2v/flf2v the same way `minimax-h3-fasth3-turbo` does; the six
- * selectors (three video modes, three audio-guide modes) map to the six socket
- * ids.
+ * FastH3 selectors (three video modes, three audio-guide modes) map to the six
+ * FastH3 socket ids, and the two reference-to-video selectors (Standard and
+ * Balanced) map to the two Ref2VA `_2stage` socket ids.
  */
 export const MINIMAX_H3_TWO_STAGE_MODEL_IDS: readonly string[] = Object.freeze([
   "minimax-h3-fasth3-turbo-2stage",
@@ -921,12 +971,16 @@ export const MINIMAX_H3_TWO_STAGE_MODEL_IDS: readonly string[] = Object.freeze([
   "minimax-h3-fasth3-ia2v-turbo-2stage",
   "minimax-h3-fasth3-flfa2v-turbo-2stage",
   "minimax-h3-fasth3-a2v-turbo-2stage",
+  "minimax-h3-r2v-2stage",
+  "minimax-h3-r2v-balanced-2stage",
   "minimax-h3-fastvideo-int8_t2v_turbo_2stage",
   "minimax-h3-fastvideo-int8_i2v_turbo_2stage",
   "minimax-h3-fastvideo-int8_flf2v_turbo_2stage",
   "minimax-h3-fastvideo-int8_ia2v_turbo_2stage",
   "minimax-h3-fastvideo-int8_flfa2v_turbo_2stage",
   "minimax-h3-fastvideo-int8_a2v_turbo_2stage",
+  "minimax-h3-ref2va-fp8_r2v_2stage",
+  "minimax-h3-ref2va-fp8_r2v_balanced_2stage",
 ]);
 
 /** The inputs a MiniMax H3 FastH3 audio-guide mode takes besides its audio. */
@@ -1071,7 +1125,7 @@ export function minimaxH3AudioGuideFrameInputError(
   return null;
 }
 
-/** True for a two-stage FastH3 selector, family alias, or socket id (any `_`/`-` spelling). */
+/** True for a two-stage FastH3 or Ref2VA selector, family alias, or socket id (any `_`/`-` spelling). */
 export function isMinimaxH3TwoStageModelId(modelId: string | null | undefined): boolean {
   return typeof modelId === "string"
     && NORMALIZED_MINIMAX_H3_TWO_STAGE_MODEL_IDS.has(normalizeMinimaxH3ModelSpelling(modelId));

@@ -833,6 +833,44 @@ async function runTests() {
         throw new Error(`${baseSelector} must not be recognized as two-stage`);
       }
     }
+    // Two-stage reference-to-video: the Standard and Balanced R2V requests on
+    // their own selectors and socket ids, rendered on the half canvas and
+    // delivered at 2x. Every request field matches the one-stage R2V selector
+    // except the canvas tiers and, for Balanced, its fixed eight-step
+    // Euler/simple recipe.
+    const r2vTwoStageExpected = {
+      'minimax-h3-r2v-2stage': ['minimax-h3-ref2va-fp8_r2v_2stage', 20, 'res_multistep'],
+      'minimax-h3-r2v-balanced-2stage': ['minimax-h3-ref2va-fp8_r2v_balanced_2stage', 8, 'euler'],
+    } as const;
+    const {
+      model: _r2vModel, resolutionTiers: _r2vTiers, steps: _r2vSteps, sampler: _r2vSampler, ...r2vBaseFields
+    } = getVideoModelConfig('minimax-h3-r2v');
+    for (const [selector, [model, steps, sampler]] of Object.entries(r2vTwoStageExpected)) {
+      const config = getVideoModelConfig(selector as keyof typeof r2vTwoStageExpected);
+      if (config.model !== model) throw new Error(`${selector} mapped to ${config.model}`);
+      const {
+        model: _twoStageModel, resolutionTiers: twoStageTiers, steps: twoStageSteps, sampler: twoStageSampler, ...twoStageFields
+      } = config;
+      if (twoStageSteps !== steps || twoStageSampler !== sampler || config.scheduler !== 'simple') {
+        throw new Error(`${selector} sampling does not match its tier (${steps} steps, ${sampler}/simple)`);
+      }
+      if (JSON.stringify(twoStageFields) !== JSON.stringify(r2vBaseFields)) {
+        throw new Error(`${selector} request fields drifted from minimax-h3-r2v`);
+      }
+      if (JSON.stringify(twoStageTiers) !== JSON.stringify([768, 544, 384])) {
+        throw new Error(`${selector} canvas tiers must be the two-stage canvas classes; got ${JSON.stringify(twoStageTiers)}`);
+      }
+      for (const spelling of [selector, model]) {
+        if (!isMinimaxH3TwoStageModelId(spelling)) throw new Error(`${spelling} is not recognized as two-stage`);
+        if (!isMiniMaxH3VideoModel(spelling)) throw new Error(`${spelling} is not recognized as MiniMax H3`);
+      }
+    }
+    for (const oneStage of [
+      'minimax-h3-r2v', 'minimax-h3-r2v-turbo', 'minimax-h3-ref2va-fp8_r2v',
+      'minimax-h3-ref2va-fp8_r2v_balanced', 'minimax-h3-ref2va-fp8_r2v_turbo',
+    ]) {
+      if (isMinimaxH3TwoStageModelId(oneStage)) throw new Error(`${oneStage} must not be recognized as two-stage`);
+    }
     if (!isMinimaxH3TwoStageModelId('minimax-h3-fasth3-turbo-2stage')) {
       throw new Error('The two-stage family alias is not recognized');
     }

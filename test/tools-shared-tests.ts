@@ -108,8 +108,10 @@ export function runToolsSharedTests(): { passed: number; failed: number } {
       fastH3T2vTurbo: generateVideoModelKeys.includes('minimax-h3-fasth3-t2v-turbo'),
       fastH3T2vTwoStage: generateVideoModelKeys.includes('minimax-h3-fasth3-t2v-turbo-2stage'),
       r2vTurbo: generateVideoModelKeys.includes('minimax-h3-r2v-turbo'),
+      r2vTwoStage: generateVideoModelKeys.includes('minimax-h3-r2v-2stage'),
+      r2vBalancedTwoStage: generateVideoModelKeys.includes('minimax-h3-r2v-balanced-2stage'),
     },
-    { t2vTurbo: true, fastH3T2vTurbo: true, fastH3T2vTwoStage: true, r2vTurbo: true },
+    { t2vTurbo: true, fastH3T2vTurbo: true, fastH3T2vTwoStage: true, r2vTurbo: true, r2vTwoStage: true, r2vBalancedTwoStage: true },
   );
   expect(
     'model registry: animate_photo includes H3 I2V and FLF2V Turbo selectors',
@@ -167,7 +169,7 @@ export function runToolsSharedTests(): { passed: number; failed: number } {
   // MiniMax H3 video LoRAs. The two tools split the H3 modes between them, so
   // each must carry the arrays and name only its own selectors.
   for (const [toolName, definition, expectedSelectors] of [
-    ['generate_video', generateVideoDefinition, ['minimax-h3-t2v', 'minimax-h3-t2v-turbo', 'minimax-h3-fasth3-t2v-turbo', 'minimax-h3-fasth3-t2v-turbo-2stage', 'minimax-h3-r2v', 'minimax-h3-r2v-turbo']],
+    ['generate_video', generateVideoDefinition, ['minimax-h3-t2v', 'minimax-h3-t2v-turbo', 'minimax-h3-fasth3-t2v-turbo', 'minimax-h3-fasth3-t2v-turbo-2stage', 'minimax-h3-r2v', 'minimax-h3-r2v-turbo', 'minimax-h3-r2v-2stage', 'minimax-h3-r2v-balanced-2stage']],
     ['animate_photo', animatePhotoDefinition, ['minimax-h3-i2v', 'minimax-h3-i2v-turbo', 'minimax-h3-fasth3-i2v-turbo', 'minimax-h3-fasth3-i2v-turbo-2stage', 'minimax-h3-flf2v', 'minimax-h3-flf2v-turbo', 'minimax-h3-fasth3-flf2v-turbo', 'minimax-h3-fasth3-flf2v-turbo-2stage']],
   ] as const) {
     const properties = definition.function.parameters.properties ?? {};
@@ -387,6 +389,71 @@ Directly reuse <Audio 1> unchanged.`;
     }).ok,
     false,
   );
+  // Two-stage reference-to-video: the Standard and Balanced R2V tiers get their
+  // own selector on generate_video only, with the references, LoRAs, retired
+  // outputScale refusal and source-audio rule of their one-stage forms. The
+  // source-audio gate mirrors the base exactly: minimax-h3-r2v is gated, so
+  // minimax-h3-r2v-2stage is; minimax-h3-r2v-balanced is not (it is a
+  // patch-layer selector, absent from this raw enum), so
+  // minimax-h3-r2v-balanced-2stage is not either.
+  const h3TwoStageSourceAudio = (videoModel: string, sourceAudioPolicy?: string) =>
+    validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
+      prompt: h3ExactAudioPrompt,
+      videoModel,
+      referenceVideoIndices: [-1],
+      ...(sourceAudioPolicy === undefined ? {} : { sourceAudioPolicy }),
+    }).ok;
+  expect(
+    'generate_video requires sourceAudioPolicy on the Standard two-stage R2V selector with a reference video',
+    h3TwoStageSourceAudio('minimax-h3-r2v-2stage'),
+    false,
+  );
+  expect(
+    'generate_video accepts typed exact source-audio reuse on the Standard two-stage R2V selector',
+    h3TwoStageSourceAudio('minimax-h3-r2v-2stage', 'reuse_exact'),
+    true,
+  );
+  expect(
+    'generate_video accepts the Balanced two-stage R2V selector with a reference video and no sourceAudioPolicy, like its ungated base',
+    h3TwoStageSourceAudio('minimax-h3-r2v-balanced-2stage'),
+    true,
+  );
+  expect(
+    'generate_video rejects sourceAudioPolicy on the Balanced two-stage R2V selector, like its ungated base',
+    h3TwoStageSourceAudio('minimax-h3-r2v-balanced-2stage', 'reuse_exact'),
+    false,
+  );
+  for (const videoModel of ['minimax-h3-r2v-2stage', 'minimax-h3-r2v-balanced-2stage']) {
+    expect(
+      `generate_video accepts ${videoModel} with image references and an H3 LoRA`,
+      validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
+        prompt: h3ExactAudioPrompt,
+        videoModel,
+        referenceImageIndices: [-1],
+        loras: ['h3-realism-people'],
+        loraStrengths: [0.8],
+      }).ok,
+      true,
+    );
+    expect(
+      `generate_video refuses retired outputScale on ${videoModel}`,
+      validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
+        prompt: h3ExactAudioPrompt,
+        videoModel,
+        referenceImageIndices: [-1],
+        outputScale: 2,
+      }).ok,
+      false,
+    );
+    expect(
+      `animate_photo rejects ${videoModel}`,
+      validateAndNormalizeHostedToolArguments([animatePhotoDefinition], 'animate_photo', {
+        prompt: 'She turns to the window as the rain starts.',
+        videoModel,
+      }).ok,
+      false,
+    );
+  }
   // MiniMax H3 FastH3 audio guide on sound_to_video: six selectors, never the
   // default, with endImageIndex for the first/last-frame mode and refusals for
   // argument sets the socket would refuse.

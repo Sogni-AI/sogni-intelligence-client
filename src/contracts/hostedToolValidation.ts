@@ -480,7 +480,12 @@ export function validateAndNormalizeHostedToolArguments(
   // returns it as a 400 naming the argument.
   if (toolName === 'generate_video') {
     const model = cleanedRecord.videoModel;
-    const isH3R2v = model === 'minimax-h3-r2v' || model === 'minimax-h3-r2v-turbo';
+    // A two-stage selector mirrors its one-stage base here: minimax-h3-r2v is
+    // gated, so minimax-h3-r2v-2stage is; minimax-h3-r2v-balanced is not, so
+    // minimax-h3-r2v-balanced-2stage is not either.
+    const isH3R2v = model === 'minimax-h3-r2v'
+      || model === 'minimax-h3-r2v-turbo'
+      || model === 'minimax-h3-r2v-2stage';
     const hasSourceMedia =
       (Array.isArray(cleanedRecord.referenceVideoIndices) && cleanedRecord.referenceVideoIndices.length > 0)
       || (Array.isArray(cleanedRecord.referenceAudioIndices) && cleanedRecord.referenceAudioIndices.length > 0);

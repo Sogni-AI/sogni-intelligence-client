@@ -95,6 +95,8 @@ export const MODELS_BY_TOOL: Record<string, ModelOption[]> = {
     { key: 'minimax-h3-fasth3-t2v-turbo-2stage', displayName: 'MiniMax H3 FastH3 Two-Stage (Text to Video)' },
     { key: 'minimax-h3-r2v', displayName: 'MiniMax H3 (Reference to Video)' },
     { key: 'minimax-h3-r2v-turbo', displayName: 'MiniMax H3 LightX2V Turbo (Reference to Video)' },
+    { key: 'minimax-h3-r2v-2stage', displayName: 'MiniMax H3 Two-Stage (Reference to Video)' },
+    { key: 'minimax-h3-r2v-balanced-2stage', displayName: 'MiniMax H3 Balanced Two-Stage (Reference to Video)' },
     { key: 'happyhorse-1.1-t2v', displayName: 'HappyHorse 1.1 (Text to Video)' },
     { key: 'happyhorse-1.1-i2v', displayName: 'HappyHorse 1.1 (Image to Video)' },
     { key: 'happyhorse-1.1-r2v', displayName: 'HappyHorse 1.1 (Reference to Video)' },

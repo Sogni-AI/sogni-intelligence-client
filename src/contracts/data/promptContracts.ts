@@ -333,6 +333,12 @@ const GENERATE_VIDEO_CONTRACT: PromptContract = {
     'and LoRAs as "minimax-h3-fasth3-t2v-turbo". Choose it when the user asks for 1080p, 1440p or 2K',
     'MiniMax H3 output, for two-stage output, or for the sharpest/best H3 quality; for ordinary 768p',
     'FastH3 output keep the regular FastH3 selector at targetResolution 768. Never set 4K for H3.',
+    'The reference-to-video tiers have their own two-stage selectors: "minimax-h3-r2v-2stage" (Standard,',
+    '20 steps) and "minimax-h3-r2v-balanced-2stage" (Balanced, 8 steps) take exactly the references, prompt',
+    'contract, durations and LoRAs of "minimax-h3-r2v" and "minimax-h3-r2v-balanced", deliver twice the',
+    'canvas, and read targetResolution the same way (1080, 1440 or omitted for 2K, 720); each bills its',
+    "tier's rate plus the two-stage surcharge of the delivered class. Choose one when the user asks for",
+    '1080p, 1440p or 2K MiniMax H3 reference-to-video output; keep the one-stage R2V selectors for 768p.',
   ].join('\n'),
   parameterDocs: {
     prompt: 'Video prompt. Use double quotes ONLY for spoken dialogue. Describe visual text without quotes.',
