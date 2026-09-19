@@ -1,3 +1,10 @@
+## [4.3.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.0...v4.3.1) (2026-09-19)
+
+
+### Bug Fixes
+
+* **deps:** align the SDK for the Wan 3 consumer release ([a1766d5](https://github.com/Sogni-AI/sogni-intelligence-client/commit/a1766d5067f618f4a9f38403fcfd84bf02c87847))
+
 # [4.3.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.2.1...v4.3.0) (2026-09-18)
 
 
