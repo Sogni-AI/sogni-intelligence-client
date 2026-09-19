@@ -1,3 +1,10 @@
+## [4.3.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.1...v4.3.2) (2026-09-19)
+
+
+### Bug Fixes
+
+* **deps:** pin sogni-client 5.53.1 for dropped-socket request recovery ([5276016](https://github.com/Sogni-AI/sogni-intelligence-client/commit/5276016d673dc83937885696f921f73c4ce8caa8))
+
 ## [4.3.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.0...v4.3.1) (2026-09-19)
 
 
