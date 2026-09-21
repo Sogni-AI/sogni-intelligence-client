@@ -322,8 +322,8 @@ export function validateProjectConfig(config: ProjectConfig): void {
 
   // Type-specific validations
   if (isImageProjectConfig(config)) {
-    if (config.outputFormat && !['png', 'jpg'].includes(config.outputFormat)) {
-      throw new SogniValidationError('Image output format must be either "png" or "jpg"');
+    if (config.outputFormat && !['png', 'jpg', 'webp'].includes(config.outputFormat)) {
+      throw new SogniValidationError('Image output format must be "png", "jpg", or "webp"');
     }
 
     if (config.startingImageStrength !== undefined) {

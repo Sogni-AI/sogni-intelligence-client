@@ -1814,6 +1814,19 @@ async function runTests() {
     }
   })();
 
+  await test('Should accept WebP worker images and preserve zero image strength', () => {
+    const config: ImageProjectConfig = {
+      type: 'image',
+      modelId: 'coreml-sogni_artist_v1_768',
+      positivePrompt: 'A ceramic mug',
+      numberOfMedia: 1,
+      outputFormat: 'webp',
+      startingImageStrength: 0,
+      embedPromptMetadata: false
+    };
+    validateProjectConfig(config);
+  })();
+
   // Test 17b: Audio project type guard
   await test('Should identify audio project config', () => {
     const audioConfig: AudioProjectConfig = {
