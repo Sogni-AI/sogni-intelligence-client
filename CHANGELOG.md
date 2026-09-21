@@ -1,3 +1,10 @@
+## [4.3.4](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.3...v4.3.4) (2026-09-21)
+
+
+### Bug Fixes
+
+* **deps:** align the SDK for the Google Play guidance rollout ([#8](https://github.com/Sogni-AI/sogni-intelligence-client/issues/8)) ([bfe2677](https://github.com/Sogni-AI/sogni-intelligence-client/commit/bfe26770e5d3bdd1c9137bcebec81f5369530f6c))
+
 ## [4.3.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.2...v4.3.3) (2026-09-21)
 
 
