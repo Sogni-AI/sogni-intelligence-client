@@ -1,3 +1,10 @@
+## [4.3.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.2...v4.3.3) (2026-09-21)
+
+
+### Bug Fixes
+
+* **video:** accept sourceAudioPolicy on the MiniMax H3 Balanced R2V selectors ([e5fe05a](https://github.com/Sogni-AI/sogni-intelligence-client/commit/e5fe05aeca897daaef7b423088024fe57e15ce03))
+
 ## [4.3.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.1...v4.3.2) (2026-09-19)
 
 
