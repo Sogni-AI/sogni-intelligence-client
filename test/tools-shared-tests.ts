@@ -418,9 +418,32 @@ Directly reuse <Audio 1> unchanged.`;
     h3TwoStageSourceAudio('minimax-h3-r2v-balanced-2stage'),
     true,
   );
+  // Not REQUIRING the policy on Balanced mirrors its base. Refusing it did not:
+  // Balanced is an H3 R2V model, the host applies the policy to it, and the tool
+  // description tells callers every H3 R2V call takes one. Until 2026-09 this was
+  // refused as "only supported by MiniMax H3 R2V models".
   expect(
-    'generate_video rejects sourceAudioPolicy on the Balanced two-stage R2V selector, like its ungated base',
+    'generate_video accepts typed exact source-audio reuse on the Balanced two-stage R2V selector',
     h3TwoStageSourceAudio('minimax-h3-r2v-balanced-2stage', 'reuse_exact'),
+    true,
+  );
+  expect(
+    'generate_video holds a Balanced call that names a policy to the same prompt contract as Standard',
+    validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
+      prompt: 'A dancer turns under warm stage light.',
+      videoModel: 'minimax-h3-r2v-balanced-2stage',
+      referenceVideoIndices: [-1],
+      sourceAudioPolicy: 'reuse_exact',
+    }).ok,
+    false,
+  );
+  expect(
+    'generate_video still rejects sourceAudioPolicy on an H3 model that is not reference to video',
+    validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
+      prompt: 'A dancer turns under warm stage light.',
+      videoModel: 'minimax-h3-t2v',
+      sourceAudioPolicy: 'replace',
+    }).ok,
     false,
   );
   for (const videoModel of ['minimax-h3-r2v-2stage', 'minimax-h3-r2v-balanced-2stage']) {
