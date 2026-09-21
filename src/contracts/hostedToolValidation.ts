@@ -480,12 +480,25 @@ export function validateAndNormalizeHostedToolArguments(
   // returns it as a 400 naming the argument.
   if (toolName === 'generate_video') {
     const model = cleanedRecord.videoModel;
-    // A two-stage selector mirrors its one-stage base here: minimax-h3-r2v is
-    // gated, so minimax-h3-r2v-2stage is; minimax-h3-r2v-balanced is not, so
+    // Which selectors REQUIRE a source-audio policy and which ACCEPT one are two
+    // questions, and one variable used to answer both. The requirement was
+    // written for the selectors that existed (Standard and Turbo), and a
+    // two-stage selector mirrors its one-stage base: minimax-h3-r2v is gated, so
+    // minimax-h3-r2v-2stage is; minimax-h3-r2v-balanced is not, so
     // minimax-h3-r2v-balanced-2stage is not either.
+    //
+    // Accepting one is not optional in the same way. Balanced is an H3 R2V model:
+    // the host applies the policy to every model whose workflow is reference to
+    // video, the planner prompts give Standard, Balanced and Turbo one Ref2VA
+    // contract, and the tool description tells callers every H3 R2V call takes
+    // it. Refusing it on Balanced as "only supported by MiniMax H3 R2V models"
+    // turned away callers who had followed that description.
     const isH3R2v = model === 'minimax-h3-r2v'
       || model === 'minimax-h3-r2v-turbo'
       || model === 'minimax-h3-r2v-2stage';
+    const acceptsSourceAudioPolicy = isH3R2v
+      || model === 'minimax-h3-r2v-balanced'
+      || model === 'minimax-h3-r2v-balanced-2stage';
     const hasSourceMedia =
       (Array.isArray(cleanedRecord.referenceVideoIndices) && cleanedRecord.referenceVideoIndices.length > 0)
       || (Array.isArray(cleanedRecord.referenceAudioIndices) && cleanedRecord.referenceAudioIndices.length > 0);
@@ -495,10 +508,14 @@ export function validateAndNormalizeHostedToolArguments(
         'Argument "sourceAudioPolicy" is required for MiniMax H3 R2V reference video/audio. Use "reuse_exact" for a specific/original/trending song.'
       );
     }
-    if (sourceAudioPolicy !== undefined && !isH3R2v) {
+    if (sourceAudioPolicy !== undefined && !acceptsSourceAudioPolicy) {
       context.errors.push('Argument "sourceAudioPolicy" is only supported by MiniMax H3 R2V models');
     }
-    if (isH3R2v && hasSourceMedia && typeof cleanedRecord.prompt === 'string') {
+    // A policy means the same thing on every selector that takes one, so a
+    // Balanced call that names it is held to the same prompt contract. Without
+    // a policy neither branch below applies, which leaves a Balanced call that
+    // omits it exactly as it was.
+    if (acceptsSourceAudioPolicy && hasSourceMedia && typeof cleanedRecord.prompt === 'string') {
       const prompt = cleanedRecord.prompt;
       if (sourceAudioPolicy === 'reuse_exact') {
         if (!/\[[^\]\n]*\baudio reuse\b[^\]\n]*\]/.test(prompt)) {
