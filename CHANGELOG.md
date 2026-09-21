@@ -1,3 +1,10 @@
+## [4.3.5](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.4...v4.3.5) (2026-09-21)
+
+
+### Bug Fixes
+
+* **images:** accept WebP and update worker export contract ([0187cb7](https://github.com/Sogni-AI/sogni-intelligence-client/commit/0187cb7ab1a2a24c2d9ab1d5c880d8774708643e))
+
 ## [4.3.4](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.3...v4.3.4) (2026-09-21)
 
 
