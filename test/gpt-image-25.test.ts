@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import {
   getGptImage2ModelOverride, getGptImageCapabilities, isGptImageModel,
   normalizeGptImageModelAlias, normalizeGptImageQuality,
+  textRequestedGptImage25Variant, textRequestsGptImage2ImageModel,
 } from '../src/media/gptImage.js';
 import { resolveImageEditModelForProfile } from '../src/media/imageEditRouting.js';
 import { applyGenerationJobOverridesToArgs } from '../src/media/generationJob.js';
@@ -68,6 +69,53 @@ test('requested variants override stale selections while existing defaults stay 
   assert.equal(getGptImage2ModelOverride('generate_video', undefined, 'Use GPT Image 2.5 Sunburst'), null);
   assert.equal(getGptImage2ModelOverride('generate_image', 'krea-2-turbo', 'Create a cat with Krea 2 Turbo'), null);
   assert.equal(getGptImage2ModelOverride('generate_image', 'krea-2-turbo', 'Create a sunset portrait with flare'), null);
+});
+
+test('abbreviated GPT 2.5 names keep their version and variant', () => {
+  for (const [name, model] of [
+    ['GPT 2.5 Sunburst', sunburst],
+    ['gpt-2.5-sunburst', sunburst],
+    ['GPT2.5 Sunburst', sunburst],
+    ['GPT 2.5 Flare', flare],
+    ['gpt_2.5_flare', flare],
+    ['GPT 2.5', flare],
+  ]) {
+    assert.equal(normalizeGptImageModelAlias(name), model, name);
+    const request = `Edit these photos with ${name.replaceAll('_', ' ')}.`;
+    assert.equal(textRequestedGptImage25Variant(request), name.endsWith('2.5') ? 'unspecified' : model, name);
+    assert.equal(textRequestsGptImage2ImageModel(`Use ${name.replaceAll('_', ' ')}.`), true, name);
+    for (const tool of ['generate_image', 'edit_image']) {
+      assert.equal(getGptImage2ModelOverride(tool, baseline, request), model, `${tool}: ${name}`);
+      assert.equal(getGptImage2ModelOverride(tool, model, request), null, `${tool}: ${name}`);
+    }
+  }
+  assert.equal(textRequestedGptImage25Variant('Edit with GPT 2.5 (Sunburst)'), sunburst);
+  assert.equal(getGptImage2ModelOverride('edit_image', 'qwen', 'Do not use GPT 2.5 Sunburst for this photo'), null);
+  for (const name of ['GPT 2.50 Sunburst', 'GPT Image 2.5.1', 'GPT 2 Sunburst', 'a sunburst with lens flare']) {
+    assert.equal(textRequestedGptImage25Variant(name), null, name);
+  }
+});
+
+test('excluded GPT variants never override another selection', () => {
+  for (const model of ['qwen', 'krea-identity-edit']) {
+    for (const exclusion of ['instead of', 'rather than', 'not', 'without', 'do not use']) {
+      const request = `Use ${model} ${exclusion} GPT 2.5 Sunburst.`;
+      assert.equal(textRequestedGptImage25Variant(request), null, request);
+      assert.equal(textRequestsGptImage2ImageModel(request), false, request);
+      assert.equal(getGptImage2ModelOverride('edit_image', model, request), null, request);
+    }
+  }
+  for (const request of [
+    'Use GPT 2.5 Sunburst instead of GPT 2.5 Flare.',
+    'Use GPT 2.5 Sunburst, not GPT 2.5 Flare.',
+    'Do not use GPT 2.5 Flare; use GPT 2.5 Sunburst.',
+    'Not GPT 2.5 Flare but use GPT 2.5 Sunburst.',
+    'Use GPT2.5 Sunburst rather than Qwen.',
+    'Use Sunburst model instead of GPT 2.5 Flare.',
+  ]) {
+    assert.equal(textRequestedGptImage25Variant(request), sunburst, request);
+    assert.equal(getGptImage2ModelOverride('edit_image', baseline, request), sunburst, request);
+  }
 });
 
 test('2.5 qualities survive, auto is rejected, and baseline gains no 2.5 controls', () => {
