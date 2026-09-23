@@ -91,7 +91,8 @@ const GPT_IMAGE_TOOL_NAMES = new Set(['generate_image', 'edit_image']);
 
 export function normalizeGptImageModelAlias(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
-  const normalized = value.trim().toLowerCase().replace(/[_\s]+/g, '-');
+  const normalized = value.trim().toLowerCase().replace(/[_\s]+/g, '-')
+    .replace(/^gpt-?(2\.5)(?=-|$)/, 'gpt-image-$1');
   if (Object.prototype.hasOwnProperty.call(GPT_IMAGE_25_ALIASES, normalized)) return GPT_IMAGE_25_ALIASES[normalized];
   if (GPT_IMAGE_MODEL_ALIASES.has(normalized)) return GPT_IMAGE_MODEL_KEY;
   return value;
@@ -101,7 +102,8 @@ export function textRequestsGptImage2ImageModel(text: string): boolean {
   if (!text) return false;
   const hasGptImageTerm = /\b(?:chat\s*gpt|chatgpt|open\s*ai|openai|gpt(?:[-\s]?2)?|gpt\s*image(?:\s*2)?|gpt-image-2)\b/i.test(text);
   if (!hasGptImageTerm) return false;
-  return /\b(?:images?|pictures?|photos?|portraits?|illustrations?|artwork|graphics?|renders?|text[-\s]?to[-\s]?image|generate|create|draw|render|make)\b/i.test(text);
+  return textRequestedGptImage25Variant(text) !== null
+    || /\b(?:images?|pictures?|photos?|portraits?|illustrations?|artwork|graphics?|renders?|text[-\s]?to[-\s]?image|generate|create|draw|render|make)\b/i.test(text);
 }
 
 export function textExplicitlyAvoidsGptImageModel(text: string): boolean {
@@ -163,7 +165,7 @@ export function textSuggestsGptImage2DefaultImageModel(text: string): boolean {
   return asksForStoryboardImage || asksForCharacterSheetImage || asksForVideoStoryboardImage || asksForComplexRender || asksForTextOrLayoutPrecision;
 }
 
-const GPT_IMAGE_25_REQUEST_PATTERN = /\bgpt[-\s]*image[-\s]*2\.5(?:[-\s]*\(?\s*(sunburst|flare))?\b/i;
+const GPT_IMAGE_25_REQUEST_PATTERN = /\bgpt[-\s]*(?:image[-\s]*)?2\.5(?!\d|\.\d)(?:[-\s]*\(?\s*(sunburst|flare))?\b/i;
 const GPT_IMAGE_25_NAMED_VARIANT_PATTERN = /\b(?:use|using|with)\s+(sunburst|flare)\s+(?:image\s+)?model\b/i;
 
 /**
