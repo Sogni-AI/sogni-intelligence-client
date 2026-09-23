@@ -1,3 +1,10 @@
+## [4.3.7](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.6...v4.3.7) (2026-09-23)
+
+
+### Bug Fixes
+
+* **deps:** adopt concurrent session SDK updates ([7b8c19a](https://github.com/Sogni-AI/sogni-intelligence-client/commit/7b8c19a0822f6f375c4fd35f7b5486528fa9dbf4))
+
 ## [4.3.6](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.5...v4.3.6) (2026-09-23)
 
 
