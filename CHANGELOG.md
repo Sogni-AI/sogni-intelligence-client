@@ -1,3 +1,10 @@
+## [4.3.8](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.7...v4.3.8) (2026-09-23)
+
+
+### Bug Fixes
+
+* **deps:** use the current project queue SDK ([a452d49](https://github.com/Sogni-AI/sogni-intelligence-client/commit/a452d4900b889635c3bad9a12170f4186f7a35af))
+
 ## [4.3.7](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.6...v4.3.7) (2026-09-23)
 
 
