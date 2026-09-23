@@ -527,6 +527,16 @@ Directly reuse <Audio 1> unchanged.`;
     });
     return result.ok ? 'ok' : result.errors.join(' | ');
   };
+  for (const videoModel of audioGuideSelectors) {
+    const result = validateAndNormalizeHostedToolArguments([soundToVideoDefinition], 'sound_to_video', {
+      prompt: 'She reads the line to camera.',
+      videoModel,
+      ...(videoModel.includes('flfa2v') ? { sourceImageIndex: -1, endImageIndex: -2 } : {}),
+      loras: ['personal-owned'],
+      loraStrengths: [0.5],
+    });
+    expect(`sound_to_video preserves Personal LoRAs for ${videoModel}`, result.ok, true);
+  }
   expect(
     'sound_to_video accepts each H3 audio mode with the frames it takes',
     [

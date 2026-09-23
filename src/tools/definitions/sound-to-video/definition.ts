@@ -5,6 +5,12 @@
 
 import type { ToolDefinition } from '../types.js';
 import {
+  H3_VIDEO_LORA_CATALOG_REFERENCE,
+  H3_VIDEO_LORA_STRENGTHS_GUIDANCE,
+  LORA_STACKING_GUIDANCE,
+  h3LoraModelSentence,
+} from '../../shared/loraGuidance.js';
+import {
   LITERAL_SEEDANCE_PROMPT_OVERRIDE,
   MINIMAX_H3_AUDIO_GUIDE_AUDIO_START_DESCRIPTION,
   MINIMAX_H3_AUDIO_GUIDE_DURATION_DESCRIPTION,
@@ -156,6 +162,20 @@ ${MINIMAX_H3_AUDIO_GUIDE_PROMPT_DESCRIPTION}`,
             WAN3_VIDEO_MODEL_GUIDANCE +
             ' ' +
             MINIMAX_H3_AUDIO_GUIDE_SOUND_TO_VIDEO_MODEL_DESCRIPTION,
+        },
+        loras: {
+          type: "array",
+          minItems: 1,
+          maxItems: 8,
+          items: { type: "string", minLength: 1 },
+          description: `Ordered MiniMax H3 LoRA IDs, including owned ready Personal LoRAs. ${LORA_STACKING_GUIDANCE}\n\n${h3LoraModelSentence(MINIMAX_H3_AUDIO_GUIDE_SELECTORS)}\n\n${H3_VIDEO_LORA_CATALOG_REFERENCE}`,
+        },
+        loraStrengths: {
+          type: "array",
+          minItems: 1,
+          maxItems: 8,
+          items: { type: "number" },
+          description: H3_VIDEO_LORA_STRENGTHS_GUIDANCE,
         },
         generateAudio: {
           type: "boolean",
