@@ -99,16 +99,23 @@ export function normalizeGptImageModelAlias(value: unknown): string | undefined 
 }
 
 export function textRequestsGptImage2ImageModel(text: string): boolean {
-  if (!text) return false;
+  if (!text || textExplicitlyAvoidsGptImageModel(text)) return false;
   const hasGptImageTerm = /\b(?:chat\s*gpt|chatgpt|open\s*ai|openai|gpt(?:[-\s]?2)?|gpt\s*image(?:\s*2)?|gpt-image-2)\b/i.test(text);
   if (!hasGptImageTerm) return false;
   return textRequestedGptImage25Variant(text) !== null
     || /\b(?:images?|pictures?|photos?|portraits?|illustrations?|artwork|graphics?|renders?|text[-\s]?to[-\s]?image|generate|create|draw|render|make)\b/i.test(text);
 }
 
+/** Bounded exclusion immediately before a literal model name, not turn intent. */
+export function isNegatedImageModelMention(text: string, index: number): boolean {
+  return /\b(?:not|no|never|avoid|without|except|other\s+than|instead\s+of|rather\s+than|don'?t|dont|(?:anything|any\s+model|nothing|everything)\s+but)\s+(?:(?:use|using|with|the|model)\s+){0,3}["'“‘(]*$/i
+    .test(text.slice(Math.max(0, index - 64), index));
+}
+
 export function textExplicitlyAvoidsGptImageModel(text: string): boolean {
-  return /\b(?:do\s+not|don't|dont|never|avoid|without|no|not)\s+(?:use\s+)?(?:chat\s*gpt|chatgpt|open\s*ai|openai|gpt(?:[-\s]?2)?|gpt\s*image(?:\s*2)?|gpt-image-2)\b/i.test(text)
-    || /\b(?:anything|any\s+model)\s+(?:but|except)\s+(?:chat\s*gpt|chatgpt|open\s*ai|openai|gpt(?:[-\s]?2)?|gpt\s*image(?:\s*2)?|gpt-image-2)\b/i.test(text);
+  if (textRequestedGptImage25Variant(text) !== null) return false;
+  const mentions = [...text.matchAll(/\b(?:chat\s*gpt|chatgpt|open\s*ai|openai|gpt(?:[-\s]?2)?)\b/gi)];
+  return mentions.length > 0 && mentions.every(match => isNegatedImageModelMention(text, match.index!));
 }
 
 export function textExplicitlyRequestsNonGptImageModel(text: string): boolean {
@@ -177,8 +184,10 @@ export function textRequestedGptImage25Variant(
   text: string | null | undefined,
 ): typeof GPT_IMAGE_25_SUNBURST_MODEL_KEY | typeof GPT_IMAGE_25_FLARE_MODEL_KEY | 'unspecified' | null {
   if (!text) return null;
-  const requested = text.match(GPT_IMAGE_25_REQUEST_PATTERN);
-  const named = text.match(GPT_IMAGE_25_NAMED_VARIANT_PATTERN);
+  const positiveMatch = (pattern: RegExp) => [...text.matchAll(new RegExp(pattern.source, 'gi'))]
+    .find(match => !isNegatedImageModelMention(text, match.index!));
+  const requested = positiveMatch(GPT_IMAGE_25_REQUEST_PATTERN);
+  const named = positiveMatch(GPT_IMAGE_25_NAMED_VARIANT_PATTERN);
   if (!requested && !named) return null;
   const variant = (requested?.[1] ?? named?.[1])?.toLowerCase();
   if (variant === 'sunburst') return GPT_IMAGE_25_SUNBURST_MODEL_KEY;
