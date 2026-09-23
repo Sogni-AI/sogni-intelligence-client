@@ -1,3 +1,10 @@
+# [4.4.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.8...v4.4.0) (2026-09-23)
+
+
+### Features
+
+* **sound-to-video:** offer MiniMax H3 LoRAs on the audio-guide selectors ([c6a8920](https://github.com/Sogni-AI/sogni-intelligence-client/commit/c6a8920ff9adb639aa03933735bce7dbf895f785))
+
 ## [4.3.8](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.7...v4.3.8) (2026-09-23)
 
 
