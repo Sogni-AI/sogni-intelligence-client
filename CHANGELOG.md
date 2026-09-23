@@ -1,3 +1,11 @@
+## [4.3.6](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.5...v4.3.6) (2026-09-23)
+
+
+### Bug Fixes
+
+* **media:** preserve abbreviated GPT 2.5 model requests ([8430e92](https://github.com/Sogni-AI/sogni-intelligence-client/commit/8430e92255c485ba4adf7a664f8772e59ee334e8))
+* **media:** respect exclusions when resolving image model aliases ([cab1649](https://github.com/Sogni-AI/sogni-intelligence-client/commit/cab16495e8440a68ec72c63751cb3631b2928b18))
+
 ## [4.3.5](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.4...v4.3.5) (2026-09-21)
 
 
