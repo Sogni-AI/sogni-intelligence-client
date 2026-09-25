@@ -195,20 +195,10 @@ type AvailableModelInfo = {
   recommendedSettings?: { steps?: number; guidance?: number };
 };
 
+// Flux only, no fallback: "any image model" can resolve to a third-party
+// vendor model (gpt-image-*, happyhorse-*, …) and bill a real vendor render.
 function selectPreferredImageModel(models: AvailableModelInfo[]): AvailableModelInfo | undefined {
-  return (
-    models.find((model) => model.media === 'image' && model.id.includes('flux')) ||
-    models.find((model) => model.media === 'image' && model.workerCount && model.workerCount > 0) ||
-    models.find((model) => model.media === 'image') ||
-    models.find(
-      (model) =>
-        !model.id.startsWith('wan_') &&
-        !model.id.startsWith('ltx2-') &&
-        !model.id.startsWith('ltx23-') &&
-        !model.id.startsWith('seedance-') &&
-        !model.id.includes('ace-step')
-    )
-  );
+  return models.find((model) => model.media === 'image' && model.id.includes('flux'));
 }
 
 function test(name: string, fn: () => void | Promise<void>) {
@@ -419,7 +409,7 @@ async function runTests() {
 
       const model = selectPreferredImageModel(availableModels);
       if (!model) {
-        throw new Error('No image generation model available');
+        throw new Error('No Flux image model available');
       }
       console.log(`   Using model: ${model.id}`);
       console.log(`   Generating image...`);
@@ -492,7 +482,7 @@ async function runTests() {
       
       const model = selectPreferredImageModel(availableModels);
       if (!model) {
-        throw new Error('No image generation model available');
+        throw new Error('No Flux image model available');
       }
       
       await client.createProject({
