@@ -580,7 +580,7 @@ export function validateAndNormalizeHostedToolArguments(
   // shorter; nothing is cut here.
   for (const violation of checkToolArgumentPromptLimits(toolName, cleanedRecord)) {
     context.errors.push(
-      `Argument "${violation.argument}" is too long for videoModel/model "${violation.modelId}": ${violation.message.replace(/ Shorten (?:it|them) and submit again\.$/, '')} Rewrite it shorter, keeping the user's intent and every exact quoted span, and call the tool again; never cut it off mid-sentence.`,
+      `Argument "${violation.argument}" is too long${violation.modelId ? ` for videoModel/model "${violation.modelId}"` : ''}: ${violation.message.replace(/ Shorten (?:it|them) and submit again\.$/, '')} Rewrite it shorter, keeping the user's intent and every exact quoted span, and call the tool again; never cut it off mid-sentence.`,
     );
   }
 

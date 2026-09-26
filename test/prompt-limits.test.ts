@@ -234,3 +234,22 @@ test('hosted tool validation returns over-limit prompts to the LLM as argument e
   // Authoring tools take a brief, not a model prompt.
   assert.deepEqual(checkToolArgumentPromptLimits('enhance_prompt', { prompt: 'x'.repeat(9000), videoModel: 'minimax-h3-t2v' }), []);
 });
+
+test('every model refuses a prompt, negative prompt or lyrics over 200,000 characters', async () => {
+  const { UNIVERSAL_MAX_PROMPT_CHARACTERS, checkToolArgumentPromptLimits } = await import('../src/contracts/promptLimits.js');
+  assert.equal(UNIVERSAL_MAX_PROMPT_CHARACTERS, 200_000);
+  for (const model of ['krea2', 'z_image_turbo_bf16', 'qwen_image_edit_2511_fp8', 'coreml-zavychromaxl_v80', 'ltx25-t2v', null]) {
+    assert.deepEqual(checkGenerationPromptLimits(model, { prompt: 'x'.repeat(200_000) }), [], String(model));
+    const [over] = checkGenerationPromptLimits(model, { prompt: 'x'.repeat(199_995), stylePrompt: 'noir' });
+    assert.equal(over.measured, 200_001, String(model));
+    assert.equal(over.message, 'Your prompt is 200,001 characters; Every Sogni model accepts at most 200,000. Shorten it and submit again.');
+  }
+  const fields = checkGenerationPromptLimits('krea2', { negativePrompt: 'n'.repeat(200_001), lyrics: 'l'.repeat(200_001) });
+  assert.deepEqual(fields.map(v => v.field), ['negativePrompt', 'lyrics']);
+  // A model limit that already refused the field is not repeated.
+  assert.equal(checkGenerationPromptLimits('minimax-h3-t2v', { prompt: 'x'.repeat(250_000) }).length, 1);
+  // Tool calls that name no model still get the backstop.
+  const [noModel] = checkToolArgumentPromptLimits('generate_image', { prompt: 'x'.repeat(200_001) });
+  assert.equal(noModel.argument, 'prompt');
+  assert.equal(noModel.modelId, null);
+});

@@ -214,6 +214,7 @@ export type {
 // prompt expanders can instruct, check, regenerate or refuse; never truncate.
 export {
   PROMPT_TOO_LONG_ERROR_CODE,
+  UNIVERSAL_MAX_PROMPT_CHARACTERS,
   PromptTooLongError,
   resolvePromptLimitFamily,
   resolveGenerationPromptLimits,

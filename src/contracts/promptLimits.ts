@@ -10,6 +10,10 @@
  * dispatched, and regenerate or refuse when it is over. Nothing here ever
  * shortens a prompt.
  *
+ * A style prompt counts toward every limit: the Supernet appends it to the
+ * prompt as ", <style>" before counting. Every model, capped or not, also has a
+ * 200,000-character backstop (UNIVERSAL_MAX_PROMPT_CHARACTERS).
+ *
  * Character limits are checked exactly. Token limits are checked against a
  * proven lower bound on the token count (every whitespace-separated word, or
  * pre-tokenizer piece, is at least one token), so a prompt is refused here only
@@ -96,6 +100,13 @@ export interface PromptLimitViolation {
 
 /** Error code the Supernet uses for the same refusal. */
 export const PROMPT_TOO_LONG_ERROR_CODE = 4102;
+
+/**
+ * The Supernet's backstop on every model, capped or not (Krea 2, Qwen Image,
+ * Z-Image, SD/SDXL included): a prompt (with its style prompt), negative prompt
+ * or lyric sheet over this many characters is refused with 4102.
+ */
+export const UNIVERSAL_MAX_PROMPT_CHARACTERS = 200_000;
 
 export class PromptTooLongError extends Error {
   readonly code = PROMPT_TOO_LONG_ERROR_CODE;
@@ -226,8 +237,9 @@ export function resolvePromptLimitFamily(modelId: string | null | undefined): Pr
 /**
  * The prompt limits of a model id or selector (for example
  * `wan_v2.2-14b-fp8_i2v_lightx2v`, `minimax-h3-t2v-turbo`, `happyhorse-1.1-t2v`),
- * or null for a model with no prompt limit (Krea 2, Z-Image, Qwen Image, LTX,
- * SD/SDXL, ...).
+ * or null for a model with no model-specific limit (Krea 2, Z-Image, Qwen
+ * Image, LTX, SD/SDXL, ...). checkGenerationPromptLimits still applies the
+ * universal 200,000-character backstop to those.
  */
 export function resolveGenerationPromptLimits(
   modelId: string | null | undefined,
@@ -358,22 +370,19 @@ export function checkGenerationPromptLimits(
   text: GenerationPromptText,
 ): PromptLimitViolation[] {
   const limits = resolveGenerationPromptLimits(modelId);
-  if (!limits) return [];
-  const prompt = typeof text.prompt === 'string' ? text.prompt : '';
+  const prompt = encodedPositivePrompt(typeof text.prompt === 'string' ? text.prompt : '', text.stylePrompt);
   const lyrics = typeof text.lyrics === 'string' ? text.lyrics : '';
   const negativePrompt = typeof text.negativePrompt === 'string' ? text.negativePrompt : '';
   const fields: Array<[PromptLimitField, PromptFieldLimit | undefined, string]> = [
-    ['prompt', limits.prompt, encodedPositivePrompt(prompt, text.stylePrompt)],
-    ['negativePrompt', limits.negativePrompt, negativePrompt],
-    ['lyrics', limits.lyrics, lyrics],
+    ['prompt', limits?.prompt, prompt],
+    ['negativePrompt', limits?.negativePrompt, negativePrompt],
+    ['lyrics', limits?.lyrics, lyrics],
     // Only the lyrics give a proven lower bound for Music 3 (see promptTokenLowerBound).
-    ['promptWithLyrics', limits.promptWithLyrics, lyrics],
+    ['promptWithLyrics', limits?.promptWithLyrics, lyrics],
   ];
+  const modelName = limits?.modelName ?? 'Every Sogni model';
   const violations: PromptLimitViolation[] = [];
-  for (const [field, limit, value] of fields) {
-    if (!limit || !value) continue;
-    const measurement = measurePromptField(limit, value);
-    if (measurement.measured <= limit.max) continue;
+  const add = (field: PromptLimitField, limit: PromptFieldLimit, measurement: PromptFieldMeasurement) => {
     violations.push({
       field,
       unit: limit.unit,
@@ -381,8 +390,26 @@ export function checkGenerationPromptLimits(
       measured: measurement.measured,
       exact: measurement.exact,
       characters: measurement.characters,
-      message: violationMessage(field, limit, measurement, limits.modelName),
+      message: violationMessage(field, limit, measurement, modelName),
     });
+  };
+  for (const [field, limit, value] of fields) {
+    if (!limit || !value) continue;
+    const measurement = measurePromptField(limit, value);
+    if (measurement.measured > limit.max) add(field, limit, measurement);
+  }
+  // The universal backstop, for fields no model limit already refused.
+  const backstop: CharacterPromptLimit = { unit: 'characters', max: UNIVERSAL_MAX_PROMPT_CHARACTERS };
+  const backstopFields: Array<[PromptLimitField, string]> = [
+    ['prompt', prompt],
+    ['negativePrompt', negativePrompt],
+    ['lyrics', lyrics],
+  ];
+  for (const [field, value] of backstopFields) {
+    if (!value) continue;
+    if (violations.some(v => v.field === field || (field === 'lyrics' && v.field === 'promptWithLyrics'))) continue;
+    const measurement = measurePromptField(backstop, value);
+    if (measurement.measured > backstop.max) add(field, backstop, measurement);
   }
   return violations;
 }
@@ -464,9 +491,13 @@ const PROMPT_LIMITED_TOOLS = new Set([
   'segment_image',
 ]);
 
-/** Which model a hosted tool call targets, for its prompt limits. */
-function toolCallPromptLimitModel(toolName: string, args: Record<string, unknown>): string | null {
-  if (!PROMPT_LIMITED_TOOLS.has(toolName)) return null;
+/**
+ * Which model a hosted tool call targets, for its prompt limits: undefined for
+ * a tool that takes no generation prompt, null when the call names no model
+ * (only the universal backstop applies).
+ */
+function toolCallPromptLimitModel(toolName: string, args: Record<string, unknown>): string | null | undefined {
+  if (!PROMPT_LIMITED_TOOLS.has(toolName)) return undefined;
   const text = (value: unknown): string | null => (typeof value === 'string' && value.trim() ? value : null);
   switch (toolName) {
     case 'segment_image':
@@ -484,7 +515,8 @@ function toolCallPromptLimitModel(toolName: string, args: Record<string, unknown
 export interface ToolArgumentPromptLimitViolation extends PromptLimitViolation {
   /** The tool argument that is over, e.g. "prompt", "lyrics" or "prompts[2]". */
   argument: string;
-  modelId: string;
+  /** The model the call names, or null when it names none (universal backstop only). */
+  modelId: string | null;
 }
 
 /**
@@ -498,7 +530,7 @@ export function checkToolArgumentPromptLimits(
   args: Record<string, unknown>,
 ): ToolArgumentPromptLimitViolation[] {
   const modelId = toolCallPromptLimitModel(toolName, args);
-  if (!modelId || !resolveGenerationPromptLimits(modelId)) return [];
+  if (modelId === undefined) return [];
   const str = (value: unknown): string | undefined => (typeof value === 'string' ? value : undefined);
   const violations: ToolArgumentPromptLimitViolation[] = [];
   const add = (argument: string, found: PromptLimitViolation[]) => {
