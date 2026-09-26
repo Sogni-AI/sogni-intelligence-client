@@ -22,7 +22,7 @@ export type PromptLimitTokenizer = 'umt5' | 't5xxl' | 'clip' | 'minimax-music3';
 export interface CharacterPromptLimit {
   unit: 'characters';
   max: number;
-  /** Weight of each Chinese/Japanese/Korean character (HappyHorse counts each as 2). */
+  /** Weight of each Chinese (Han script) character (HappyHorse counts each as 2). */
   cjkWeight?: number;
 }
 
@@ -38,7 +38,7 @@ export type PromptFieldLimit = CharacterPromptLimit | TokenPromptLimit;
 
 export type PromptLimitFamily =
   | 'wan2.2'
-  | 'flux-schnell'
+  | 'flux1'
   | 'chroma'
   | 'minimax-h3'
   | 'wan3'
@@ -59,7 +59,7 @@ export interface PromptLengthAdvisory {
 export interface GenerationPromptLimits {
   family: PromptLimitFamily;
   modelName: string;
-  /** The positive prompt. For token limits a style prompt is counted too, appended as ", <style>". */
+  /** The positive prompt, with any style prompt appended as ", <style>" (the Supernet counts it). */
   prompt?: PromptFieldLimit;
   negativePrompt?: PromptFieldLimit;
   lyrics?: PromptFieldLimit;
@@ -125,11 +125,11 @@ const LIMITS: Record<PromptLimitFamily, Omit<GenerationPromptLimits, 'family'>> 
     negativePrompt: { unit: 'tokens', max: 4096, tokenizer: 'umt5', addedTokens: 1 },
     instruction: WAN22_INSTRUCTION,
   },
-  'flux-schnell': {
-    modelName: 'Flux.1 Schnell',
+  flux1: {
+    modelName: 'FLUX.1',
     prompt: { unit: 'tokens', max: 4096, tokenizer: 't5xxl', addedTokens: 1 },
     negativePrompt: { unit: 'tokens', max: 4096, tokenizer: 't5xxl', addedTokens: 1 },
-    instruction: T5_INSTRUCTION('Flux.1 Schnell'),
+    instruction: T5_INSTRUCTION('FLUX.1'),
   },
   chroma: {
     modelName: 'Chroma',
@@ -159,7 +159,7 @@ const LIMITS: Record<PromptLimitFamily, Omit<GenerationPromptLimits, 'family'>> 
     modelName: 'HappyHorse',
     prompt: { unit: 'characters', max: 5000, cjkWeight: 2 },
     instruction:
-      'LENGTH LIMIT: HappyHorse accepts at most 5,000 characters, and each Chinese, Japanese, or Korean character counts as 2; keep the prompt under 4,200 characters (2,100 CJK characters). Never cut a prompt to fit; rewrite it shorter.',
+      'LENGTH LIMIT: HappyHorse accepts at most 5,000 characters, and each Chinese (Han) character counts as 2; keep the prompt under 4,200 characters (2,100 Chinese characters). Never cut a prompt to fit; rewrite it shorter.',
   },
   seedance: {
     modelName: 'Seedance',
@@ -206,7 +206,8 @@ const FAMILY_PATTERNS: ReadonlyArray<readonly [PromptLimitFamily, RegExp]> = [
   ['happyhorse', /^happyhorse(?:-|$)/],
   ['seedance', /^(?:dreamina-)?seedance/],
   ['gpt-image', /^gpt-image-2(?:-|$)/],
-  ['flux-schnell', /^flux-?1?-schnell(?:-|$)/],
+  // FLUX.1 schnell, Kontext [dev] and Krea [dev] (T5-XXL); FLUX.2 has no cap.
+  ['flux1', /^flux-?1(?:-|$)|^flux-schnell(?:-|$)/],
   ['chroma', /^chroma/],
   ['ace-step', /^ace-step(?:-|$)/],
   ['sam3', /^sam3(?:-|$)/],
@@ -240,11 +241,16 @@ export function promptLimitInstruction(modelId: string | null | undefined): stri
   return resolveGenerationPromptLimits(modelId)?.instruction ?? null;
 }
 
-// Basic CJK Unified Ideographs: counted as CJK by every definition, so the
-// weighted count below is never higher than the Supernet's.
-const CJK_CERTAIN = /[\u4e00-\u9fff]/g;
-// Other CJK scripts and forms a count might also weight.
-const CJK_POSSIBLE = /[\u3000-\u303f\u3040-\u30ff\u3100-\u312f\u3130-\u318f\u31f0-\u31ff\u3400-\u4dbf\uac00-\ud7af\uf900-\ufaff\uff00-\uffef]|[\ud840-\ud87f][\udc00-\udfff]/;
+// The Supernet counts Unicode characters (code points) and weights Han-script
+// characters for HappyHorse.
+const HAN_CHARACTER = /\p{Script=Han}/gu;
+
+/** Prompt length the way a character limit counts it: code points, Han weighted. */
+function characterLength(text: string, cjkWeight = 1): number {
+  const characters = Array.from(text).length;
+  if (cjkWeight === 1) return characters;
+  return characters + (text.match(HAN_CHARACTER)?.length ?? 0) * (cjkWeight - 1);
+}
 
 function countWords(text: string): number {
   return text.split(/\s+/).filter(Boolean).length;
@@ -301,14 +307,9 @@ export interface PromptFieldMeasurement {
  * count, or a lower bound on the token count.
  */
 export function measurePromptField(limit: PromptFieldLimit, text: string): PromptFieldMeasurement {
-  const characters = text.length;
+  const characters = characterLength(text);
   if (limit.unit === 'characters') {
-    const weight = limit.cjkWeight ?? 1;
-    if (weight === 1) return { measured: characters, exact: true, characters };
-    const certain = text.match(CJK_CERTAIN)?.length ?? 0;
-    const measured = characters + certain * (weight - 1);
-    const stripped = text.replace(CJK_CERTAIN, '');
-    return { measured, exact: !CJK_POSSIBLE.test(stripped), characters };
+    return { measured: characterLength(text, limit.cjkWeight ?? 1), exact: true, characters };
   }
   return { measured: promptTokenLowerBound(limit, text), exact: false, characters };
 }
@@ -333,10 +334,11 @@ function violationMessage(
     return `Your lyrics alone are at least ${fmt(measurement.measured)} tokens (${fmt(measurement.characters)} characters) with the model's template; ${modelName} reads at most ${fmt(limit.max)} tokens of caption and lyrics together. Shorten them and submit again.`;
   }
   if (limit.unit === 'characters') {
-    const weighted = limit.cjkWeight && limit.cjkWeight !== 1
-      ? ` (each Chinese, Japanese, or Korean character counts as ${limit.cjkWeight})`
-      : '';
-    return `${subject} ${verb} ${fmt(measurement.measured)} characters${weighted}; ${modelName} accepts at most ${fmt(limit.max)}. Shorten it and submit again.`;
+    const weight = limit.cjkWeight ?? 1;
+    const counted = weight === 1
+      ? `${fmt(measurement.measured)} characters`
+      : `${fmt(measurement.measured)} characters long, counting each Chinese character ${weight === 2 ? 'twice' : `${weight} times`}`;
+    return `${subject} ${verb} ${counted}; ${modelName} accepts at most ${fmt(limit.max)}. Shorten it and submit again.`;
   }
   return `${subject} ${verb} at least ${fmt(measurement.measured)} tokens (${fmt(measurement.characters)} characters); ${modelName} reads at most ${fmt(limit.max)} tokens, roughly ${fmt(limit.max * ENGLISH_CHARS_PER_TOKEN)} characters of English. Shorten it and submit again.`;
 }
@@ -361,11 +363,7 @@ export function checkGenerationPromptLimits(
   const lyrics = typeof text.lyrics === 'string' ? text.lyrics : '';
   const negativePrompt = typeof text.negativePrompt === 'string' ? text.negativePrompt : '';
   const fields: Array<[PromptLimitField, PromptFieldLimit | undefined, string]> = [
-    [
-      'prompt',
-      limits.prompt,
-      limits.prompt?.unit === 'tokens' ? encodedPositivePrompt(prompt, text.stylePrompt) : prompt,
-    ],
+    ['prompt', limits.prompt, encodedPositivePrompt(prompt, text.stylePrompt)],
     ['negativePrompt', limits.negativePrompt, negativePrompt],
     ['lyrics', limits.lyrics, lyrics],
     // Only the lyrics give a proven lower bound for Music 3 (see promptTokenLowerBound).
@@ -427,8 +425,8 @@ export function promptLengthAdvisory(
 ): string | null {
   const limits = resolveGenerationPromptLimits(modelId);
   if (!limits?.advisory || typeof prompt !== 'string' || !prompt) return null;
-  const chinese = prompt.match(CJK_CERTAIN)?.length ?? 0;
-  const words = countWords(prompt.replace(CJK_CERTAIN, ' '));
+  const chinese = prompt.match(HAN_CHARACTER)?.length ?? 0;
+  const words = countWords(prompt.replace(HAN_CHARACTER, ' '));
   if (chinese > limits.advisory.chineseCharacters) {
     return `This ${limits.modelName} prompt has ${fmt(chinese)} Chinese characters; ${limits.modelName} keeps the most detail under ${fmt(limits.advisory.chineseCharacters)}.`;
   }
@@ -440,7 +438,7 @@ export function promptLengthAdvisory(
 
 /** Tool-schema guidance for video `prompt` fields (the LLM writes these directly). */
 export const VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE =
-  'PROMPT LENGTH LIMITS (an over-limit request is refused, never cut): MiniMax H3 at most 7,000 characters; HappyHorse at most 5,000 (each Chinese, Japanese, or Korean character counts as 2); Wan 3 at most 20,000; Wan 2.2 at most 4,096 tokens (about 3,000 English words) for the prompt and for negativePrompt. Seedance keeps the most detail under 1,000 English words or 500 Chinese characters. Stay well under these; condense wording instead of dropping required content.';
+  'PROMPT LENGTH LIMITS (an over-limit request is refused, never cut): MiniMax H3 at most 7,000 characters; HappyHorse at most 5,000 (each Chinese character counts as 2); Wan 3 at most 20,000; Wan 2.2 at most 4,096 tokens (about 3,000 English words) for the prompt and for negativePrompt. Seedance keeps the most detail under 1,000 English words or 500 Chinese characters. Stay well under these; condense wording instead of dropping required content.';
 
 /** Tool-schema guidance for music `prompt` and `lyrics` fields. */
 export const MUSIC_TEXT_LENGTH_LIMITS_GUIDANCE =

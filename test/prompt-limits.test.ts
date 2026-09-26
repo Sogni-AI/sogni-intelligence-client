@@ -39,8 +39,10 @@ test('model ids resolve to their prompt-limit family; uncapped models have none'
     ['seedance2-mini', 'seedance'],
     ['gpt-image-2', 'gpt-image'],
     ['gpt-image-2.5-sunburst', 'gpt-image'],
-    ['flux1-schnell-fp8', 'flux-schnell'],
-    ['flux-schnell', 'flux-schnell'],
+    ['flux1-schnell-fp8', 'flux1'],
+    ['flux-schnell', 'flux1'],
+    ['flux1-dev-kontext_fp8_scaled', 'flux1'],
+    ['flux1-krea-dev_fp8_scaled', 'flux1'],
     ['chroma-v46-flash', 'chroma'],
     ['zavychroma-xl', null],
     ['wan22-animate', 'wan2.2'],
@@ -82,16 +84,25 @@ test('MiniMax H3 counts characters exactly and refuses one over 7,000', () => {
   );
 });
 
-test('HappyHorse counts each Chinese character twice', () => {
+test('HappyHorse counts each Chinese (Han) character twice, as the Supernet does', () => {
   assert.deepEqual(checkGenerationPromptLimits('happyhorse-1.1-t2v', { prompt: '猫'.repeat(2500) }), []);
   const [over] = checkGenerationPromptLimits('happyhorse-1.1-t2v', { prompt: '猫'.repeat(2501) });
   assert.equal(over.measured, 5002);
-  assert.match(over.message, /each Chinese, Japanese, or Korean character counts as 2/);
-  // English is counted one per character.
+  assert.equal(over.exact, true);
+  assert.equal(over.message, 'Your prompt is 5,002 characters long, counting each Chinese character twice; HappyHorse accepts at most 5,000. Shorten it and submit again.');
+  // English, kana and Hangul count once per character.
   assert.deepEqual(checkGenerationPromptLimits('happyhorse-1.1-t2v', { prompt: 'x'.repeat(5000) }), []);
-  // Kana may be weighted too, so the count is marked inexact.
-  const [kana] = checkGenerationPromptLimits('happyhorse-1.1-t2v', { prompt: `${'猫'.repeat(2501)}カ` });
-  assert.equal(kana.exact, false);
+  assert.deepEqual(checkGenerationPromptLimits('happyhorse-1.1-t2v', { prompt: 'カ'.repeat(5000) }), []);
+  assert.equal(checkGenerationPromptLimits('happyhorse-1.1-t2v', { prompt: `${'猫'.repeat(2499)}カカカ` }).length, 1);
+});
+
+test('character limits count code points and the appended style prompt, like the Supernet', () => {
+  // An emoji is one character, not two UTF-16 units.
+  assert.deepEqual(checkGenerationPromptLimits('minimax-h3-t2v', { prompt: '🙂'.repeat(7000) }), []);
+  assert.equal(checkGenerationPromptLimits('minimax-h3-t2v', { prompt: '🙂'.repeat(7001) })[0].measured, 7001);
+  // prompt + ", " + style = 6,990 + 2 + 9 = 7,001.
+  const [styled] = checkGenerationPromptLimits('minimax-h3-t2v', { prompt: 'x'.repeat(6990), stylePrompt: 'film noir' });
+  assert.equal(styled.measured, 7001);
 });
 
 test('Wan 2.2 refuses only prompts certainly over 4,096 UMT5 tokens, style prompt included', () => {
@@ -165,7 +176,7 @@ test('tool schemas tell the LLM the prompt limits', () => {
   const property = (definition: typeof generateVideo, name: string) =>
     String((definition.function.parameters.properties as Record<string, { description?: string }>)[name]?.description);
   for (const definition of [generateVideo, animatePhoto, soundToVideo, videoToVideo]) {
-    assert.match(property(definition, 'prompt'), /MiniMax H3 at most 7,000 characters; HappyHorse at most 5,000/, definition.function.name);
+    assert.match(property(definition, 'prompt'), /MiniMax H3 at most 7,000 characters; HappyHorse at most 5,000 \(each Chinese character counts as 2\)/, definition.function.name);
   }
   assert.match(property(generateMusic, 'prompt'), /ACE-Step accepts at most 4,096 characters of prompt/);
   assert.match(property(generateMusic, 'lyrics'), /at most 4,096 characters of lyrics/);
