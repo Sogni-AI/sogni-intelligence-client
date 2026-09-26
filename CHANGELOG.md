@@ -1,3 +1,10 @@
+## [4.4.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.4.1...v4.4.2) (2026-09-26)
+
+
+### Bug Fixes
+
+* **deps:** take sogni-client 5.57.0 for project results by id and recent history ([129c324](https://github.com/Sogni-AI/sogni-intelligence-client/commit/129c3244437e6a278d6dc1df6d61e95a73c445c2))
+
 ## [4.4.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.4.0...v4.4.1) (2026-09-26)
 
 
