@@ -1,3 +1,10 @@
+## [4.5.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.5.0...v4.5.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **contracts:** count prompt limits exactly as the Supernet does ([ef37900](https://github.com/Sogni-AI/sogni-intelligence-client/commit/ef379004c2f68c21ddcff1cc73e4d125d3369858))
+
 # [4.5.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.4.3...v4.5.0) (2026-09-26)
 
 
