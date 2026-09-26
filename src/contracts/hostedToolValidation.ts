@@ -1,4 +1,5 @@
 import { minimaxH3AudioGuideMode } from '../media/videoSettings.js';
+import { checkToolArgumentPromptLimits } from './promptLimits.js';
 
 export interface HostedToolSchemaProperty {
   type?: string | string[];
@@ -572,6 +573,15 @@ export function validateAndNormalizeHostedToolArguments(
         `videoModel "${String(cleanedRecord.videoModel)}" has no negative-prompt input; remove "negativePrompt"`,
       );
     }
+  }
+
+  // Per-model prompt size limits (the Supernet refuses these with 4102). The
+  // LLM gets the measured length and the limit so it can rewrite the prompt
+  // shorter; nothing is cut here.
+  for (const violation of checkToolArgumentPromptLimits(toolName, cleanedRecord)) {
+    context.errors.push(
+      `Argument "${violation.argument}" is too long for videoModel/model "${violation.modelId}": ${violation.message.replace(/ Shorten (?:it|them) and submit again\.$/, '')} Rewrite it shorter, keeping the user's intent and every exact quoted span, and call the tool again; never cut it off mid-sentence.`,
+    );
   }
 
   return {

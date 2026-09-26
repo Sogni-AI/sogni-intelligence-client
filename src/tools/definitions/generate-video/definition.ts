@@ -18,6 +18,7 @@ import {
   HAPPYHORSE_GENERATE_VIDEO_MODEL_DESCRIPTION,
 } from '../../../contracts/toolPromptMarkers.js';
 import { ASPECT_RATIO_DESCRIPTION } from '../../../media/index.js';
+import { VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE } from '../../../contracts/promptLimits.js';
 
 /**
  * The videoModel selectors on THIS tool that load LoRAs.
@@ -79,7 +80,9 @@ AVOID: Vague prompts, too many characters at once, conflicting lighting logic, r
 
 NON-SEEDANCE POSITIVE CONSTRAINTS: For videoModel="ltx25", "ltx23", or "wan22", prompt is a positive prompt. Translate user avoid/no/don't constraints into affirmative production constraints instead of copying negative phrasing. Preserve exact quoted visible text or dialogue when the user explicitly requests it; keep surrounding surfaces blank.
 
-BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax. This is one Sogni project with multiple jobs, so prefer it when all outputs share the same references, model, duration, dimensions, and generation parameters and only prompt text varies. Lock in any camera/subject/style the user specified, vary the rest. Example: "slow dolly in on a city street {at dawn with golden light|during a rainstorm|at night with neon reflections}".`,
+BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax. This is one Sogni project with multiple jobs, so prefer it when all outputs share the same references, model, duration, dimensions, and generation parameters and only prompt text varies. Lock in any camera/subject/style the user specified, vary the rest. Example: "slow dolly in on a city street {at dawn with golden light|during a rainstorm|at night with neon reflections}".
+
+${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
         },
         expandPrompt: {
           type: "boolean",

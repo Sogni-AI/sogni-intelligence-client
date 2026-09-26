@@ -8,6 +8,7 @@ import { LITERAL_PROMPT_OVERRIDE } from '../../../contracts/promptOverrideMarker
 import {
   SEEDANCE_TOOL_V2V_REFERENCE_GUIDANCE,
 } from '../../../contracts/toolPromptMarkers.js';
+import { VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE } from '../../../contracts/promptLimits.js';
 
 const LITERAL_SEEDANCE_V2V_PROMPT_OVERRIDE =
   `${LITERAL_PROMPT_OVERRIDE} For Seedance, set expandPrompt=false.`;
@@ -44,7 +45,9 @@ Present tense. Positive phrasing. Concrete visual details.
 
 NON-SEEDANCE POSITIVE CONSTRAINTS: For LTX 2.5, LTX 2.3, and WAN 2.2 modes, prompt is a positive prompt. Translate user avoid/no/don't constraints into affirmative production constraints instead of copying negative phrasing. Preserve exact quoted visible text when the user explicitly requests it; keep surrounding surfaces blank.
 
-BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary the artistic treatment while keeping control mode and structural intent consistent. Example: "transform to {watercolor with soft edges|oil painting with bold strokes|anime with clean lines} style".`,
+BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary the artistic treatment while keeping control mode and structural intent consistent. Example: "transform to {watercolor with soft edges|oil painting with bold strokes|anime with clean lines} style".
+
+${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
         },
         expandPrompt: {
           type: "boolean",

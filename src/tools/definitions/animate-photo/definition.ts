@@ -15,6 +15,7 @@ import {
   LORA_STACKING_GUIDANCE,
   h3LoraModelSentence,
 } from '../../shared/loraGuidance.js';
+import { VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE } from '../../../contracts/promptLimits.js';
 
 /**
  * The videoModel selectors on THIS tool that load LoRAs.
@@ -78,7 +79,9 @@ POSITIVE CONSTRAINT TRANSLATION: For LTX 2.3 and WAN 2.2, the prompt field is a 
 
 WAN 2.2 ("wan22"): 30-150 words, subtle natural movements. Motion-only visual prompt; omit soundtrack, ambience, room tone, music, hums, sighs, spoken words, voice, and SFX cues because WAN does not generate audio.
 
-BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary motion, camera, or atmosphere while preserving the user's specified elements. This is one Sogni project with multiple jobs, so prefer it when all outputs share the same source/end frames and generation parameters and only prompt text varies. Example: "{gentle sway with drifting embers|slow paw wave with a tiny head tilt|small hop with soft fur motion}".`,
+BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary motion, camera, or atmosphere while preserving the user's specified elements. This is one Sogni project with multiple jobs, so prefer it when all outputs share the same source/end frames and generation parameters and only prompt text varies. Example: "{gentle sway with drifting embers|slow paw wave with a tiny head tilt|small hop with soft fur motion}".
+
+${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
         },
         expandPrompt: {
           type: "boolean",

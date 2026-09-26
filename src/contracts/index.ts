@@ -210,6 +210,39 @@ export type {
   ImagePromptAuthoringProfile,
   BuildImagePromptAuthoringMessagesInput,
 } from './imagePrompt.js';
+// Per-model prompt size limits (mirrors the Supernet's 4102 refusal) so
+// prompt expanders can instruct, check, regenerate or refuse; never truncate.
+export {
+  PROMPT_TOO_LONG_ERROR_CODE,
+  PromptTooLongError,
+  resolvePromptLimitFamily,
+  resolveGenerationPromptLimits,
+  promptLimitInstruction,
+  promptTokenLowerBound,
+  measurePromptField,
+  checkGenerationPromptLimits,
+  assertGenerationPromptWithinLimits,
+  promptLimitRepairInstruction,
+  promptLengthAdvisory,
+  checkToolArgumentPromptLimits,
+  VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE,
+  MUSIC_TEXT_LENGTH_LIMITS_GUIDANCE,
+  SAM3_TEXT_LENGTH_GUIDANCE,
+} from './promptLimits.js';
+export type {
+  PromptLimitTokenizer,
+  CharacterPromptLimit,
+  TokenPromptLimit,
+  PromptFieldLimit,
+  PromptLimitFamily,
+  PromptLengthAdvisory,
+  GenerationPromptLimits,
+  PromptLimitField,
+  GenerationPromptText,
+  PromptLimitViolation,
+  PromptFieldMeasurement,
+  ToolArgumentPromptLimitViolation,
+} from './promptLimits.js';
 // instrumental composition surface (system prompts, tool definitions,
 // message builders, result parser) extracted from
 // `prompts/musicComposition.ts`. Depends only on the already-public
@@ -221,6 +254,8 @@ export {
   buildLyricsMessages,
   buildInstrumentalMessages,
   parseToolCallResult,
+  checkMusicCompositionLimits,
+  buildMusicCompositionLengthRepairMessage,
 } from './musicComposition.js';
 export type {
   LyricsGenerationResult,

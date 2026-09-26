@@ -10,6 +10,12 @@ import {
 } from '../media/musicSettings.js';
 import { getRandomLyricsTheme } from './randomThemes.js';
 import { withAdultRequesterDirective } from './adultRequesterDirective.js';
+import {
+  checkGenerationPromptLimits,
+  promptLimitInstruction,
+  promptLimitRepairInstruction,
+  type PromptLimitViolation,
+} from './promptLimits.js';
 
 export interface LyricsGenerationResult {
   lyrics: string;
@@ -33,6 +39,15 @@ export interface MusicCompositionOptions {
 
 export const LYRICS_MAX_TOKENS = 2048;
 
+/** Prompt-limit model id for each composition target (see promptLimits.ts). */
+const MUSIC_LIMIT_MODEL: Record<MusicCompositionTarget, string> = {
+  ace: 'ace-step',
+  music3: 'minimax-music3',
+};
+
+const ACE_LENGTH_LIMIT = promptLimitInstruction(MUSIC_LIMIT_MODEL.ace) as string;
+const MUSIC3_LENGTH_LIMIT = promptLimitInstruction(MUSIC_LIMIT_MODEL.music3) as string;
+
 const LYRICS_SYSTEM_PROMPT = `You are an expert songwriter. Generate song lyrics using the ACE-Step structured format and return them via the compose_lyrics tool.
 
 Section headers — each section tag can optionally include a vocal/performance modifier after a hyphen, e.g. [Section - modifier]. Choose modifiers that fit the song's mood and vary them across sections.
@@ -47,7 +62,9 @@ Rules:
 - Use parentheses for background vocals: "We rise together (together)"
 - The lyrics should be suitable for a song, not a poem
 
-Suggest a duration that fits the lyrics naturally at the chosen tempo.`;
+Suggest a duration that fits the lyrics naturally at the chosen tempo.
+
+${ACE_LENGTH_LIMIT}`;
 
 const INSTRUMENTAL_SYSTEM_PROMPT = `You are an expert music composer and arranger. Design an instrumental music structure using the ACE-Step structured format and return it via the compose_instrumental tool.
 
@@ -90,7 +107,9 @@ Caption rules — also fill the caption field with a three-section structured de
 - Arrangement: primary and secondary instruments, groove, bass, percussion, textures, spatial effects, and how sections evolve.
 Write it as one paragraph: "Global Metadata: ... Vocal Details: ... Arrangement: ..."
 
-Also return bpm, keyscale, timesignature, and the duration your lyric sheet fills — bake the BPM and key into the caption text too, since Music 3 has no separate tempo or key controls.`;
+Also return bpm, keyscale, timesignature, and the duration your lyric sheet fills — bake the BPM and key into the caption text too, since Music 3 has no separate tempo or key controls.
+
+${MUSIC3_LENGTH_LIMIT}`;
 
 const MUSIC3_INSTRUMENTAL_SYSTEM_PROMPT = `You are an expert composer and arranger writing for MiniMax Music 3 and must return your work via the compose_instrumental tool.
 
@@ -120,7 +139,7 @@ export const LYRICS_COMPOSITION_TOOL: ToolDefinition = {
         lyrics: {
           type: 'string',
           description:
-            'Song lyrics with enriched section headers (e.g. [Verse 1 - soft vocal]). Use \\n for newlines.',
+            'Song lyrics with enriched section headers (e.g. [Verse 1 - soft vocal]). Use \\n for newlines. ACE-Step accepts at most 4,096 characters of lyrics, tags included; MiniMax Music 3 reads at most 5,000 tokens of caption and lyrics together.',
         },
         bpm: { type: 'number', description: 'Tempo in beats per minute, e.g. 120 for a pop song' },
         keyscale: {
@@ -285,5 +304,35 @@ export function parseToolCallResult(args: Record<string, unknown>): LyricsGenera
     timeSignature: parseTimeSignature(args.timesignature),
     duration: parseDuration(args.duration),
     caption: caption || null,
+  };
+}
+
+/**
+ * The prompt limits a composed result is certainly over for its target model:
+ * ACE-Step reads at most 4,096 characters of lyrics; MiniMax Music 3 at most
+ * 5,000 tokens of caption and lyrics together. Empty when it fits. Callers
+ * regenerate (see buildMusicCompositionLengthRepairMessage) or refuse; they
+ * never cut the lyrics.
+ */
+export function checkMusicCompositionLimits(
+  result: Pick<LyricsGenerationResult, 'lyrics' | 'caption'>,
+  options?: MusicCompositionOptions,
+): PromptLimitViolation[] {
+  const target: MusicCompositionTarget = options?.model === 'music3' ? 'music3' : 'ace';
+  return checkGenerationPromptLimits(MUSIC_LIMIT_MODEL[target], {
+    prompt: target === 'music3' ? result.caption ?? '' : '',
+    lyrics: result.lyrics,
+  });
+}
+
+/** A follow-up user message asking the composer to rewrite an over-limit result shorter. */
+export function buildMusicCompositionLengthRepairMessage(
+  violations: readonly PromptLimitViolation[],
+  options?: MusicCompositionOptions,
+): SogniChatMessage {
+  const target: MusicCompositionTarget = options?.model === 'music3' ? 'music3' : 'ace';
+  return {
+    role: 'user',
+    content: `${promptLimitRepairInstruction(MUSIC_LIMIT_MODEL[target], violations)} Return the complete result through the same tool.`,
   };
 }

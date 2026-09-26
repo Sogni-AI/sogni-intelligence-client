@@ -25,6 +25,7 @@ import {
   SEEDANCE_TOOL_AUDIO_REFERENCE_GUIDANCE,
 } from '../../../contracts/toolPromptMarkers.js';
 import { ASPECT_RATIO_DESCRIPTION } from '../../../media/index.js';
+import { VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE } from '../../../contracts/promptLimits.js';
 
 /**
  * The MiniMax H3 FastH3 audio-guide selectors (Comfy worker 1.0.217+), each
@@ -78,7 +79,9 @@ NON-SEEDANCE POSITIVE CONSTRAINTS: For ltx25-ia2v, ltx25-a2v, ltx23-ia2v, ltx23-
 
 BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary the visual interpretation while keeping audio sync intent consistent. This is one Sogni project with multiple jobs, so prefer it when all outputs share the same audio source/window, image source, model, duration, dimensions, and parameters and only prompt text varies. Example: "{abstract neon visualization|nature scene with swaying trees|urban street with rain} synced to the beat".
 
-${MINIMAX_H3_AUDIO_GUIDE_PROMPT_DESCRIPTION}`,
+${MINIMAX_H3_AUDIO_GUIDE_PROMPT_DESCRIPTION}
+
+${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
         },
         expandPrompt: {
           type: "boolean",

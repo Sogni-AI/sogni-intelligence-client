@@ -5,6 +5,7 @@
 
 import type { ToolDefinition } from '../types.js';
 import { LITERAL_PROMPT_OVERRIDE } from '../../../contracts/promptOverrideMarker.js';
+import { MUSIC_TEXT_LENGTH_LIMITS_GUIDANCE } from '../../../contracts/promptLimits.js';
 
 export const definition: ToolDefinition = {
   type: 'function',
@@ -36,7 +37,9 @@ Include:
 
 MODEL "music3": MiniMax Music 3 wants a structured caption instead of a tag list — write the prompt as one paragraph in three labeled parts: "Global Metadata: genre, BPM, key, emotional progression across the song, production profile. Vocal Details: gender, timbre, delivery, harmonies (or: none, purely instrumental). Arrangement: primary and secondary instruments, groove, bass, percussion, textures, how sections evolve." The more specific, the closer the result. Fold tempo and key into this caption — music3 ignores the bpm/keyscale/timesig args.
 
-BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary ONE dimension across separate tracks. This is one Sogni project with multiple jobs, so prefer it when all tracks share the same duration, BPM, key, lyrics, model, and generation parameters and only prompt text varies. Lock in any genre/mood/instruments the user specified, vary the rest. Example: "{lo-fi hip hop beat with muted keys|jazz piano trio with brushed drums|ambient electronic with soft pads} with warm reverb and vinyl texture".`,
+BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary ONE dimension across separate tracks. This is one Sogni project with multiple jobs, so prefer it when all tracks share the same duration, BPM, key, lyrics, model, and generation parameters and only prompt text varies. Lock in any genre/mood/instruments the user specified, vary the rest. Example: "{lo-fi hip hop beat with muted keys|jazz piano trio with brushed drums|ambient electronic with soft pads} with warm reverb and vinyl texture".
+
+${MUSIC_TEXT_LENGTH_LIMITS_GUIDANCE}`,
         },
         duration: {
           type: 'number',
@@ -60,7 +63,7 @@ BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary
         lyrics: {
           type: 'string',
           description:
-            'Song lyrics. Optional — omit for instrumental music. Format: write lyrics naturally with line breaks. The model will attempt to sing these lyrics with the generated music. Works best with clear, rhythmic phrasing that matches the BPM. For model "music3", structure lyrics with plain section tags on their own lines ([Intro], [Verse], [Pre-Chorus], [Chorus], [Post-Chorus], [Bridge], [Solo], [Outro]) — no modifiers inside brackets, and write enough sections to fill the requested duration since the composer ends the song when the lyric sheet runs out. For instrumental music3 tracks, pass ONLY a skeleton of those tags one per line (e.g. [Intro] [Verse] [Chorus] [Verse] [Solo] [Chorus] [Outro]) — bare instrumental pieces end early without it.',
+            'Song lyrics. Optional — omit for instrumental music. Format: write lyrics naturally with line breaks. The model will attempt to sing these lyrics with the generated music. Works best with clear, rhythmic phrasing that matches the BPM. For model "music3", structure lyrics with plain section tags on their own lines ([Intro], [Verse], [Pre-Chorus], [Chorus], [Post-Chorus], [Bridge], [Solo], [Outro]) — no modifiers inside brackets, and write enough sections to fill the requested duration since the composer ends the song when the lyric sheet runs out. For instrumental music3 tracks, pass ONLY a skeleton of those tags one per line (e.g. [Intro] [Verse] [Chorus] [Verse] [Solo] [Chorus] [Outro]) — bare instrumental pieces end early without it. Length: ACE-Step (turbo, sft) accepts at most 4,096 characters of lyrics, tags and line breaks included; music3 reads at most 5,000 tokens of prompt and lyrics together. Over-limit lyrics are refused, never cut.',
         },
         model: {
           type: 'string',
