@@ -1,3 +1,10 @@
+## [4.4.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.4.2...v4.4.3) (2026-09-26)
+
+
+### Bug Fixes
+
+* **video:** keep Wan 2.2 sizes within 1,048,576 pixels ([614ff97](https://github.com/Sogni-AI/sogni-intelligence-client/commit/614ff97057dab3c98c562150779ae0c4992a3455))
+
 ## [4.4.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.4.1...v4.4.2) (2026-09-26)
 
 
