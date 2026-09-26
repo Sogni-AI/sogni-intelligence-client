@@ -1,3 +1,10 @@
+## [4.4.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.4.0...v4.4.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **deps:** take sogni-client 5.56.3 so results never hit the image endpoint blind ([4b9e071](https://github.com/Sogni-AI/sogni-intelligence-client/commit/4b9e0712a8a6c6f7d643e2e157b7cd8070b5802b))
+
 # [4.4.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.3.8...v4.4.0) (2026-09-23)
 
 
