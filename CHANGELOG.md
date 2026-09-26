@@ -1,3 +1,10 @@
+# [4.5.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.4.3...v4.5.0) (2026-09-26)
+
+
+### Features
+
+* **contracts:** per-model prompt limits for prompt expanders ([6dc996c](https://github.com/Sogni-AI/sogni-intelligence-client/commit/6dc996cff61a1c71f9c741df354615a01c9505e8))
+
 ## [4.4.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.4.2...v4.4.3) (2026-09-26)
 
 
