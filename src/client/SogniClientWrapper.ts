@@ -6,7 +6,7 @@
 import { EventEmitter } from 'events';
 import { SogniClient, Project, Job, ChatStream } from '@sogni-ai/sogni-client';
 import { VIDEO_UPSCALE_MODEL_ID } from '../media/videoUpscale.js';
-import { isMinimaxH3TwoStageModelId } from '../media/videoSettings.js';
+import { getWan22VideoSizeRefusal, isMinimaxH3TwoStageModelId } from '../media/videoSettings.js';
 import type {
   SogniClientConfig,
   SogniAttributionConfig,
@@ -1037,6 +1037,15 @@ export class SogniClientWrapper extends EventEmitter {
 
     let width = config.width;
     let height = config.height;
+
+    // Wan 2.2 refuses any size over 1,048,576 pixels or with a side outside
+    // 480-1536 (error 4101). A size the caller asked for is refused here, in
+    // the network's own words, instead of being quietly shrunk; a size taken
+    // from the reference image is fitted inside those limits below.
+    if (config.width && config.height && isWanVideoModel(config.modelId)) {
+      const refusal = getWan22VideoSizeRefusal(config.width, config.height);
+      if (refusal) throw new SogniValidationError(refusal);
+    }
 
     if ((!width || !height) && baseBuffer) {
       const meta = await this.getImageMetadata(baseBuffer);

@@ -21,6 +21,7 @@ import {
 import { resolveRegisteredVideoModelFamily } from '../utils/videoModelIds.js';
 import { resolveRegisteredImageReferenceModelId } from '../utils/imageReferenceModelIds.js';
 import { isGptImageModel, normalizeGptImageModelAlias } from '../media/gptImage.js';
+import { WAN22_MAX_VIDEO_PIXELS } from '../media/videoSettings.js';
 
 type LtxWorkflow = 't2v' | 'i2v' | 'ia2v' | 'a2v' | 'v2v';
 type Ltx25Workflow = LtxWorkflow;
@@ -33,6 +34,8 @@ export interface SkillVideoModelConfig {
   minDimension: number;
   maxDimension: number;
   dimensionMultiple: number;
+  /** Largest width x height the model renders; the network refuses more. */
+  maxPixels?: number;
   steps?: number;
   guidance?: number;
   fps?: number;
@@ -56,6 +59,7 @@ export interface SkillModelDefaults {
   minDimension?: number;
   maxDimension?: number;
   dimensionMultiple?: number;
+  maxPixels?: number;
   steps?: number;
   guidance?: number;
   fps?: number;
@@ -2010,6 +2014,7 @@ export const VIDEO_MODEL_REGISTRY = Object.freeze({
     defaultHeight: 640,
     minDimension: 480,
     maxDimension: 1536,
+    maxPixels: WAN22_MAX_VIDEO_PIXELS,
     dimensionMultiple: 16,
     steps: 4,
     guidance: 1.0,
@@ -2029,6 +2034,7 @@ export const VIDEO_MODEL_REGISTRY = Object.freeze({
     defaultHeight: 480,
     minDimension: 480,
     maxDimension: 1536,
+    maxPixels: WAN22_MAX_VIDEO_PIXELS,
     dimensionMultiple: 16,
     steps: 4,
     guidance: 1.0,
@@ -2048,6 +2054,7 @@ export const VIDEO_MODEL_REGISTRY = Object.freeze({
     defaultHeight: 480,
     minDimension: 480,
     maxDimension: 1536,
+    maxPixels: WAN22_MAX_VIDEO_PIXELS,
     dimensionMultiple: 16,
     steps: 4,
     guidance: 1.0,
@@ -2067,6 +2074,7 @@ export const VIDEO_MODEL_REGISTRY = Object.freeze({
     defaultHeight: 480,
     minDimension: 480,
     maxDimension: 1536,
+    maxPixels: WAN22_MAX_VIDEO_PIXELS,
     dimensionMultiple: 16,
     steps: 4,
     guidance: 1.0,
@@ -2086,6 +2094,7 @@ export const VIDEO_MODEL_REGISTRY = Object.freeze({
     defaultHeight: 480,
     minDimension: 480,
     maxDimension: 1536,
+    maxPixels: WAN22_MAX_VIDEO_PIXELS,
     dimensionMultiple: 16,
     steps: 4,
     guidance: 1.0,

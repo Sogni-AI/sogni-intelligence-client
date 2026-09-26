@@ -129,6 +129,8 @@ import {
   minimaxH3TwoStageCanvasShortEdge,
   minimaxH3TwoStageDeliveredSize,
   resolveImageEditModelForProfile,
+  getWan22VideoSizeRefusal,
+  WAN22_MAX_VIDEO_PIXELS,
 } from '../src/media/index.js';
 import { SogniClient } from '@sogni-ai/sogni-client';
 import { runToolsSharedTests } from './tools-shared-tests';
@@ -1191,7 +1193,12 @@ async function runTests() {
     const ltx23 = getVideoDimensionRules('ltx23-22b-fp8_i2v_distilled');
     if (ltx23.maxDimension !== 3840) throw new Error('LTX-2.3 must allow up to 3840');
     const wan = getVideoDimensionRules('wan_v2.2-14b-fp8_i2v_lightx2v');
-    if (wan.maxDimension !== 1536 || wan.minDimension !== 480 || wan.dimensionMultiple !== 16) {
+    if (
+      wan.maxDimension !== 1536 ||
+      wan.minDimension !== 480 ||
+      wan.dimensionMultiple !== 16 ||
+      wan.maxPixels !== 1_048_576
+    ) {
       throw new Error(`Unexpected WAN rules: ${JSON.stringify(wan)}`);
     }
     const hh = getVideoDimensionRules('happyhorse-1.1-t2v');
@@ -1330,7 +1337,7 @@ async function runTests() {
     }
   })();
 
-  await test('Should not downscale LTX-2.5 1080p (and should preserve legacy WAN clamp)', () => {
+  await test('Should not downscale LTX-2.5 1080p (and should fit WAN sources inside its pixel budget)', () => {
     const client = new SogniClientWrapper({
       username: 'test-user',
       password: 'test-pass',
@@ -1367,10 +1374,19 @@ async function runTests() {
       throw new Error(`Clamped LTX dimensions must stay on the multiple-of-16 grid, got ${JSON.stringify(over)}`);
     }
 
-    // WAN keeps its historical envelope.
+    // A WAN size taken from a 1920x1080 source fits inside the 1,048,576-pixel
+    // budget. 1536x864 would be inside the per-side range but is refused.
     const wan = normalize(1920, 1080, 'wan_v2.2-14b-fp8_i2v_lightx2v');
-    if (wan.width !== 1536 || wan.height !== 864 || !wan.adjusted) {
-      throw new Error(`WAN 1920x1080 must clamp to 1536x864, got ${JSON.stringify(wan)}`);
+    if (wan.width !== 1360 || wan.height !== 768 || !wan.adjusted) {
+      throw new Error(`WAN 1920x1080 source must fit to 1360x768, got ${JSON.stringify(wan)}`);
+    }
+    const wanSquare = normalize(1536, 1536, 'wan_v2.2-14b-fp8_s2v_lightx2v');
+    if (wanSquare.width !== 1024 || wanSquare.height !== 1024 || !wanSquare.adjusted) {
+      throw new Error(`WAN 1536x1536 source must fit to 1024x1024, got ${JSON.stringify(wanSquare)}`);
+    }
+    const wan720 = normalize(1280, 720, 'wan_v2.2-14b-fp8_t2v_lightx2v');
+    if (wan720.width !== 1280 || wan720.height !== 720 || wan720.adjusted) {
+      throw new Error(`WAN 1280x720 must pass through untouched, got ${JSON.stringify(wan720)}`);
     }
 
     // HappyHorse's exact 1080p geometry survives (divisor 1, ceiling 1920).
@@ -1393,6 +1409,102 @@ async function runTests() {
     const legacy = normalize(1920, 1088);
     if (legacy.width !== 1536 || legacy.height !== 864 || !legacy.adjusted) {
       throw new Error(`Unknown-model 1920x1088 must keep the legacy clamp, got ${JSON.stringify(legacy)}`);
+    }
+  })();
+
+  await test('Should keep WAN 2.2 inside 1,048,576 pixels and refuse larger requested sizes', async () => {
+    if (WAN22_MAX_VIDEO_PIXELS !== 1_048_576) {
+      throw new Error(`WAN 2.2 pixel budget drifted: ${WAN22_MAX_VIDEO_PIXELS}`);
+    }
+    // The network's 4101 text (sogni-socket 94a217e1), word for word.
+    const socketText =
+      'Wan 2.2 cannot render this video size. 864×1536 is 1,327,104 pixels; Wan 2.2 renders at most 1,048,576 pixels per frame (1024×1024). Choose 1024×1024, 1280×720, 720×1280, or any other size of at most 1,048,576 pixels, with each side between 480 and 1536.';
+    if (getWan22VideoSizeRefusal(864, 1536) !== socketText) {
+      throw new Error(`WAN refusal drifted from the network text: ${getWan22VideoSizeRefusal(864, 1536)}`);
+    }
+    const sideText = getWan22VideoSizeRefusal(1600, 480);
+    if (sideText !== "Wan 2.2 cannot render this video size. A width of 1600 is outside Wan 2.2's 480–1536 pixel range. Choose 1024×1024, 1280×720, 720×1280, or any other size of at most 1,048,576 pixels, with each side between 480 and 1536.") {
+      throw new Error(`WAN side refusal drifted: ${sideText}`);
+    }
+    for (const [w, h] of [[1024, 1024], [1280, 720], [720, 1280], [1440, 720], [480, 480]]) {
+      const refusal = getWan22VideoSizeRefusal(w, h);
+      if (refusal !== null) throw new Error(`WAN ${w}x${h} must be accepted, got ${refusal}`);
+    }
+
+    // Sizes chosen from a source or a short-side target stay inside the budget.
+    const chosen: Array<[number, number, number | undefined, number, number]> = [
+      [1920, 1080, undefined, 1360, 768],
+      [1080, 1920, undefined, 768, 1360],
+      [2048, 2048, undefined, 1024, 1024],
+      [1280, 720, 720, 1280, 720],
+      [2520, 1080, 720, 1536, 656],
+      [1440, 720, 720, 1440, 720],
+    ];
+    for (const [sw, sh, target, ew, eh] of chosen) {
+      const dims = calculateVideoDimensions(sw, sh, target, 'wan22');
+      if (dims.width !== ew || dims.height !== eh) {
+        throw new Error(`WAN ${sw}x${sh} @${target ?? 'source'} must be ${ew}x${eh}, got ${dims.width}x${dims.height}`);
+      }
+      if (dims.width * dims.height > 1_048_576 || getWan22VideoSizeRefusal(dims.width, dims.height)) {
+        throw new Error(`WAN chose an invalid size ${dims.width}x${dims.height}`);
+      }
+    }
+
+    const { default: sharp } = await import('sharp');
+    const source = await sharp({
+      create: { width: 1920, height: 1080, channels: 3, background: { r: 40, g: 90, b: 160 } },
+    }).png().toBuffer();
+    const client = new SogniClientWrapper({
+      username: 'test-user',
+      password: 'test-pass',
+      autoConnect: false,
+    });
+    const prepare = (
+      client as unknown as {
+        prepareProjectConfig: (config: VideoProjectConfig) => Promise<VideoProjectConfig>;
+      }
+    ).prepareProjectConfig.bind(client);
+
+    // An explicit request is refused with the network's words, never shrunk.
+    let refused: unknown = null;
+    try {
+      await prepare({
+        type: 'video',
+        modelId: 'wan_v2.2-14b-fp8_i2v_lightx2v',
+        positivePrompt: 'A lighthouse at dusk.',
+        width: 1536,
+        height: 864,
+        referenceImage: source,
+        numberOfMedia: 1,
+      } as VideoProjectConfig);
+    } catch (error) {
+      refused = error;
+    }
+    if (!(refused instanceof SogniValidationError) || !refused.message.startsWith('Wan 2.2 cannot render this video size. 1536×864 is 1,327,104 pixels')) {
+      throw new Error(`Explicit WAN 1536x864 must be refused, got ${String(refused)}`);
+    }
+
+    // A size taken from the reference image is fitted inside the budget.
+    const fitted = await prepare({
+      type: 'video',
+      modelId: 'wan_v2.2-14b-fp8_i2v_lightx2v',
+      positivePrompt: 'A lighthouse at dusk.',
+      referenceImage: source,
+      numberOfMedia: 1,
+    } as VideoProjectConfig);
+    const fw = fitted.width as number;
+    const fh = fitted.height as number;
+    if (fw !== 1360 || fh % 16 !== 0 || fh < 720 || getWan22VideoSizeRefusal(fw, fh) !== null) {
+      throw new Error(`WAN source-derived size must fit inside the budget near 1360x768, got ${fw}x${fh}`);
+    }
+    const metadata = await sharp(fitted.referenceImage as Buffer).metadata();
+    if (metadata.width !== fw || metadata.height !== fh) {
+      throw new Error(`WAN reference must match ${fw}x${fh}, got ${metadata.width}x${metadata.height}`);
+    }
+
+    const card = getBuiltinVideoModelConfig('wan_v2.2-14b-fp8_i2v');
+    if (card?.maxPixels !== 1_048_576 || card.maxDimension !== 1536) {
+      throw new Error(`WAN skill card lost its pixel budget: ${JSON.stringify(card)}`);
     }
   })();
 

@@ -191,6 +191,47 @@ export function getLtx25StepsForQuality(
   return 8;
 }
 
+/**
+ * Wan 2.2 renders at most 1,048,576 pixels per frame (1024x1024), with each
+ * side between 480 and 1536. The network refuses any other size with error
+ * 4101 rather than resizing it (sogni-socket 94a217e1, live 2026-09-25).
+ */
+export const WAN22_MAX_VIDEO_PIXELS = 1_048_576;
+export const WAN22_MIN_VIDEO_SIDE = 480;
+export const WAN22_MAX_VIDEO_SIDE = 1536;
+
+/**
+ * Why the network refuses a requested Wan 2.2 size, or null when it can render
+ * it. The text matches the network's own 4101 message word for word, so a
+ * caller that stops early says exactly what the network would. Use it on a size
+ * someone asked for; a size the caller picks itself should come from
+ * `calculateVideoDimensions`, which already stays inside these limits.
+ */
+export function getWan22VideoSizeRefusal(width: number, height: number): string | null {
+  const fmt = (value: number) => value.toLocaleString("en-US");
+  const w = Number(width) || 0;
+  const h = Number(height) || 0;
+  const valid =
+    `Choose 1024×1024, 1280×720, 720×1280, or any other size of at most ${fmt(WAN22_MAX_VIDEO_PIXELS)} pixels, ` +
+    `with each side between ${WAN22_MIN_VIDEO_SIDE} and ${WAN22_MAX_VIDEO_SIDE}.`;
+  if (w && h && w * h > WAN22_MAX_VIDEO_PIXELS) {
+    return (
+      `Wan 2.2 cannot render this video size. ${w}×${h} is ${fmt(w * h)} pixels; ` +
+      `Wan 2.2 renders at most ${fmt(WAN22_MAX_VIDEO_PIXELS)} pixels per frame (1024×1024). ${valid}`
+    );
+  }
+  const outOfRange = ([["width", w], ["height", h]] as const).find(
+    ([, side]) => side && (side < WAN22_MIN_VIDEO_SIDE || side > WAN22_MAX_VIDEO_SIDE),
+  );
+  if (outOfRange) {
+    return (
+      `Wan 2.2 cannot render this video size. A ${outOfRange[0]} of ${outOfRange[1]} is outside ` +
+      `Wan 2.2's ${WAN22_MIN_VIDEO_SIDE}–${WAN22_MAX_VIDEO_SIDE} pixel range. ${valid}`
+    );
+  }
+  return null;
+}
+
 export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
   wan22: {
     model: "wan_v2.2-14b-fp8_i2v_lightx2v",
@@ -199,8 +240,9 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     steps: 6,
     guidance: 5.0,
     dimensionDivisor: 16,
-    minDimension: 480,
-    maxDimension: 1536,
+    minDimension: WAN22_MIN_VIDEO_SIDE,
+    maxDimension: WAN22_MAX_VIDEO_SIDE,
+    maxPixels: WAN22_MAX_VIDEO_PIXELS,
     sampler: "euler",
     scheduler: "simple",
     shift: 8.0,

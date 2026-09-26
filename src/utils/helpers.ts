@@ -12,6 +12,11 @@ import type {
 import { SogniValidationError } from './errors.js';
 import { VIDEO_UPSCALE_MAX_OUTPUT, VIDEO_UPSCALE_MODEL_ID } from '../media/videoUpscale.js';
 import {
+  WAN22_MAX_VIDEO_PIXELS,
+  WAN22_MAX_VIDEO_SIDE,
+  WAN22_MIN_VIDEO_SIDE,
+} from '../media/videoSettings.js';
+import {
   getSeedanceReferenceLimits,
 } from '../tools/shared/seedanceReferences.js';
 import {
@@ -139,9 +144,21 @@ export function getVideoDimensionRules(modelId?: string): VideoDimensionRules {
       // native 4K on 2.0); never shrink the request on its behalf.
       return { minDimension: 1, maxDimension: 8192, dimensionMultiple: 1 };
     }
+    if (isWanVideoModel(modelId)) {
+      // Wan 2.2 renders at most 1,048,576 pixels per frame (1024x1024) with
+      // each side 480-1536; the network refuses larger sizes (4101). The pixel
+      // cap matters on its own: 1536x864 is inside the per-side range but is
+      // still refused.
+      return {
+        minDimension: WAN22_MIN_VIDEO_SIDE,
+        maxDimension: WAN22_MAX_VIDEO_SIDE,
+        dimensionMultiple: 16,
+        maxPixels: WAN22_MAX_VIDEO_PIXELS,
+      };
+    }
   }
-  // Legacy envelope for WAN and unrecognized models — matches the 1536-class
-  // WAN tiers this clamp was originally written for.
+  // Legacy envelope for unrecognized models — matches the 1536-class WAN tiers
+  // this clamp was originally written for.
   return { minDimension: 480, maxDimension: 1536, dimensionMultiple: 16 };
 }
 
