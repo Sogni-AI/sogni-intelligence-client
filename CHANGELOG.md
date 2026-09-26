@@ -1,3 +1,10 @@
+## [4.5.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.5.1...v4.5.2) (2026-09-26)
+
+
+### Bug Fixes
+
+* **contracts:** apply the 200,000-character prompt backstop to every model ([b2ffc82](https://github.com/Sogni-AI/sogni-intelligence-client/commit/b2ffc8257882507584e53009d05c83ba05ca37ae))
+
 ## [4.5.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.5.0...v4.5.1) (2026-09-26)
 
 
