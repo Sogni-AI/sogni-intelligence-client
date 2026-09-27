@@ -1120,6 +1120,19 @@ function runMinimaxH3KeyframePromptTests(): void {
     ['animate_photo', 'generate_video', 'sound_to_video'].map(name => PROMPT_CONTRACTS.find(contract => contract.toolName === name)?.version),
     ['1.3.0', '1.5.0', '1.2.0'],
   );
+  // MiniMax's keyframe format names every keyframe <Picture N> after the mode's own pictures.
+  const generateVideoContract = PROMPT_CONTRACTS.find(contract => contract.toolName === 'generate_video');
+  expect(
+    'keyframe wording names each keyframe <Picture N> and never forbids it',
+    [
+      MINIMAX_H3_KEYFRAMES_GUIDANCE.includes('the prompt names each one <Picture N>'),
+      MINIMAX_H3_KEYFRAMES_GENERATE_VIDEO_DESCRIPTION.includes('The prompt names each keyframe <Picture N>'),
+      generateVideoContract?.baseDescription.includes('The prompt names each keyframe <Picture N>'),
+      [MINIMAX_H3_KEYFRAMES_GUIDANCE, MINIMAX_H3_KEYFRAMES_GENERATE_VIDEO_DESCRIPTION, generateVideoContract?.baseDescription ?? '']
+        .some(text => /never (?:counted as |count as )?<Picture N>/.test(text)),
+    ],
+    [true, true, true, false],
+  );
   expect(
     'video skills tell the planner about MiniMax H3 keyframes',
     [

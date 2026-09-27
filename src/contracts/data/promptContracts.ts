@@ -355,8 +355,9 @@ const GENERATE_VIDEO_CONTRACT: PromptContract = {
     '',
     MINIMAX_H3_KEYFRAMES_GUIDANCE,
     'On generate_video only the MiniMax H3 reference-to-video selectors take keyframes, never text-to-video.',
-    'Keyframe images are not references: they do not go in referenceImageIndices, never count as <Picture N>',
-    'in the reference map, and R2V still needs its own image or video reference.',
+    'Keyframe images are not references: they do not go in referenceImageIndices or the reference map, and',
+    'R2V still needs its own image or video reference. The prompt names each keyframe <Picture N>, numbered',
+    'after the reference pictures in time order.',
   ].join('\n'),
   parameterDocs: {
     keyframes: MINIMAX_H3_KEYFRAMES_GENERATE_VIDEO_DESCRIPTION,
