@@ -1,3 +1,18 @@
+# [4.6.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.5.2...v4.6.0) (2026-09-27)
+
+
+### Bug Fixes
+
+* **contracts:** check audio-guide keyframes against the covering frame count ([e69768b](https://github.com/Sogni-AI/sogni-intelligence-client/commit/e69768b45685c9a3c28b3c0e9eae2d5b4b1881a7))
+* **deps:** take sogni-client 5.58.0 for MiniMax H3 keyframes ([09647d8](https://github.com/Sogni-AI/sogni-intelligence-client/commit/09647d88e603af9beef3bcf46d8c7c63fe0a19c2))
+* **video:** keep every MiniMax H3 Ref2VA and Balanced id on the H3 canvas ([0ad4aa2](https://github.com/Sogni-AI/sogni-intelligence-client/commit/0ad4aa27ad0fefe9b29a991364d1ae7ab3efcad2))
+
+
+### Features
+
+* **contracts:** validate MiniMax H3 keyframes before dispatch ([7864d6f](https://github.com/Sogni-AI/sogni-intelligence-client/commit/7864d6f77d29d6f5b291e3a96cb53ccaa6742a21))
+* **video:** add MiniMax H3 keyframes to the video tools ([f9d85fc](https://github.com/Sogni-AI/sogni-intelligence-client/commit/f9d85fc81343973ea97ef4eaf810d958e2dc80d3))
+
 ## [4.5.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.5.1...v4.5.2) (2026-09-26)
 
 
