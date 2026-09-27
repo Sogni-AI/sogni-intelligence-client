@@ -23,7 +23,7 @@ import {
   supportsMinimaxH3Keyframes,
   textExplicitlyRequestsMultipleImageOutputs,
 } from '../src/tools/index';
-import { validateAndNormalizeHostedToolArguments } from '../src/contracts/index';
+import { PROMPT_CONTRACTS, validateAndNormalizeHostedToolArguments } from '../src/contracts/index';
 import {
   checkMinimaxH3Keyframes,
   isMinimaxH3KeyframeModelId,
@@ -33,6 +33,7 @@ import {
   minimaxH3KeyframeSeconds,
   minimaxH3KeyframeWorkflow,
 } from '../src/media/index';
+import { VIDEO_EDITING_SKILL, VIDEO_GENERATION_SKILL } from '../src/public-skill-runtime/index';
 
 let testsPassed = 0;
 let testsFailed = 0;
@@ -725,6 +726,7 @@ Directly reuse <Audio 1> unchanged.`;
 
   runMinimaxH3KeyframeToolTests();
   runMinimaxH3KeyframeValidationTests();
+  runMinimaxH3KeyframePromptTests();
 
   console.log(`\ntools/shared: ${testsPassed} passed, ${testsFailed} failed`);
   return { passed: testsPassed, failed: testsFailed };
@@ -1054,3 +1056,32 @@ function runMinimaxH3KeyframeValidationTests(): void {
   );
 }
 
+/** The video prompt contracts and skills teach MiniMax H3 keyframes with the tool's own wording. */
+function runMinimaxH3KeyframePromptTests(): void {
+  const tools = [
+    ['animate_photo', MINIMAX_H3_KEYFRAMES_ANIMATE_PHOTO_DESCRIPTION],
+    ['sound_to_video', MINIMAX_H3_KEYFRAMES_SOUND_TO_VIDEO_DESCRIPTION],
+    ['generate_video', MINIMAX_H3_KEYFRAMES_GENERATE_VIDEO_DESCRIPTION],
+  ] as const;
+  for (const [toolName, description] of tools) {
+    const contract = PROMPT_CONTRACTS.find(candidate => candidate.toolName === toolName);
+    expect(
+      `${toolName} prompt contract carries the keyframes guidance and the same parameter text`,
+      [contract?.baseDescription.includes(MINIMAX_H3_KEYFRAMES_GUIDANCE), contract?.parameterDocs.keyframes === description],
+      [true, true],
+    );
+  }
+  expect(
+    'prompt contracts that gained keyframes bump their versions',
+    ['animate_photo', 'generate_video', 'sound_to_video'].map(name => PROMPT_CONTRACTS.find(contract => contract.toolName === name)?.version),
+    ['1.3.0', '1.5.0', '1.2.0'],
+  );
+  expect(
+    'video skills tell the planner about MiniMax H3 keyframes',
+    [
+      VIDEO_GENERATION_SKILL.constraints?.some(line => line.includes(MINIMAX_H3_KEYFRAMES_GUIDANCE) && line.includes('never text-to-video')),
+      VIDEO_EDITING_SKILL.constraints?.some(line => line.includes(MINIMAX_H3_KEYFRAMES_GUIDANCE) && line.includes('sound_to_video')),
+    ],
+    [true, true],
+  );
+}

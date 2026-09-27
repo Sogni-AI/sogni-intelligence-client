@@ -1,5 +1,11 @@
 import type { ContractRegistry } from '../registry.js';
 import type { PromptContract } from '../promptContract.js';
+import {
+  MINIMAX_H3_KEYFRAMES_ANIMATE_PHOTO_DESCRIPTION,
+  MINIMAX_H3_KEYFRAMES_GENERATE_VIDEO_DESCRIPTION,
+  MINIMAX_H3_KEYFRAMES_GUIDANCE,
+  MINIMAX_H3_KEYFRAMES_SOUND_TO_VIDEO_DESCRIPTION,
+} from '../toolPromptMarkers.js';
 
 /**
  * Phase 5 PromptContracts — per-tool prompt prose shared across
@@ -65,7 +71,7 @@ const ORBIT_VIDEO_CONTRACT: PromptContract = {
 // ---------------------------------------------------------------------------
 const ANIMATE_PHOTO_CONTRACT: PromptContract = {
   contractId: 'animate_photo_v1',
-  version: '1.2.0',
+  version: '1.3.0',
   toolName: 'animate_photo',
   baseDescription: [
     'animate_photo produces video from one or more source images using LTX 2.5 by default,',
@@ -233,8 +239,15 @@ const ANIMATE_PHOTO_CONTRACT: PromptContract = {
     '1080p, 1440p or 2K MiniMax H3 output, for two-stage output, or for the sharpest/best H3 quality;',
     'for ordinary 768p FastH3 output keep the regular FastH3 selector at targetResolution 768. Never',
     'set 4K for H3.',
+    '',
+    MINIMAX_H3_KEYFRAMES_GUIDANCE,
+    'On animate_photo keyframes work with every MiniMax H3 image-to-video and first-and-last-frame selector,',
+    'with any frameRole; the first and last frames stay in sourceImageIndex and endImageIndex. They are the',
+    'H3 way to make one continuous clip pass through several images. Without an explicit MiniMax H3 request,',
+    'a multi-image sequence keeps the adjacent-clip chain described above.',
   ].join('\n'),
   parameterDocs: {
+    keyframes: MINIMAX_H3_KEYFRAMES_ANIMATE_PHOTO_DESCRIPTION,
     sourceImageIndices: 'Batch source image indices. Read startIndex from prior generate_image/edit_image result. Negative = uploaded images (-1 = first upload). May be paired with frameRole="end" only for explicit last/end-frame-only fan-out.',
     prompts: 'Per-clip prompt array. Length MUST equal sourceImageIndices.length when both are set.',
     duration: 'Per-clip duration in seconds. Target 15s when dialogue is involved and total length is given without per-clip spec.',
@@ -248,7 +261,7 @@ const ANIMATE_PHOTO_CONTRACT: PromptContract = {
 // ---------------------------------------------------------------------------
 const GENERATE_VIDEO_CONTRACT: PromptContract = {
   contractId: 'generate_video_v1',
-  version: '1.4.0',
+  version: '1.5.0',
   toolName: 'generate_video',
   baseDescription: [
     'generate_video produces text-to-video clips and multimodal reference videos.',
@@ -339,8 +352,14 @@ const GENERATE_VIDEO_CONTRACT: PromptContract = {
     'canvas, and read targetResolution the same way (1080, 1440 or omitted for 2K, 720); each bills its',
     "tier's rate plus the two-stage surcharge of the delivered class. Choose one when the user asks for",
     '1080p, 1440p or 2K MiniMax H3 reference-to-video output; keep the one-stage R2V selectors for 768p.',
+    '',
+    MINIMAX_H3_KEYFRAMES_GUIDANCE,
+    'On generate_video only the MiniMax H3 reference-to-video selectors take keyframes, never text-to-video.',
+    'Keyframe images are not references: they do not go in referenceImageIndices, never count as <Picture N>',
+    'in the reference map, and R2V still needs its own image or video reference.',
   ].join('\n'),
   parameterDocs: {
+    keyframes: MINIMAX_H3_KEYFRAMES_GENERATE_VIDEO_DESCRIPTION,
     prompt: 'Video prompt. Use double quotes ONLY for spoken dialogue. Describe visual text without quotes.',
     duration: 'Clip duration in seconds. Plan dialogue word count against the 3.75 words/second ceiling.',
   },
@@ -790,7 +809,7 @@ const STITCH_VIDEO_CONTRACT: PromptContract = {
 // ---------------------------------------------------------------------------
 const SOUND_TO_VIDEO_CONTRACT: PromptContract = {
   contractId: 'sound_to_video_v1',
-  version: '1.1.0',
+  version: '1.2.0',
   toolName: 'sound_to_video',
   baseDescription: [
     'sound_to_video creates audio-synced video from an audio source. Works with uploaded audio',
@@ -825,8 +844,15 @@ const SOUND_TO_VIDEO_CONTRACT: PromptContract = {
     'negativePrompt are not supported. Add "-2stage" only for 1080p, 1440p or 2K H3 output (1080 or',
     '1440 targetResolution); 720p-class audio output stays on the regular selector. Never use these',
     'in place of the LTX 2.5 defaults when the user did not ask for MiniMax H3 or FastH3.',
+    '',
+    MINIMAX_H3_KEYFRAMES_GUIDANCE,
+    'On sound_to_video every MiniMax H3 audio selector takes keyframes: the audio drives the performance and',
+    'the keyframes pin how it looks at their times. imageIndex follows endImageIndex (-1 = first upload), not',
+    'the 0-based upload numbering of sourceImageIndex. Without duration the clip runs for the audio window',
+    'from audioStart, so keep every keyframe inside it.',
   ].join('\n'),
   parameterDocs: {
+    keyframes: MINIMAX_H3_KEYFRAMES_SOUND_TO_VIDEO_DESCRIPTION,
     audioSource: 'Uploaded audio file or reference to a prior generate_music result. Auto-detected when omitted after generate_music.',
     endImageIndex: 'Last frame for the MiniMax H3 FastH3 first/last frame + audio selectors only, indexed like animate_photo (-1 first upload, -2 second upload, non-negative generated results).',
   },

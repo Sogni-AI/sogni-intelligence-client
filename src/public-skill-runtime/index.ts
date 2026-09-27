@@ -22,6 +22,7 @@ import { resolveRegisteredVideoModelFamily } from '../utils/videoModelIds.js';
 import { resolveRegisteredImageReferenceModelId } from '../utils/imageReferenceModelIds.js';
 import { isGptImageModel, normalizeGptImageModelAlias } from '../media/gptImage.js';
 import { WAN22_MAX_VIDEO_PIXELS } from '../media/videoSettings.js';
+import { MINIMAX_H3_KEYFRAMES_GUIDANCE } from '../contracts/toolPromptMarkers.js';
 
 type LtxWorkflow = 't2v' | 'i2v' | 'ia2v' | 'a2v' | 'v2v';
 type Ltx25Workflow = LtxWorkflow;
@@ -1122,6 +1123,7 @@ export const VIDEO_GENERATION_SKILL: SkillManifest = {
     'For My Personas video requests, default to image_editing first to produce a conditioned scene image before animation. Use direct video only when the user explicitly asks to animate an existing persona image/reference or no source image is available for a voice-only request.',
     'Wan 3.0 Enhanced uses exact Sogni model id wan3.0-spicy-video (MuleRouter provider id w3.0-video): 2-30 seconds at 30 fps, 480p/720p/1080p, native audio, prompt expansion, adaptive/fixed ratios, and up to 10 image/5 video/5 audio references. First/last-frame mode and loose-reference mode are mutually exclusive. It has no document/web context, watermark, negative prompt, source-video edit, or extend mode.',
     'MiniMax H3 two-stage: 1080p and 2K H3 delivery is its own selector, not an option. minimax-h3-fasth3-t2v-turbo-2stage on generate_video (animate_photo carries minimax-h3-fasth3-i2v-turbo-2stage and minimax-h3-fasth3-flf2v-turbo-2stage) renders the FastH3 canvas, then the worker enlarges it 2x and refines it, so the clip is delivered at twice the canvas with the same length and audio. targetResolution names the delivered class: 1080 renders a 544px short-edge canvas (960x544 becomes 1920x1088) for 10 Spark per second, 1440 or omitted renders the 768p canvas for 2K (1344x768 becomes 2688x1536) for 16 Spark per second, and 720 renders a 384px canvas (672x384 becomes 1344x768) for the regular FastH3 price of 4 Spark per second. Choose it when the user asks for 1080p, 1440p or 2K H3 output, for two-stage output, or for the sharpest/best H3 quality, and send the same prompt contract, durations and LoRAs as the matching FastH3 selector; keep ordinary 768p FastH3 output on the regular FastH3 selector at targetResolution 768. Reference-to-video has its own two-stage selectors on generate_video: minimax-h3-r2v-2stage (Standard, 20 steps) and minimax-h3-r2v-balanced-2stage (Balanced, 8 steps) take exactly the references, prompt contract, durations and LoRAs of minimax-h3-r2v and minimax-h3-r2v-balanced, deliver twice the canvas, and read targetResolution the same way; each bills its tier\'s rate plus the two-stage surcharge of the delivered class. Keep the one-stage R2V selectors for ordinary 768p output.',
+    `${MINIMAX_H3_KEYFRAMES_GUIDANCE} On generate_video only the MiniMax H3 reference-to-video selectors take keyframes, never text-to-video; the keyframe images are not references and do not go in referenceImageIndices.`,
   ],
 };
 
@@ -1148,6 +1150,7 @@ export const VIDEO_EDITING_SKILL: SkillManifest = {
     'animate_photo errors with all_failed must surface to the user; do not auto-retry from inside the chat loop.',
     'Use upscale_video for a promptless 1080p/1440p resolution increase of an existing video; it keeps every frame, the frame rate, and the audio. Do not substitute video_to_video unless the user explicitly asks a generative model such as Seedance to re-render the clip.',
     'MiniMax H3 audio guide: sound_to_video takes minimax-h3-fasth3-ia2v-turbo (first-frame image + audio), minimax-h3-fasth3-flfa2v-turbo (first and last frame + audio, with endImageIndex) and minimax-h3-fasth3-a2v-turbo (audio only), each with a -2stage form for 1080p or 2K output. The uploaded audio drives the picture from frame 0 and stays in the output; clips are 5.2-15.1 seconds at 24 fps, audioStart picks the window, and MiniMax H3 catalog and Personal LoRAs work across audio modes and tiers; generateAudio false and negativePrompt are refused. Use them only when the user asks for MiniMax H3 or FastH3; the LTX 2.5 audio selectors stay the default.',
+    `${MINIMAX_H3_KEYFRAMES_GUIDANCE} animate_photo takes keyframes on every MiniMax H3 image-to-video and first-and-last-frame selector, and sound_to_video on every MiniMax H3 audio selector (without duration the audio window from audioStart sets the clip length).`,
   ],
 };
 
