@@ -28,6 +28,7 @@ import {
   isRegisteredLtxVideoModelId,
   isRegisteredLooseReferenceVideoModelId,
   isRegisteredMiniMaxH3VideoModelId,
+  isRegisteredWan3VideoModelId,
   isRegisteredWanVideoModelId,
 } from './videoModelIds.js';
 
@@ -137,6 +138,13 @@ export function getVideoDimensionRules(modelId?: string): VideoDimensionRules {
     if (isHappyHorseVideoModel(modelId)) {
       // HappyHorse registers exact 720P/1080P geometries (1920 ceiling, no
       // divisor) — rounding to multiples of 16 would corrupt 1080.
+      return { minDimension: 480, maxDimension: 1920, dimensionMultiple: 1 };
+    }
+    if (isRegisteredWan3VideoModelId(modelId)) {
+      // Wan 3 (and Enhanced) take exact 480P/720P/1080P sizes up to 1920x1080
+      // or 1080x1920, with no divisor (480p is 854x480). The network picks the
+      // tier from the canvas area, so the legacy 1536 clamp turned every 1080p
+      // request into 1536x864, which prices and renders as 720p.
       return { minDimension: 480, maxDimension: 1920, dimensionMultiple: 1 };
     }
     if (isSeedanceVideoModel(modelId)) {
