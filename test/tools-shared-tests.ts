@@ -724,6 +724,7 @@ Directly reuse <Audio 1> unchanged.`;
   );
 
   runMinimaxH3KeyframeToolTests();
+  runMinimaxH3KeyframeValidationTests();
 
   console.log(`\ntools/shared: ${testsPassed} passed, ${testsFailed} failed`);
   return { passed: testsPassed, failed: testsFailed };
@@ -904,6 +905,152 @@ function runMinimaxH3KeyframeToolTests(): void {
     'keyframes do not block the one-project Dynamic Prompt collapse and are kept',
     [collapsed?.prompt, collapsed?.numberOfVariations, collapsed?.keyframes],
     ['{first take|second take}', 2, shared],
+  );
+}
+
+/**
+ * Hosted-tool validation of MiniMax H3 keyframes: only on keyframe selectors,
+ * at most 8, strictly inside the clip, one frame each, and never dropped.
+ */
+function runMinimaxH3KeyframeValidationTests(): void {
+  const definitions = {
+    animate_photo: animatePhotoDefinition,
+    sound_to_video: soundToVideoDefinition,
+    generate_video: generateVideoDefinition,
+  } as const;
+  const validate = (toolName: keyof typeof definitions, args: Record<string, unknown>) => {
+    const result = validateAndNormalizeHostedToolArguments([definitions[toolName]], toolName, {
+      prompt: 'She walks from the kitchen to the garden.',
+      ...args,
+    });
+    return result.ok ? 'ok' : result.errors.join(' | ');
+  };
+  const twoKeyframes = [{ imageIndex: -2, atSeconds: 2 }, { imageIndex: 0, atSeconds: 4.5 }];
+  expect(
+    'every keyframe selector accepts keyframes inside its clip',
+    [
+      ...getMinimaxH3KeyframeSelectors('animate_photo').map(videoModel => validate('animate_photo', {
+        videoModel,
+        duration: 8,
+        ...(videoModel.includes('flf2v') ? { frameRole: 'both', sourceImageIndex: -1, endImageIndex: -3 } : {}),
+        keyframes: twoKeyframes,
+      })),
+      ...getMinimaxH3KeyframeSelectors('sound_to_video').map(videoModel => validate('sound_to_video', {
+        videoModel,
+        ...(videoModel.includes('flfa2v') ? { sourceImageIndex: -1, endImageIndex: -3 } : {}),
+        ...(videoModel.includes('ia2v') ? { sourceImageIndex: -1 } : {}),
+        keyframes: twoKeyframes,
+      })),
+      ...getMinimaxH3KeyframeSelectors('generate_video').map(videoModel => validate('generate_video', {
+        videoModel,
+        duration: 8,
+        referenceImageIndices: [-1],
+        keyframes: twoKeyframes,
+      })),
+    ],
+    Array.from({ length: 18 }, () => 'ok'),
+  );
+  expect(
+    'eight keyframes are accepted and the cleaned arguments keep every one',
+    validateAndNormalizeHostedToolArguments([animatePhotoDefinition], 'animate_photo', {
+      prompt: 'A tour of the house.',
+      videoModel: 'minimax-h3-fasth3-i2v-turbo-2stage',
+      duration: 15,
+      keyframes: Array.from({ length: 8 }, (_, index) => ({ imageIndex: -(index + 2), atSeconds: index * 1.5 + 1 })),
+    }).cleaned.keyframes,
+    Array.from({ length: 8 }, (_, index) => ({ imageIndex: -(index + 2), atSeconds: index * 1.5 + 1 })),
+  );
+  expect(
+    'keyframes are refused on models that cannot pin them, naming the ones that can',
+    [
+      validate('animate_photo', { keyframes: twoKeyframes }).startsWith('Argument "keyframes" needs a MiniMax H3 videoModel: on animate_photo only "minimax-h3-i2v"'),
+      validate('animate_photo', { videoModel: 'ltx25', keyframes: twoKeyframes }).startsWith('videoModel "ltx25" cannot pin keyframes. On animate_photo only "minimax-h3-i2v"'),
+      validate('sound_to_video', { videoModel: 'ltx25-a2v', keyframes: twoKeyframes }).includes('"minimax-h3-fasth3-a2v-turbo-2stage" take "keyframes"'),
+      validate('generate_video', { videoModel: 'seedance2-5', keyframes: twoKeyframes }).includes('"minimax-h3-r2v-balanced-2stage" take "keyframes"'),
+    ],
+    [true, true, true, true],
+  );
+  expect(
+    'generate_video refuses keyframes on MiniMax H3 text-to-video and points at R2V or animate_photo',
+    validate('generate_video', { videoModel: 'minimax-h3-fasth3-t2v-turbo', duration: 8, keyframes: twoKeyframes }),
+    'videoModel "minimax-h3-fasth3-t2v-turbo" is MiniMax H3 text-to-video, which cannot pin keyframes. On generate_video only the reference-to-video selectors "minimax-h3-r2v", "minimax-h3-r2v-turbo", "minimax-h3-r2v-2stage", "minimax-h3-r2v-balanced-2stage" take "keyframes" (with an image or video reference); for a clip that starts on or passes through images use animate_photo with a MiniMax H3 image-to-video selector, or remove "keyframes".',
+  );
+  expect(
+    'nine keyframes are refused, not trimmed',
+    validate('animate_photo', {
+      videoModel: 'minimax-h3-i2v',
+      duration: 15,
+      keyframes: Array.from({ length: 9 }, (_, index) => ({ imageIndex: -1, atSeconds: index + 1 })),
+    }),
+    'Argument "keyframes" must contain at most 8 items',
+  );
+  expect(
+    'a keyframe past the clip is refused with the window and a whole-second duration that fits',
+    validate('animate_photo', { videoModel: 'minimax-h3-fasth3-i2v-turbo', duration: 8, keyframes: [{ imageIndex: -2, atSeconds: 9.2 }] }),
+    'keyframes[0] at 9.2 s is past the 8.0 s clip (duration 8 renders 192 frames); keep keyframes between 0.1 s and 7.9 s, or set duration to at least 10 s.',
+  );
+  expect(
+    'without duration the default 5 s clip bounds the keyframes',
+    validate('generate_video', { videoModel: 'minimax-h3-r2v', referenceImageIndices: [-1], keyframes: [{ imageIndex: -2, atSeconds: 7 }] }),
+    'keyframes[0] at 7 s is past the 5.17 s clip (the default 5 s duration renders 124 frames); keep keyframes between 0.1 s and 5.0 s, or set duration to at least 7 s.',
+  );
+  expect(
+    'keyframes on the first or last frame, before the start, or sharing a frame are refused',
+    validate('animate_photo', {
+      videoModel: 'minimax-h3-flf2v',
+      frameRole: 'both',
+      sourceImageIndex: -1,
+      endImageIndex: -2,
+      duration: 8,
+      keyframes: [
+        { imageIndex: -3, atSeconds: 0 },
+        { imageIndex: -3, atSeconds: 7.96 },
+        { imageIndex: -3, atSeconds: -1 },
+        { imageIndex: -4, atSeconds: 2 },
+        { imageIndex: -5, atSeconds: 2.01 },
+      ],
+    }).split(' | '),
+    [
+      'keyframes[0] at 0 s lands on the first frame, which is never a keyframe (the first and last frames come from sourceImageIndex and endImageIndex); keep keyframes between 0.1 s and 7.9 s.',
+      'keyframes[1] at 7.96 s lands on the last frame of the 8.0 s clip, which is never a keyframe (the first and last frames come from sourceImageIndex and endImageIndex); keep keyframes between 0.1 s and 7.9 s.',
+      'keyframes[2] at -1 s is before the video starts; keep keyframes between 0.1 s and 7.9 s.',
+      'keyframes[3] and keyframes[4] both land on frame 48 (2.0 s); give each keyframe its own time, at least 0.1 s apart.',
+    ],
+  );
+  expect(
+    'Sound to Video without duration checks against the longest H3 clip; with duration against its own',
+    [
+      validate('sound_to_video', { videoModel: 'minimax-h3-fasth3-a2v-turbo', keyframes: [{ imageIndex: -1, atSeconds: 14.9 }] }),
+      validate('sound_to_video', { videoModel: 'minimax-h3-fasth3-a2v-turbo', keyframes: [{ imageIndex: -1, atSeconds: 15.05 }] }),
+      validate('sound_to_video', { videoModel: 'minimax-h3-fasth3-ia2v-turbo', sourceImageIndex: -1, duration: 6, keyframes: [{ imageIndex: -1, atSeconds: 5.85 }] }),
+    ],
+    [
+      'ok',
+      'keyframes[0] at 15.05 s is at or past the end of the longest MiniMax H3 clip (15.08 s); keep keyframes between 0.1 s and 15.0 s.',
+      'keyframes[0] at 5.85 s lands on the last frame of the 5.88 s clip, which is never a keyframe (the first frame comes from sourceImageIndex, and the last frame cannot be pinned); keep keyframes between 0.1 s and 5.7 s.',
+    ],
+  );
+  expect(
+    'malformed keyframe entries are refused by the schema',
+    validate('animate_photo', {
+      videoModel: 'minimax-h3-i2v',
+      keyframes: [{ imageIndex: 1.5, atSeconds: 1 }, { imageIndex: -1 }, { imageIndex: -1, atSeconds: 'two' }],
+    }).split(' | '),
+    [
+      'Argument "keyframes[0].imageIndex" must be integer',
+      'Missing required argument "keyframes[1].atSeconds"',
+      'Argument "keyframes[2].atSeconds" must be number',
+    ],
+  );
+  expect(
+    'a definition that does not declare keyframes refuses them instead of dropping them',
+    validateAndNormalizeHostedToolArguments(
+      [{ function: { name: 'animate_photo', parameters: { type: 'object', properties: { prompt: { type: 'string' } } } } }],
+      'animate_photo',
+      { prompt: 'x', videoModel: 'minimax-h3-i2v', keyframes: twoKeyframes },
+      { stripUnknownProperties: true },
+    ).errors,
+    ['Argument "keyframes" is not declared by this animate_photo definition, so its MiniMax H3 keyframes would be lost; update the tool definition before sending keyframes, or remove "keyframes".'],
   );
 }
 

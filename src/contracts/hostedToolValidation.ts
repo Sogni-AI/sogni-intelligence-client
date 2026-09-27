@@ -1,4 +1,15 @@
 import { minimaxH3AudioGuideMode } from '../media/videoSettings.js';
+import {
+  MINIMAX_H3_MAX_KEYFRAMES,
+  checkMinimaxH3Keyframes,
+  minimaxH3FramesForDuration,
+  minimaxH3KeyframeEdgeHint,
+  minimaxH3KeyframeWorkflow,
+} from '../media/minimaxH3Keyframes.js';
+import {
+  getMinimaxH3KeyframeSelectors,
+  supportsMinimaxH3Keyframes,
+} from '../tools/shared/modelRegistry.js';
 import { checkToolArgumentPromptLimits } from './promptLimits.js';
 
 export interface HostedToolSchemaProperty {
@@ -126,6 +137,79 @@ function coerceValueForTypes(
   }
 
   return { value, coerced: false };
+}
+
+/** The video tools whose `keyframes` argument pins MiniMax H3 intermediate keyframes. */
+const MINIMAX_H3_KEYFRAME_TOOLS: ReadonlySet<string> = new Set(['animate_photo', 'sound_to_video', 'generate_video']);
+
+/** Seconds the video tools render when `duration` is omitted. */
+const DEFAULT_VIDEO_TOOL_DURATION_SECONDS = 5;
+
+function isWellFormedKeyframe(entry: unknown): boolean {
+  return isRecord(entry)
+    && typeof entry.imageIndex === 'number'
+    && Number.isInteger(entry.imageIndex)
+    && typeof entry.atSeconds === 'number'
+    && Number.isFinite(entry.atSeconds);
+}
+
+function formatSelectorList(selectors: readonly string[]): string {
+  return selectors.map(selector => `"${selector}"`).join(', ');
+}
+
+/**
+ * The refusal for `keyframes` on a videoModel that cannot pin them, naming the
+ * selectors on this tool that can.
+ */
+function minimaxH3KeyframeModelError(toolName: string, videoModel: unknown): string {
+  const supported = formatSelectorList(getMinimaxH3KeyframeSelectors(toolName));
+  if (typeof videoModel !== 'string') {
+    return `Argument "keyframes" needs a MiniMax H3 videoModel: on ${toolName} only ${supported} take keyframes. Set videoModel to one of them or remove "keyframes".`;
+  }
+  if (toolName === 'generate_video' && videoModel.startsWith('minimax-h3-') && minimaxH3KeyframeWorkflow(videoModel) === null) {
+    return `videoModel "${videoModel}" is MiniMax H3 text-to-video, which cannot pin keyframes. On generate_video only the reference-to-video selectors ${supported} take "keyframes" (with an image or video reference); for a clip that starts on or passes through images use animate_photo with a MiniMax H3 image-to-video selector, or remove "keyframes".`;
+  }
+  return `videoModel "${videoModel}" cannot pin keyframes. On ${toolName} only ${supported} take "keyframes"; switch videoModel to one of them or remove "keyframes".`;
+}
+
+/**
+ * MiniMax H3 intermediate keyframes: only on this tool's keyframe selectors,
+ * at most 8, every time strictly inside the clip and on its own frame. The
+ * tool schema reports malformed entries and a list over 8, so the timing
+ * checks run only on a well-formed list. Frames come from `duration`
+ * (default 5 s) on the H3 grid. A Sound to Video clip with no duration is sized
+ * by its audio window, which only the executor knows: its times are checked
+ * against the longest H3 clip here, and the executor checks them again against
+ * the real frame count (`checkMinimaxH3Keyframes` with `frames`). An executor
+ * that changes the duration after validation must re-check the same way.
+ */
+function minimaxH3KeyframeArgumentErrors(toolName: string, args: Record<string, unknown>): string[] {
+  const keyframes = args.keyframes;
+  if (!Array.isArray(keyframes) || keyframes.length === 0) return [];
+  const videoModel = args.videoModel;
+  if (!supportsMinimaxH3Keyframes(toolName, videoModel)) {
+    return [minimaxH3KeyframeModelError(toolName, videoModel)];
+  }
+  if (keyframes.length > MINIMAX_H3_MAX_KEYFRAMES || !keyframes.every(isWellFormedKeyframe)) return [];
+
+  const duration = typeof args.duration === 'number' && Number.isFinite(args.duration) && args.duration > 0
+    ? args.duration
+    : undefined;
+  const sizedByAudio = toolName === 'sound_to_video' && duration === undefined;
+  const frames = sizedByAudio
+    ? undefined
+    : minimaxH3FramesForDuration(duration ?? DEFAULT_VIDEO_TOOL_DURATION_SECONDS);
+  const framesSource = frames === undefined
+    ? undefined
+    : duration === undefined
+      ? `the default ${DEFAULT_VIDEO_TOOL_DURATION_SECONDS} s duration renders ${frames} frames`
+      : `duration ${duration} renders ${frames} frames`;
+  return checkMinimaxH3Keyframes(keyframes, {
+    frames,
+    framesSource,
+    edgeHint: minimaxH3KeyframeEdgeHint(videoModel as string),
+    suggestDuration: true,
+  }).errors;
 }
 
 interface SchemaValidationContext {
@@ -572,6 +656,20 @@ export function validateAndNormalizeHostedToolArguments(
       context.errors.push(
         `videoModel "${String(cleanedRecord.videoModel)}" has no negative-prompt input; remove "negativePrompt"`,
       );
+    }
+  }
+
+  // MiniMax H3 intermediate keyframes. A definition that does not declare the
+  // argument would strip or ignore it and render the clip without them, so
+  // that is refused rather than dropped.
+  if (MINIMAX_H3_KEYFRAME_TOOLS.has(toolName) && args.keyframes !== undefined && args.keyframes !== null) {
+    const declaresKeyframes = isRecord(normalizedSchema.properties) && 'keyframes' in normalizedSchema.properties;
+    if (!declaresKeyframes) {
+      context.errors.push(
+        `Argument "keyframes" is not declared by this ${toolName} definition, so its MiniMax H3 keyframes would be lost; update the tool definition before sending keyframes, or remove "keyframes".`,
+      );
+    } else {
+      context.errors.push(...minimaxH3KeyframeArgumentErrors(toolName, cleanedRecord));
     }
   }
 
