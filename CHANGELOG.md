@@ -1,3 +1,10 @@
+## [4.6.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.6.2...v4.6.3) (2026-09-27)
+
+
+### Bug Fixes
+
+* **contracts:** name MiniMax H3 keyframes as <Picture N> in the tool wording ([9770621](https://github.com/Sogni-AI/sogni-intelligence-client/commit/977062104f78c88f4fb03bc88a6071f080b9a9d3))
+
 ## [4.6.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.6.1...v4.6.2) (2026-09-27)
 
 
