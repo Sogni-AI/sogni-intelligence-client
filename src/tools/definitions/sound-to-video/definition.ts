@@ -21,10 +21,15 @@ import {
   MINIMAX_H3_AUDIO_GUIDE_SOUND_TO_VIDEO_FUNCTION_DESCRIPTION,
   MINIMAX_H3_AUDIO_GUIDE_SOUND_TO_VIDEO_MODEL_DESCRIPTION,
   MINIMAX_H3_AUDIO_GUIDE_SOURCE_IMAGE_INDEX_DESCRIPTION,
+  MINIMAX_H3_KEYFRAME_AT_SECONDS_DESCRIPTION,
+  MINIMAX_H3_KEYFRAME_IMAGE_INDEX_DESCRIPTION,
+  MINIMAX_H3_KEYFRAMES_GUIDANCE,
+  MINIMAX_H3_KEYFRAMES_SOUND_TO_VIDEO_DESCRIPTION,
   SEEDANCE_EXPAND_PROMPT_DESCRIPTION,
   SEEDANCE_TOOL_AUDIO_REFERENCE_GUIDANCE,
 } from '../../../contracts/toolPromptMarkers.js';
 import { ASPECT_RATIO_DESCRIPTION } from '../../../media/index.js';
+import { MINIMAX_H3_MAX_KEYFRAMES } from '../../../media/minimaxH3Keyframes.js';
 import { VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE } from '../../../contracts/promptLimits.js';
 
 /**
@@ -107,6 +112,21 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
         endImageIndex: {
           type: "number",
           description: MINIMAX_H3_AUDIO_GUIDE_END_IMAGE_INDEX_DESCRIPTION,
+        },
+        keyframes: {
+          type: "array",
+          minItems: 1,
+          maxItems: MINIMAX_H3_MAX_KEYFRAMES,
+          items: {
+            type: "object",
+            properties: {
+              imageIndex: { type: "integer", description: MINIMAX_H3_KEYFRAME_IMAGE_INDEX_DESCRIPTION },
+              atSeconds: { type: "number", description: MINIMAX_H3_KEYFRAME_AT_SECONDS_DESCRIPTION },
+            },
+            required: ["imageIndex", "atSeconds"],
+            additionalProperties: false,
+          },
+          description: MINIMAX_H3_KEYFRAMES_SOUND_TO_VIDEO_DESCRIPTION,
         },
         audioStart: {
           type: "number",
@@ -210,4 +230,6 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
 
 definition.function.description +=
   ' Use videoModel="wan3.0-video" when the user explicitly requests Wan 3 audio-driven video. ' +
-  MINIMAX_H3_AUDIO_GUIDE_SOUND_TO_VIDEO_FUNCTION_DESCRIPTION;
+  MINIMAX_H3_AUDIO_GUIDE_SOUND_TO_VIDEO_FUNCTION_DESCRIPTION +
+  ' ' +
+  MINIMAX_H3_KEYFRAMES_GUIDANCE;

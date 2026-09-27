@@ -20,7 +20,10 @@ function stringArray(value: unknown): string[] | null {
   return parsed;
 }
 
-const SINGLE_PROJECT_FANOUT_ARRAY_FIELDS = new Set(['prompts', 'sourceImageIndices', 'endImageIndices']);
+// Array arguments that never make a call per-output. The fan-out fields are
+// collapsed below; `keyframes` is one clip's list of MiniMax H3 keyframes that
+// every output of the call pins, so several of them are still one project.
+const SINGLE_PROJECT_FANOUT_ARRAY_FIELDS = new Set(['prompts', 'sourceImageIndices', 'endImageIndices', 'keyframes']);
 
 function oneRepeatedInteger(values: readonly number[], expectedLength: number): number | null {
   if (values.length === 1) return values[0] ?? null;

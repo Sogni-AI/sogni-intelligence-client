@@ -7,6 +7,11 @@
  * this registry to keep all three consumers in sync.
  */
 
+import {
+  minimaxH3KeyframeWorkflow,
+  type MinimaxH3KeyframeWorkflow,
+} from '../../media/minimaxH3Keyframes.js';
+
 export interface ModelOption {
   key: string;
   displayName: string;
@@ -188,6 +193,54 @@ export function isQualityTierTool(toolName: string): boolean {
 /** Get all available models for a tool. Returns empty array if tool has no model options. */
 export function getModelOptions(toolName: string): ModelOption[] {
   return MODELS_BY_TOOL[toolName] ?? [];
+}
+
+/**
+ * The MiniMax H3 workflows whose selectors take `keyframes` on each video tool:
+ * animate_photo's image-to-video and first/last-frame selectors (any
+ * frameRole), sound_to_video's FastH3 audio selectors, and generate_video's
+ * reference-to-video selectors. Text-to-video never takes them.
+ */
+const MINIMAX_H3_KEYFRAME_WORKFLOWS_BY_TOOL: Readonly<Record<string, readonly MinimaxH3KeyframeWorkflow[]>> = {
+  animate_photo: ['i2v', 'flf2v'],
+  sound_to_video: ['ia2v', 'flfa2v', 'a2v'],
+  generate_video: ['r2v'],
+};
+
+/**
+ * Whether `videoModel` on `toolName` can pin MiniMax H3 intermediate
+ * `keyframes`. Decided by the selector's H3 workflow, so every tier and
+ * two-stage form of a keyframe-capable workflow qualifies, including tiers a
+ * host adds to its own copy of the tool (the Balanced selectors). An omitted
+ * videoModel means the tool's default, which never takes keyframes.
+ */
+export function supportsMinimaxH3Keyframes(toolName: string, videoModel: unknown): boolean {
+  const workflows = MINIMAX_H3_KEYFRAME_WORKFLOWS_BY_TOOL[toolName];
+  if (!workflows || typeof videoModel !== 'string') return false;
+  const workflow = minimaxH3KeyframeWorkflow(videoModel);
+  return workflow !== null && workflows.includes(workflow);
+}
+
+/**
+ * The videoModel selectors that take `keyframes` on each tool, in registry
+ * order: 8 on animate_photo, 6 on sound_to_video and 4 on generate_video.
+ */
+export const MINIMAX_H3_KEYFRAME_SELECTORS_BY_TOOL: Readonly<Record<string, readonly string[]>> = Object.freeze(
+  Object.fromEntries(
+    Object.keys(MINIMAX_H3_KEYFRAME_WORKFLOWS_BY_TOOL).map(toolName => [
+      toolName,
+      Object.freeze(
+        (MODELS_BY_TOOL[toolName] ?? [])
+          .map(option => option.key)
+          .filter(key => supportsMinimaxH3Keyframes(toolName, key)),
+      ),
+    ]),
+  ),
+);
+
+/** The videoModel selectors that take `keyframes` on `toolName`; empty for any other tool. */
+export function getMinimaxH3KeyframeSelectors(toolName: string): readonly string[] {
+  return MINIMAX_H3_KEYFRAME_SELECTORS_BY_TOOL[toolName] ?? [];
 }
 
 /** Get alternative models (excludes the currently used model). */

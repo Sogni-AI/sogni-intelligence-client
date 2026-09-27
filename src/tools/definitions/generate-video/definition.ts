@@ -16,8 +16,13 @@ import {
   SEEDANCE_EXPAND_PROMPT_DESCRIPTION,
   SEEDANCE_TOOL_MULTIMODAL_REFERENCE_GUIDANCE,
   HAPPYHORSE_GENERATE_VIDEO_MODEL_DESCRIPTION,
+  MINIMAX_H3_KEYFRAME_AT_SECONDS_DESCRIPTION,
+  MINIMAX_H3_KEYFRAME_IMAGE_INDEX_DESCRIPTION,
+  MINIMAX_H3_KEYFRAMES_GENERATE_VIDEO_DESCRIPTION,
+  MINIMAX_H3_KEYFRAMES_GUIDANCE,
 } from '../../../contracts/toolPromptMarkers.js';
 import { ASPECT_RATIO_DESCRIPTION } from '../../../media/index.js';
+import { MINIMAX_H3_MAX_KEYFRAMES } from '../../../media/minimaxH3Keyframes.js';
 import { VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE } from '../../../contracts/promptLimits.js';
 
 /**
@@ -197,6 +202,21 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
           description:
             'Seedance or MiniMax H3 r2v loose audio references. Use negative indices for uploaded audio files and non-negative indices for generated audio results. Seedance uses @Audio tags; H3 uses <Audio 1>, <Audio 2>, and so on in selection order. H3 Ref2VA audio may accompany an image or video, but audio alone is invalid. Wan 3 loose audios use Audio 1, Audio 2, and so on, with up to 5 audios.',
         },
+        keyframes: {
+          type: "array",
+          minItems: 1,
+          maxItems: MINIMAX_H3_MAX_KEYFRAMES,
+          items: {
+            type: "object",
+            properties: {
+              imageIndex: { type: "integer", description: MINIMAX_H3_KEYFRAME_IMAGE_INDEX_DESCRIPTION },
+              atSeconds: { type: "number", description: MINIMAX_H3_KEYFRAME_AT_SECONDS_DESCRIPTION },
+            },
+            required: ["imageIndex", "atSeconds"],
+            additionalProperties: false,
+          },
+          description: MINIMAX_H3_KEYFRAMES_GENERATE_VIDEO_DESCRIPTION,
+        },
         width: {
           type: "number",
           description:
@@ -248,3 +268,5 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
     },
   },
 };
+
+definition.function.description += ` ${MINIMAX_H3_KEYFRAMES_GUIDANCE}`;

@@ -60,5 +60,33 @@ export const MINIMAX_H3_AUDIO_GUIDE_GENERATE_AUDIO_DESCRIPTION =
 export const MINIMAX_H3_AUDIO_GUIDE_NEGATIVE_PROMPT_DESCRIPTION =
   'MiniMax H3 has no negative-prompt input; do not set this for the MiniMax H3 FastH3 audio selectors and state exclusions positively in prompt.';
 
+// MiniMax H3 intermediate keyframes (Comfy worker 1.0.226+, SDK 5.58.0+) on
+// animate_photo, sound_to_video and generate_video. The `keyframes` argument
+// carries MINIMAX_H3_KEYFRAMES_DESCRIPTION word for word on every tool, followed
+// by one sentence naming which of that tool's selectors take it; the prompt
+// contracts, skill manifests and tool descriptions add
+// MINIMAX_H3_KEYFRAMES_GUIDANCE. Validation lives in hostedToolValidation and
+// the frame math in media/minimaxH3Keyframes.
+export const MINIMAX_H3_KEYFRAMES_DESCRIPTION =
+  'MiniMax H3 only. Pin up to 8 images at exact moments inside the video, in addition to the first/last frame. Each item is {imageIndex, atSeconds}: imageIndex uses the endImageIndex convention (negative = uploads, 0+ = generated results); atSeconds is when the video should land on that image. Keyframes must fall strictly inside the clip (not on the first or last frame) and at distinct times. Describe what each keyframe shows in the prompt at its time; a keyframe with a new angle, place or light starts a new shot. Two keyframes are included in the price; each additional keyframe adds a little.';
+
+export const MINIMAX_H3_KEYFRAME_IMAGE_INDEX_DESCRIPTION =
+  'The image the video lands on, indexed like endImageIndex: -1 = first upload, -2 = second upload, 0 and up = generated image results.';
+
+export const MINIMAX_H3_KEYFRAME_AT_SECONDS_DESCRIPTION =
+  'Seconds from the start of the video at which it lands on this image (0.1 s precision is enough). Must be after the first frame and before the last one.';
+
+export const MINIMAX_H3_KEYFRAMES_ANIMATE_PHOTO_DESCRIPTION =
+  `${MINIMAX_H3_KEYFRAMES_DESCRIPTION} On animate_photo every MiniMax H3 image-to-video and first-and-last-frame selector takes keyframes, with any frameRole; the first and last frames stay in sourceImageIndex and endImageIndex. When one continuous H3 clip should pass through extra images, pass them here on that single call instead of chaining sourceImageIndices clips.`;
+
+export const MINIMAX_H3_KEYFRAMES_SOUND_TO_VIDEO_DESCRIPTION =
+  `${MINIMAX_H3_KEYFRAMES_DESCRIPTION} On sound_to_video every MiniMax H3 audio selector takes keyframes (image + audio, first and last frame + audio, and audio only, each one- and two-stage). imageIndex follows endImageIndex here too (-1 = first upload), not the 0-based upload numbering of sourceImageIndex. Without duration the clip runs for the audio window from audioStart (at most 15.08 s), so keep every keyframe inside that window.`;
+
+export const MINIMAX_H3_KEYFRAMES_GENERATE_VIDEO_DESCRIPTION =
+  `${MINIMAX_H3_KEYFRAMES_DESCRIPTION} On generate_video only the MiniMax H3 reference-to-video selectors (minimax-h3-r2v and its turbo, balanced and two-stage forms) take keyframes; text-to-video never does, and reference-to-video has no first or last frame to pin. Keyframes are not references: they do not go in referenceImageIndices, are never counted as <Picture N>, and R2V still needs its own image or video reference.`;
+
+export const MINIMAX_H3_KEYFRAMES_GUIDANCE =
+  'MINIMAX H3 KEYFRAMES: when the user wants one MiniMax H3 clip to pass through extra images at chosen moments, pass keyframes=[{imageIndex, atSeconds}] (up to 8; imageIndex indexed like endImageIndex) on that one call, and make the clip long enough that every keyframe falls strictly inside it (set duration when the default would end too soon). Say in the prompt what each keyframe shows at its time, and start a new shot at a keyframe that changes the angle, place or light. Keyframes add to the first and last frame and are never <Picture N> references. Two are included in the price; each additional keyframe adds a little. Only MiniMax H3 selectors take them (see the keyframes argument for which).';
+
 export const MINIMAX_H3_AUDIO_GUIDE_PROMPT_DESCRIPTION =
   'MINIMAX H3 AUDIO SELECTORS: write the request plainly (subject, action, camera, the voice or sound heard in the upload and any exact words spoken in it); the MiniMax H3 prompt shaper turns it into the H3 contract for the matching image-to-video, first-and-last-frame or text-to-video mode. Describe the uploaded audio as it is, and do not invent other dialogue or music.';

@@ -8,13 +8,31 @@ import {
   generateImageDefinition,
   generateSpeechDefinition,
   soundToVideoDefinition,
+  collapseSingleSourceFanOutToDynamicPromptVariations,
   extractDynamicPromptBranches,
+  getMinimaxH3KeyframeSelectors,
   getModelOptions,
   isStoryboardKeyframeBatchPrompt,
   maybeAlignNumberOfVariationsToDynamicBranchCount,
+  MINIMAX_H3_KEYFRAME_SELECTORS_BY_TOOL,
+  MINIMAX_H3_KEYFRAMES_ANIMATE_PHOTO_DESCRIPTION,
+  MINIMAX_H3_KEYFRAMES_DESCRIPTION,
+  MINIMAX_H3_KEYFRAMES_GENERATE_VIDEO_DESCRIPTION,
+  MINIMAX_H3_KEYFRAMES_GUIDANCE,
+  MINIMAX_H3_KEYFRAMES_SOUND_TO_VIDEO_DESCRIPTION,
+  supportsMinimaxH3Keyframes,
   textExplicitlyRequestsMultipleImageOutputs,
 } from '../src/tools/index';
 import { validateAndNormalizeHostedToolArguments } from '../src/contracts/index';
+import {
+  checkMinimaxH3Keyframes,
+  isMinimaxH3KeyframeModelId,
+  minimaxH3FramesForDuration,
+  minimaxH3KeyframeEdgeHint,
+  minimaxH3KeyframeFrameIndex,
+  minimaxH3KeyframeSeconds,
+  minimaxH3KeyframeWorkflow,
+} from '../src/media/index';
 
 let testsPassed = 0;
 let testsFailed = 0;
@@ -705,6 +723,187 @@ Directly reuse <Audio 1> unchanged.`;
     false,
   );
 
+  runMinimaxH3KeyframeToolTests();
+
   console.log(`\ntools/shared: ${testsPassed} passed, ${testsFailed} failed`);
   return { passed: testsPassed, failed: testsFailed };
 }
+
+/**
+ * MiniMax H3 intermediate keyframes on animate_photo, sound_to_video and
+ * generate_video: one schema and wording on all three, the keyframe selectors
+ * per tool, the frame math the SDK needs, and no per-output fan-out.
+ */
+function runMinimaxH3KeyframeToolTests(): void {
+  const tools = [
+    ['animate_photo', animatePhotoDefinition, MINIMAX_H3_KEYFRAMES_ANIMATE_PHOTO_DESCRIPTION],
+    ['sound_to_video', soundToVideoDefinition, MINIMAX_H3_KEYFRAMES_SOUND_TO_VIDEO_DESCRIPTION],
+    ['generate_video', generateVideoDefinition, MINIMAX_H3_KEYFRAMES_GENERATE_VIDEO_DESCRIPTION],
+  ] as const;
+  for (const [toolName, definition, description] of tools) {
+    const properties = (definition.function.parameters?.properties ?? {}) as Record<string, any>;
+    const keyframes = properties.keyframes;
+    expect(`${toolName} declares keyframes as 1-8 {imageIndex, atSeconds} objects`, {
+      type: keyframes?.type,
+      minItems: keyframes?.minItems,
+      maxItems: keyframes?.maxItems,
+      itemType: keyframes?.items?.type,
+      imageIndex: keyframes?.items?.properties?.imageIndex?.type,
+      atSeconds: keyframes?.items?.properties?.atSeconds?.type,
+      required: keyframes?.items?.required,
+      additionalProperties: keyframes?.items?.additionalProperties,
+    }, {
+      type: 'array',
+      minItems: 1,
+      maxItems: 8,
+      itemType: 'object',
+      imageIndex: 'integer',
+      atSeconds: 'number',
+      required: ['imageIndex', 'atSeconds'],
+      additionalProperties: false,
+    });
+    expect(
+      `${toolName} keyframes description is the shared contract text plus its selector sentence`,
+      [keyframes?.description === description, String(keyframes?.description).startsWith(`${MINIMAX_H3_KEYFRAMES_DESCRIPTION} On ${toolName} `)],
+      [true, true],
+    );
+    expect(
+      `${toolName} tool description carries the keyframes guidance`,
+      String(definition.function.description).includes(MINIMAX_H3_KEYFRAMES_GUIDANCE),
+      true,
+    );
+    const enumValues = (properties.videoModel?.enum ?? []) as string[];
+    expect(
+      `${toolName} keyframe selectors are all members of its videoModel enum`,
+      getMinimaxH3KeyframeSelectors(toolName).every(selector => enumValues.includes(selector)),
+      true,
+    );
+  }
+  expect(
+    'MiniMax H3 keyframes description is the contract wording',
+    MINIMAX_H3_KEYFRAMES_DESCRIPTION,
+    'MiniMax H3 only. Pin up to 8 images at exact moments inside the video, in addition to the first/last frame. Each item is {imageIndex, atSeconds}: imageIndex uses the endImageIndex convention (negative = uploads, 0+ = generated results); atSeconds is when the video should land on that image. Keyframes must fall strictly inside the clip (not on the first or last frame) and at distinct times. Describe what each keyframe shows in the prompt at its time; a keyframe with a new angle, place or light starts a new shot. Two keyframes are included in the price; each additional keyframe adds a little.',
+  );
+  // Which selectors pin keyframes: 18 on this surface, decided by H3 workflow.
+  expect('keyframe selectors per tool', MINIMAX_H3_KEYFRAME_SELECTORS_BY_TOOL, {
+    animate_photo: [
+      'minimax-h3-i2v',
+      'minimax-h3-i2v-turbo',
+      'minimax-h3-fasth3-i2v-turbo',
+      'minimax-h3-fasth3-i2v-turbo-2stage',
+      'minimax-h3-flf2v',
+      'minimax-h3-flf2v-turbo',
+      'minimax-h3-fasth3-flf2v-turbo',
+      'minimax-h3-fasth3-flf2v-turbo-2stage',
+    ],
+    sound_to_video: [
+      'minimax-h3-fasth3-ia2v-turbo',
+      'minimax-h3-fasth3-ia2v-turbo-2stage',
+      'minimax-h3-fasth3-flfa2v-turbo',
+      'minimax-h3-fasth3-flfa2v-turbo-2stage',
+      'minimax-h3-fasth3-a2v-turbo',
+      'minimax-h3-fasth3-a2v-turbo-2stage',
+    ],
+    generate_video: [
+      'minimax-h3-r2v',
+      'minimax-h3-r2v-turbo',
+      'minimax-h3-r2v-2stage',
+      'minimax-h3-r2v-balanced-2stage',
+    ],
+  });
+  expect(
+    'supportsMinimaxH3Keyframes follows the H3 workflow, tier and tool',
+    [
+      supportsMinimaxH3Keyframes('animate_photo', 'minimax-h3-i2v-balanced'),
+      supportsMinimaxH3Keyframes('generate_video', 'minimax-h3-r2v-balanced'),
+      supportsMinimaxH3Keyframes('generate_video', 'minimax-h3-fasth3-t2v-turbo-2stage'),
+      supportsMinimaxH3Keyframes('generate_video', 'minimax-h3-i2v'),
+      supportsMinimaxH3Keyframes('sound_to_video', 'minimax-h3-fastvideo-int8_flfa2v_turbo_2stage'),
+      supportsMinimaxH3Keyframes('animate_photo', 'ltx25'),
+      supportsMinimaxH3Keyframes('animate_photo', undefined),
+      supportsMinimaxH3Keyframes('video_to_video', 'minimax-h3-i2v'),
+    ],
+    [true, true, false, false, true, false, false, false],
+  );
+  expect(
+    'minimaxH3KeyframeWorkflow reads selectors and socket ids; t2v and the family alias pin nothing',
+    [
+      minimaxH3KeyframeWorkflow('minimax-h3-fl2va-fp8_flf2v_turbo'),
+      minimaxH3KeyframeWorkflow('minimax-h3-ref2va-fp8_r2v_balanced_2stage'),
+      minimaxH3KeyframeWorkflow('minimax-h3-fasth3-a2v-turbo'),
+      minimaxH3KeyframeWorkflow('minimax-h3-fasth3-t2v-turbo'),
+      minimaxH3KeyframeWorkflow('minimax-h3-fasth3-turbo'),
+      minimaxH3KeyframeWorkflow('ltx25-i2v'),
+      isMinimaxH3KeyframeModelId('minimax-h3-fastvideo-int8_ia2v_turbo'),
+    ],
+    ['flf2v', 'r2v', 'a2v', null, null, null, true],
+  );
+
+  // Frame math: 24 fps, the 124 + 17n grid, sorted output for the SDK.
+  expect(
+    'MiniMax H3 keyframe frame math matches the SDK',
+    [
+      minimaxH3FramesForDuration(5),
+      minimaxH3FramesForDuration(6),
+      minimaxH3FramesForDuration(8),
+      minimaxH3FramesForDuration(30),
+      minimaxH3KeyframeFrameIndex(2.5),
+      minimaxH3KeyframeSeconds(60),
+      minimaxH3KeyframeSeconds(minimaxH3KeyframeFrameIndex(3.25)),
+    ],
+    [124, 141, 192, 362, 60, 2.5, 3.25],
+  );
+  const sortedCheck = checkMinimaxH3Keyframes(
+    [{ imageIndex: 0, atSeconds: 6.5 }, { imageIndex: -2, atSeconds: 1 }, { imageIndex: -1, atSeconds: 3.3 }],
+    { frames: 192 },
+  );
+  expect('checkMinimaxH3Keyframes sorts by time and adds the SDK frameIndex', sortedCheck, {
+    ok: true,
+    errors: [],
+    keyframes: [
+      { imageIndex: -2, atSeconds: 1, argumentIndex: 1, frameIndex: 24 },
+      { imageIndex: -1, atSeconds: 3.3, argumentIndex: 2, frameIndex: 79 },
+      { imageIndex: 0, atSeconds: 6.5, argumentIndex: 0, frameIndex: 156 },
+    ],
+  });
+  expect(
+    'checkMinimaxH3Keyframes refuses instead of clamping, and returns no keyframes',
+    checkMinimaxH3Keyframes([{ imageIndex: -1, atSeconds: 8 }], { frames: 192 }),
+    {
+      ok: false,
+      errors: ['keyframes[0] at 8 s is past the 8.0 s clip; keep keyframes between 0.1 s and 7.9 s.'],
+      keyframes: [],
+    },
+  );
+  expect(
+    'MiniMax H3 keyframe edge hints name each route\'s own frame inputs',
+    [
+      minimaxH3KeyframeEdgeHint('minimax-h3-fasth3-i2v-turbo'),
+      minimaxH3KeyframeEdgeHint('minimax-h3-fasth3-ia2v-turbo'),
+      minimaxH3KeyframeEdgeHint('minimax-h3-fasth3-a2v-turbo-2stage'),
+      minimaxH3KeyframeEdgeHint('minimax-h3-r2v'),
+    ],
+    [
+      'the first and last frames come from sourceImageIndex and endImageIndex',
+      'the first frame comes from sourceImageIndex, and the last frame cannot be pinned',
+      'audio-only clips cannot pin their first or last frame',
+      'reference-to-video cannot pin its first or last frame',
+    ],
+  );
+
+  // Several keyframes are one clip's list, never a per-output fan-out.
+  const shared = [{ imageIndex: -2, atSeconds: 2 }, { imageIndex: 0, atSeconds: 4.5 }];
+  const collapsed = collapseSingleSourceFanOutToDynamicPromptVariations({
+    prompt: 'summary',
+    videoModel: 'minimax-h3-fasth3-i2v-turbo',
+    sourceImageIndices: [-1, -1],
+    prompts: ['first take', 'second take'],
+    keyframes: shared,
+  });
+  expect(
+    'keyframes do not block the one-project Dynamic Prompt collapse and are kept',
+    [collapsed?.prompt, collapsed?.numberOfVariations, collapsed?.keyframes],
+    ['{first take|second take}', 2, shared],
+  );
+}
+

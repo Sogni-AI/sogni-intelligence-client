@@ -7,7 +7,12 @@ import type { ToolDefinition } from '../types.js';
 import {
   ANIMATE_PHOTO_SKIP_PROMPT_PROCESSING_DESCRIPTION,
   LITERAL_VIDEO_PROMPT_OVERRIDE,
+  MINIMAX_H3_KEYFRAME_AT_SECONDS_DESCRIPTION,
+  MINIMAX_H3_KEYFRAME_IMAGE_INDEX_DESCRIPTION,
+  MINIMAX_H3_KEYFRAMES_ANIMATE_PHOTO_DESCRIPTION,
+  MINIMAX_H3_KEYFRAMES_GUIDANCE,
 } from '../../../contracts/toolPromptMarkers.js';
+import { MINIMAX_H3_MAX_KEYFRAMES } from '../../../media/minimaxH3Keyframes.js';
 import { ASPECT_RATIO_DESCRIPTION } from '../../../media/index.js';
 import {
   H3_VIDEO_LORA_CATALOG_REFERENCE,
@@ -196,6 +201,21 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
           description:
             'Per-clip END frame indices for sourceImageIndices fan-out. Use ONLY with frameRole="both". Length MUST exactly match sourceImageIndices. Use 0-based non-negative indices for generated results and negative indices for uploaded images (-1 first upload, -2 second upload, etc.). Use this for transition chains between generated images, e.g. 5 generated images at indices [0,1,2,3,4] should become 4 transition clips with sourceImageIndices=[0,1,2,3], endImageIndices=[1,2,3,4], prompts length 4, duration as requested, then stitch_video. If the chain starts on the uploaded image and continues through generated results [0,1,2,3], use sourceImageIndices=[-1,0,1,2] and endImageIndices=[0,1,2,3]. If the user supplies 5 uploaded images as the sequence, use sourceImageIndices=[-1,-2,-3,-4] and endImageIndices=[-2,-3,-4,-5]. If the user requests a seamless loop or final transition back to the first image, append that loop closure: sourceImageIndices=[-1,-2,-3,-4,-5], endImageIndices=[-2,-3,-4,-5,-1]. Do NOT also set endImageIndex when using this.',
         },
+        keyframes: {
+          type: "array",
+          minItems: 1,
+          maxItems: MINIMAX_H3_MAX_KEYFRAMES,
+          items: {
+            type: "object",
+            properties: {
+              imageIndex: { type: "integer", description: MINIMAX_H3_KEYFRAME_IMAGE_INDEX_DESCRIPTION },
+              atSeconds: { type: "number", description: MINIMAX_H3_KEYFRAME_AT_SECONDS_DESCRIPTION },
+            },
+            required: ["imageIndex", "atSeconds"],
+            additionalProperties: false,
+          },
+          description: MINIMAX_H3_KEYFRAMES_ANIMATE_PHOTO_DESCRIPTION,
+        },
         voicePersonaName: {
           type: "string",
           description:
@@ -224,3 +244,5 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
 
 definition.function.description +=
   ' Wan 3 first-frame and first+last-frame generation is supported with videoModel="wan3.0-video".';
+
+definition.function.description += ` ${MINIMAX_H3_KEYFRAMES_GUIDANCE}`;

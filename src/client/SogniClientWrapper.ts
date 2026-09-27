@@ -7,6 +7,7 @@ import { EventEmitter } from 'events';
 import { SogniClient, Project, Job, ChatStream } from '@sogni-ai/sogni-client';
 import { VIDEO_UPSCALE_MODEL_ID } from '../media/videoUpscale.js';
 import { getWan22VideoSizeRefusal, isMinimaxH3TwoStageModelId } from '../media/videoSettings.js';
+import { MINIMAX_H3_MAX_KEYFRAMES } from '../media/minimaxH3Keyframes.js';
 import type {
   SogniClientConfig,
   SogniAttributionConfig,
@@ -650,6 +651,18 @@ export class SogniClientWrapper extends EventEmitter {
     ) {
       throw new SogniValidationError('Reference image count must be a non-negative integer');
     }
+    // MiniMax H3 keyframes are priced by count (two included). The SDK floors
+    // and ignores out-of-range counts, which would quote a different job.
+    const keyframeCount =
+      params.keyframeCount ?? (Array.isArray(params.keyframes) ? params.keyframes.length : undefined);
+    if (
+      keyframeCount !== undefined &&
+      (!Number.isInteger(keyframeCount) || keyframeCount < 0 || keyframeCount > MINIMAX_H3_MAX_KEYFRAMES)
+    ) {
+      throw new SogniValidationError(
+        `Keyframe count must be a whole number from 0 to ${MINIMAX_H3_MAX_KEYFRAMES}; got ${String(keyframeCount)}`
+      );
+    }
 
     const tokenType = params.tokenType || 'spark';
     const numberOfMedia = params.numberOfMedia || 1;
@@ -1119,6 +1132,28 @@ export class SogniClientWrapper extends EventEmitter {
         }
         normalized.referenceImageEnd = resizedEnd.buffer;
       }
+    }
+
+    // MiniMax H3 keyframes are frames of this video, pinned at chosen times, so
+    // each is cover-cropped to the canvas exactly like the closing frame (twice
+    // the canvas on two-stage). That holds on Reference to Video too, where the
+    // loose references never define the canvas but the keyframes are still
+    // frames of it. Without a known canvas the images go through unchanged.
+    if (Array.isArray(config.keyframes) && config.keyframes.length > 0 && width && height) {
+      const canvasWidth = width * referenceScale;
+      const canvasHeight = height * referenceScale;
+      normalized.keyframes = await Promise.all(config.keyframes.map(async (keyframe, index) => {
+        if (!this.isProcessableMedia(keyframe?.image)) return keyframe;
+        const imageBuffer = await this.mediaToBuffer(keyframe.image);
+        if (!imageBuffer) return keyframe;
+        const resized = await this.resizeImageBuffer(imageBuffer, canvasWidth, canvasHeight, 'cover');
+        if (resized.wasResized) {
+          console.error(
+            `[SogniClientWrapper] Resized keyframes[${index}].image from ${resized.originalWidth}x${resized.originalHeight} to ${resized.width}x${resized.height} to match the video canvas.`
+          );
+        }
+        return { ...keyframe, image: resized.buffer };
+      }));
     }
 
     return normalized;

@@ -1,5 +1,6 @@
 export * from './imageDimensions.js';
 export * from './videoSettings.js';
+export * from './minimaxH3Keyframes.js';
 export * from './aspectRatio.js';
 export * from './gptImage.js';
 export * from './characterSheet.js';

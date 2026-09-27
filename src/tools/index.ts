@@ -9,11 +9,14 @@ export type {
 } from './shared/errorClassification.js';
 export {
   GENERATE_IMAGE_MODELS,
+  MINIMAX_H3_KEYFRAME_SELECTORS_BY_TOOL,
   MODELS_BY_TOOL,
   getAlternativeModels,
+  getMinimaxH3KeyframeSelectors,
   getModelArgKey,
   getModelOptions,
   isQualityTierTool,
+  supportsMinimaxH3Keyframes,
 } from './shared/modelRegistry.js';
 export type { ModelOption } from './shared/modelRegistry.js';
 export * from './shared/policyChecks.js';
@@ -74,6 +77,18 @@ export {
   MINIMAX_H3_AUDIO_GUIDE_GENERATE_AUDIO_DESCRIPTION,
   MINIMAX_H3_AUDIO_GUIDE_NEGATIVE_PROMPT_DESCRIPTION,
   MINIMAX_H3_AUDIO_GUIDE_PROMPT_DESCRIPTION,
+} from '../contracts/toolPromptMarkers.js';
+// MiniMax H3 intermediate keyframes: the `keyframes` argument wording shared by
+// animate_photo, sound_to_video and generate_video, re-exported so the
+// creative-agent patch layers reuse it instead of copying it.
+export {
+  MINIMAX_H3_KEYFRAMES_DESCRIPTION,
+  MINIMAX_H3_KEYFRAME_IMAGE_INDEX_DESCRIPTION,
+  MINIMAX_H3_KEYFRAME_AT_SECONDS_DESCRIPTION,
+  MINIMAX_H3_KEYFRAMES_ANIMATE_PHOTO_DESCRIPTION,
+  MINIMAX_H3_KEYFRAMES_SOUND_TO_VIDEO_DESCRIPTION,
+  MINIMAX_H3_KEYFRAMES_GENERATE_VIDEO_DESCRIPTION,
+  MINIMAX_H3_KEYFRAMES_GUIDANCE,
 } from '../contracts/toolPromptMarkers.js';
 export * from './shared/llmHelpers.js';
 export * from './shared/promptRefinementCache.js';
