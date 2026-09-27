@@ -27,13 +27,16 @@ import { PROMPT_CONTRACTS, validateAndNormalizeHostedToolArguments } from '../sr
 import {
   checkMinimaxH3Keyframes,
   isMinimaxH3KeyframeModelId,
+  minimaxH3AudioGuideFramesForDuration,
   minimaxH3FramesForDuration,
+  minimaxH3JobFramesForDuration,
   minimaxH3KeyframeEdgeHint,
   minimaxH3KeyframeFrameIndex,
   minimaxH3KeyframeSeconds,
   minimaxH3KeyframeWorkflow,
 } from '../src/media/index';
 import { VIDEO_EDITING_SKILL, VIDEO_GENERATION_SKILL } from '../src/public-skill-runtime/index';
+import { getMinimaxH3FramesForAudioDuration } from '@sogni-ai/sogni-client';
 
 let testsPassed = 0;
 let testsFailed = 0;
@@ -856,6 +859,27 @@ function runMinimaxH3KeyframeToolTests(): void {
     ],
     [124, 141, 192, 362, 60, 2.5, 3.25],
   );
+  expect(
+    'the audio guide covers the requested seconds; every other H3 route snaps to the nearest count',
+    [
+      minimaxH3AudioGuideFramesForDuration(6),
+      minimaxH3AudioGuideFramesForDuration(5),
+      minimaxH3AudioGuideFramesForDuration(8),
+      minimaxH3AudioGuideFramesForDuration(141 / 24),
+      minimaxH3AudioGuideFramesForDuration(30),
+      minimaxH3JobFramesForDuration('minimax-h3-fasth3-ia2v-turbo', 6),
+      minimaxH3JobFramesForDuration('minimax-h3-fastvideo-int8_a2v_turbo_2stage', 6),
+      minimaxH3JobFramesForDuration('minimax-h3-fasth3-i2v-turbo', 6),
+      minimaxH3JobFramesForDuration('minimax-h3-r2v', 6),
+    ],
+    [158, 124, 192, 141, 362, 158, 158, 141, 141],
+  );
+  const audioGuideDurations = Array.from({ length: 320 }, (_, index) => (index + 1) * 0.05);
+  expect(
+    'minimaxH3AudioGuideFramesForDuration matches the SDK getMinimaxH3FramesForAudioDuration from 0.05 s to 16 s',
+    audioGuideDurations.filter(seconds => minimaxH3AudioGuideFramesForDuration(seconds) !== getMinimaxH3FramesForAudioDuration(seconds)),
+    [],
+  );
   const sortedCheck = checkMinimaxH3Keyframes(
     [{ imageIndex: 0, atSeconds: 6.5 }, { imageIndex: -2, atSeconds: 1 }, { imageIndex: -1, atSeconds: 3.3 }],
     { frames: 192 },
@@ -1020,17 +1044,37 @@ function runMinimaxH3KeyframeValidationTests(): void {
     ],
   );
   expect(
-    'Sound to Video without duration checks against the longest H3 clip; with duration against its own',
+    'Sound to Video without duration checks against the longest H3 clip',
     [
       validate('sound_to_video', { videoModel: 'minimax-h3-fasth3-a2v-turbo', keyframes: [{ imageIndex: -1, atSeconds: 14.9 }] }),
       validate('sound_to_video', { videoModel: 'minimax-h3-fasth3-a2v-turbo', keyframes: [{ imageIndex: -1, atSeconds: 15.05 }] }),
-      validate('sound_to_video', { videoModel: 'minimax-h3-fasth3-ia2v-turbo', sourceImageIndex: -1, duration: 6, keyframes: [{ imageIndex: -1, atSeconds: 5.85 }] }),
     ],
     [
       'ok',
       'keyframes[0] at 15.05 s is at or past the end of the longest MiniMax H3 clip (15.08 s); keep keyframes between 0.1 s and 15.0 s.',
-      'keyframes[0] at 5.85 s lands on the last frame of the 5.88 s clip, which is never a keyframe (the first frame comes from sourceImageIndex, and the last frame cannot be pinned); keep keyframes between 0.1 s and 5.7 s.',
     ],
+  );
+  // The audio guide renders the covering count: duration 6 is 158 frames
+  // (6.58 s), not the 141 (5.88 s) the other H3 routes snap to.
+  expect(
+    'Sound to Video with duration checks the covering audio-guide clip (duration 6 renders 6.58 s)',
+    [
+      validate('sound_to_video', { videoModel: 'minimax-h3-fasth3-ia2v-turbo', sourceImageIndex: -1, duration: 6, keyframes: [{ imageIndex: -1, atSeconds: 6.2 }] }),
+      validate('sound_to_video', { videoModel: 'minimax-h3-fasth3-a2v-turbo-2stage', duration: 6, keyframes: [{ imageIndex: -1, atSeconds: 5.85 }, { imageIndex: -2, atSeconds: 6.5 }] }),
+      validate('sound_to_video', { videoModel: 'minimax-h3-fasth3-ia2v-turbo', sourceImageIndex: -1, duration: 6, keyframes: [{ imageIndex: -1, atSeconds: 6.55 }] }),
+      validate('sound_to_video', { videoModel: 'minimax-h3-fasth3-flfa2v-turbo', sourceImageIndex: -1, endImageIndex: -2, duration: 6, keyframes: [{ imageIndex: -3, atSeconds: 7 }] }),
+    ],
+    [
+      'ok',
+      'ok',
+      'keyframes[0] at 6.55 s lands on the last frame of the 6.58 s clip, which is never a keyframe (the first frame comes from sourceImageIndex, and the last frame cannot be pinned); keep keyframes between 0.1 s and 6.5 s.',
+      'keyframes[0] at 7 s is past the 6.58 s clip (duration 6 renders 158 frames); keep keyframes between 0.1 s and 6.5 s, or set duration to at least 7 s.',
+    ],
+  );
+  expect(
+    'the same 6.2 s keyframe is past a 6 s clip on the nearest-count routes (duration 6 renders 5.88 s)',
+    validate('animate_photo', { videoModel: 'minimax-h3-fasth3-i2v-turbo', duration: 6, keyframes: [{ imageIndex: -2, atSeconds: 6.2 }] }),
+    'keyframes[0] at 6.2 s is past the 5.88 s clip (duration 6 renders 141 frames); keep keyframes between 0.1 s and 5.7 s, or set duration to at least 7 s.',
   );
   expect(
     'malformed keyframe entries are refused by the schema',

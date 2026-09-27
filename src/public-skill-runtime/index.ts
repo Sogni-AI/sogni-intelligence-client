@@ -1150,7 +1150,7 @@ export const VIDEO_EDITING_SKILL: SkillManifest = {
     'animate_photo errors with all_failed must surface to the user; do not auto-retry from inside the chat loop.',
     'Use upscale_video for a promptless 1080p/1440p resolution increase of an existing video; it keeps every frame, the frame rate, and the audio. Do not substitute video_to_video unless the user explicitly asks a generative model such as Seedance to re-render the clip.',
     'MiniMax H3 audio guide: sound_to_video takes minimax-h3-fasth3-ia2v-turbo (first-frame image + audio), minimax-h3-fasth3-flfa2v-turbo (first and last frame + audio, with endImageIndex) and minimax-h3-fasth3-a2v-turbo (audio only), each with a -2stage form for 1080p or 2K output. The uploaded audio drives the picture from frame 0 and stays in the output; clips are 5.2-15.1 seconds at 24 fps, audioStart picks the window, and MiniMax H3 catalog and Personal LoRAs work across audio modes and tiers; generateAudio false and negativePrompt are refused. Use them only when the user asks for MiniMax H3 or FastH3; the LTX 2.5 audio selectors stay the default.',
-    `${MINIMAX_H3_KEYFRAMES_GUIDANCE} animate_photo takes keyframes on every MiniMax H3 image-to-video and first-and-last-frame selector, and sound_to_video on every MiniMax H3 audio selector (without duration the audio window from audioStart sets the clip length).`,
+    `${MINIMAX_H3_KEYFRAMES_GUIDANCE} animate_photo takes keyframes on every MiniMax H3 image-to-video and first-and-last-frame selector, and sound_to_video on every MiniMax H3 audio selector (set duration with keyframes; the audio selectors render the shortest H3 length that covers it, so duration 6 renders 6.58 s).`,
   ],
 };
 

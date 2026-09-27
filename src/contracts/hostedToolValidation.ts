@@ -2,7 +2,7 @@ import { minimaxH3AudioGuideMode } from '../media/videoSettings.js';
 import {
   MINIMAX_H3_MAX_KEYFRAMES,
   checkMinimaxH3Keyframes,
-  minimaxH3FramesForDuration,
+  minimaxH3JobFramesForDuration,
   minimaxH3KeyframeEdgeHint,
   minimaxH3KeyframeWorkflow,
 } from '../media/minimaxH3Keyframes.js';
@@ -177,7 +177,9 @@ function minimaxH3KeyframeModelError(toolName: string, videoModel: unknown): str
  * at most 8, every time strictly inside the clip and on its own frame. The
  * tool schema reports malformed entries and a list over 8, so the timing
  * checks run only on a well-formed list. Frames come from `duration`
- * (default 5 s) on the H3 grid. A Sound to Video clip with no duration is sized
+ * (default 5 s) on the H3 grid, by the model's own rule
+ * (`minimaxH3JobFramesForDuration`: covering on the audio guide, nearest
+ * elsewhere). A Sound to Video clip with no duration is sized
  * by its audio window, which only the executor knows: its times are checked
  * against the longest H3 clip here, and the executor checks them again against
  * the real frame count (`checkMinimaxH3Keyframes` with `frames`). An executor
@@ -196,9 +198,11 @@ function minimaxH3KeyframeArgumentErrors(toolName: string, args: Record<string, 
     ? args.duration
     : undefined;
   const sizedByAudio = toolName === 'sound_to_video' && duration === undefined;
+  // The audio guide covers the requested seconds (6 s renders 158 frames); every
+  // other H3 route snaps to the nearest count (6 s renders 141).
   const frames = sizedByAudio
     ? undefined
-    : minimaxH3FramesForDuration(duration ?? DEFAULT_VIDEO_TOOL_DURATION_SECONDS);
+    : minimaxH3JobFramesForDuration(videoModel as string, duration ?? DEFAULT_VIDEO_TOOL_DURATION_SECONDS);
   const framesSource = frames === undefined
     ? undefined
     : duration === undefined
@@ -209,6 +213,7 @@ function minimaxH3KeyframeArgumentErrors(toolName: string, args: Record<string, 
     framesSource,
     edgeHint: minimaxH3KeyframeEdgeHint(videoModel as string),
     suggestDuration: true,
+    modelId: videoModel as string,
   }).errors;
 }
 

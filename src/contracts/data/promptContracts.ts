@@ -848,8 +848,9 @@ const SOUND_TO_VIDEO_CONTRACT: PromptContract = {
     MINIMAX_H3_KEYFRAMES_GUIDANCE,
     'On sound_to_video every MiniMax H3 audio selector takes keyframes: the audio drives the performance and',
     'the keyframes pin how it looks at their times. imageIndex follows endImageIndex (-1 = first upload), not',
-    'the 0-based upload numbering of sourceImageIndex. Without duration the clip runs for the audio window',
-    'from audioStart, so keep every keyframe inside it.',
+    'the 0-based upload numbering of sourceImageIndex. Set duration whenever you pass keyframes: the audio',
+    'selectors render the shortest MiniMax H3 length that covers it (duration 6 renders 6.58 s), and every',
+    'keyframe must fall inside that clip.',
   ].join('\n'),
   parameterDocs: {
     keyframes: MINIMAX_H3_KEYFRAMES_SOUND_TO_VIDEO_DESCRIPTION,

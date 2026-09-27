@@ -14,7 +14,7 @@
  * says what to change.
  */
 
-import { calculateVideoFrames } from './videoSettings.js';
+import { calculateVideoFrames, isMinimaxH3AudioGuideModelId } from './videoSettings.js';
 
 /** Most keyframes one MiniMax H3 job pins (the `keyframeImage1..8` upload slots). */
 export const MINIMAX_H3_MAX_KEYFRAMES = 8;
@@ -22,7 +22,9 @@ export const MINIMAX_H3_MAX_KEYFRAMES = 8;
 /** MiniMax H3's fixed generation rate, which turns `atSeconds` into a frame. */
 export const MINIMAX_H3_KEYFRAME_FPS = 24;
 
-/** Frame count of the longest MiniMax H3 clip (15.08 s) on the 124 + 17n grid. */
+// The MiniMax H3 frame grid: 124 + 17n frames, 124 (5.17 s) to 362 (15.08 s).
+const MINIMAX_H3_SHORTEST_CLIP_FRAMES = 124;
+const MINIMAX_H3_FRAME_STEP = 17;
 const MINIMAX_H3_LONGEST_CLIP_FRAMES = 362;
 
 /**
@@ -80,8 +82,10 @@ export function minimaxH3KeyframeSeconds(frameIndex: number): number {
  * The frame count a MiniMax H3 job renders for `durationSeconds`, exactly as the
  * SDK resolves `duration` for an H3 model: `duration * 24` snapped to the
  * nearest 124 + 17n value within 124-362 (`6` renders 141 frames, not 144).
- * Every H3 selector shares this grid. Pass the result as `frames` so keyframes
- * are checked against the count the job really renders.
+ * The FastH3 audio-guide routes round up instead
+ * (`minimaxH3AudioGuideFramesForDuration`); `minimaxH3JobFramesForDuration`
+ * picks the rule for a model. Pass the result as `frames` so keyframes are
+ * checked against the count the job really renders.
  */
 export function minimaxH3FramesForDuration(durationSeconds: number): number {
   if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
@@ -90,6 +94,40 @@ export function minimaxH3FramesForDuration(durationSeconds: number): number {
     );
   }
   return calculateVideoFrames(durationSeconds, 'minimax-h3-i2v');
+}
+
+/**
+ * The frame count a MiniMax H3 FastH3 audio-guide job (`ia2v`, `flfa2v`, `a2v`,
+ * one- or two-stage) renders for `durationSeconds`: the smallest 124 + 17n
+ * count that covers `durationSeconds * 24`, clamped to 124-362 (`6` renders
+ * 158 frames, 6.58 s). The audio guide rounds up rather than to the nearest
+ * count so the clip holds the whole requested audio window. This is the SDK's
+ * `getMinimaxH3FramesForAudioDuration`, which sogni-api and the creative-agent
+ * estimate submit and price as `frames`.
+ */
+export function minimaxH3AudioGuideFramesForDuration(durationSeconds: number): number {
+  if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+    throw new RangeError(
+      `MiniMax H3 duration must be a finite number of seconds greater than 0; received ${String(durationSeconds)}`,
+    );
+  }
+  // The epsilon keeps exact grid durations (141/24 s) from rounding up a step.
+  const neededFrames = Math.ceil(durationSeconds * MINIMAX_H3_KEYFRAME_FPS - 1e-6);
+  const steps = Math.max(0, Math.ceil((neededFrames - MINIMAX_H3_SHORTEST_CLIP_FRAMES) / MINIMAX_H3_FRAME_STEP));
+  return Math.min(MINIMAX_H3_LONGEST_CLIP_FRAMES, MINIMAX_H3_SHORTEST_CLIP_FRAMES + steps * MINIMAX_H3_FRAME_STEP);
+}
+
+/**
+ * The frame count a MiniMax H3 job on `modelId` renders for `durationSeconds`:
+ * the covering count on the FastH3 audio-guide ids
+ * (`minimaxH3AudioGuideFramesForDuration`, 6 s -> 158) and the nearest count on
+ * every other H3 id (`minimaxH3FramesForDuration`, 6 s -> 141). Keyframe times
+ * are checked against this count.
+ */
+export function minimaxH3JobFramesForDuration(modelId: string | null | undefined, durationSeconds: number): number {
+  return isMinimaxH3AudioGuideModelId(modelId)
+    ? minimaxH3AudioGuideFramesForDuration(durationSeconds)
+    : minimaxH3FramesForDuration(durationSeconds);
 }
 
 /** The tool argument: one image pinned at a moment of the clip. */
@@ -125,6 +163,11 @@ export interface CheckMinimaxH3KeyframesOptions {
   edgeHint?: string;
   /** Suggest a longer `duration` when a keyframe falls past the end of the clip. */
   suggestDuration?: boolean;
+  /**
+   * The job's model, which decides how a suggested `duration` becomes frames
+   * (`minimaxH3JobFramesForDuration`); the nearest-count rule when omitted.
+   */
+  modelId?: string;
 }
 
 export interface MinimaxH3KeyframesCheck {
@@ -151,16 +194,16 @@ function keyframeWindow(frames: number): { earliest: string; latest: string } {
 }
 
 /**
- * Shortest whole-second duration whose clip has `frameIndex` strictly inside
- * it, or null when even the longest H3 clip is too short. Whole seconds, so an
- * executor that rounds `duration` to an integer still renders at least that
- * many frames.
+ * Shortest whole-second duration whose clip on `modelId` has `frameIndex`
+ * strictly inside it, or null when even the longest H3 clip is too short. Whole
+ * seconds, so an executor that rounds `duration` to an integer still renders at
+ * least that many frames.
  */
-function shortestDurationFor(frameIndex: number): number | null {
+function shortestDurationFor(frameIndex: number, modelId: string | undefined): number | null {
   const neededFrames = frameIndex + 2;
   if (neededFrames > MINIMAX_H3_LONGEST_CLIP_FRAMES) return null;
   let seconds = Math.max(1, Math.floor(neededFrames / MINIMAX_H3_KEYFRAME_FPS));
-  while (minimaxH3FramesForDuration(seconds) < neededFrames) seconds += 1;
+  while (minimaxH3JobFramesForDuration(modelId, seconds) < neededFrames) seconds += 1;
   return seconds;
 }
 
@@ -267,7 +310,7 @@ export function checkMinimaxH3Keyframes(
         return;
       }
       const source = options.framesSource ? ` (${options.framesSource})` : '';
-      const longer = options.suggestDuration ? shortestDurationFor(frameIndex) : null;
+      const longer = options.suggestDuration ? shortestDurationFor(frameIndex, options.modelId) : null;
       errors.push(
         `${label} at ${seconds} s is past the ${formatClipSeconds(frames / MINIMAX_H3_KEYFRAME_FPS)} s clip${source}; ${keep}${longer ? `, or set duration to at least ${longer} s` : ''}.`,
       );
