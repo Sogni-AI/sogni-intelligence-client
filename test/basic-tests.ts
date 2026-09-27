@@ -1205,6 +1205,17 @@ async function runTests() {
     if (hh.maxDimension !== 1920 || hh.dimensionMultiple !== 1) {
       throw new Error(`Unexpected HappyHorse rules: ${JSON.stringify(hh)}`);
     }
+    for (const modelId of ['wan3.0-video', 'wan3.0-spicy-video']) {
+      const wan3 = getVideoDimensionRules(modelId);
+      if (
+        wan3.minDimension !== 480 ||
+        wan3.maxDimension !== 1920 ||
+        wan3.dimensionMultiple !== 1 ||
+        wan3.maxPixels !== undefined
+      ) {
+        throw new Error(`Unexpected Wan 3 rules for ${modelId}: ${JSON.stringify(wan3)}`);
+      }
+    }
     const seedance = getVideoDimensionRules('seedance-2-0');
     if (seedance.maxDimension < 3840 || seedance.dimensionMultiple !== 1) {
       throw new Error(`Seedance rules must not shrink vendor requests: ${JSON.stringify(seedance)}`);
@@ -1393,6 +1404,18 @@ async function runTests() {
     const hh = normalize(1920, 1080, 'happyhorse-1.1-t2v');
     if (hh.width !== 1920 || hh.height !== 1080 || hh.adjusted) {
       throw new Error(`HappyHorse 1920x1080 must pass through untouched, got ${JSON.stringify(hh)}`);
+    }
+
+    // Wan 3 prices and renders its tier from the canvas area, so its exact
+    // 1080p and 480p sizes must survive. The legacy 1536 clamp turned 1080p
+    // into 1536x864, which the network (correctly) treats as 720p.
+    for (const modelId of ['wan3.0-video', 'wan3.0-spicy-video']) {
+      for (const [w, h] of [[1920, 1080], [1080, 1920], [1440, 1080], [1080, 1440], [1080, 1080], [854, 480], [480, 854]]) {
+        const wan3 = normalize(w, h, modelId);
+        if (wan3.width !== w || wan3.height !== h || wan3.adjusted) {
+          throw new Error(`Wan 3 ${w}x${h} must pass through untouched for ${modelId}, got ${JSON.stringify(wan3)}`);
+        }
+      }
     }
 
     const h3Square = normalize(1344, 1344, 'minimax-h3-fl2va-fp8_i2v');
