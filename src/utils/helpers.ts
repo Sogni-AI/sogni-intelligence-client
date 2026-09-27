@@ -317,7 +317,20 @@ export function validateProjectConfig(config: ProjectConfig): void {
     }
   }
 
-  if (isImageProjectConfig(config) || isVideoProjectConfig(config)) {
+  if (isImageProjectConfig(config)) {
+    // Image size bounds differ per model (RTX VSR up to 15360 px, GPT Image up to 3840,
+    // Krea 2 and Qwen up to 2560). sogni-client enforces them when it builds the job, so a
+    // second table here would only drift from it; check the type alone.
+    if (config.width !== undefined && (typeof config.width !== 'number' || !Number.isFinite(config.width))) {
+      throw new SogniValidationError('Width must be a number');
+    }
+
+    if (config.height !== undefined && (typeof config.height !== 'number' || !Number.isFinite(config.height))) {
+      throw new SogniValidationError('Height must be a number');
+    }
+  }
+
+  if (isVideoProjectConfig(config)) {
     // FlashVSR delivers up to 2560 px on the long edge; other models keep the 2048 px bound.
     const maxDimension = config.modelId === VIDEO_UPSCALE_MODEL_ID ? VIDEO_UPSCALE_MAX_OUTPUT.longEdge : 2048;
     if (config.width !== undefined) {

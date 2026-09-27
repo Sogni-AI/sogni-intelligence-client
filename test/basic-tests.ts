@@ -1939,6 +1939,42 @@ async function runTests() {
     validateProjectConfig(config);
   })();
 
+  await test('Should leave per-model image size bounds to sogni-client (RTX VSR 16K, GPT Image 4K)', () => {
+    validateProjectConfig({
+      type: 'image',
+      modelId: 'rtx_vsr_pro',
+      positivePrompt: '',
+      numberOfMedia: 1,
+      width: 15360,
+      height: 7680,
+    } as ImageProjectConfig);
+    validateProjectConfig({
+      type: 'image',
+      modelId: 'gpt-image-2',
+      positivePrompt: 'A city skyline',
+      numberOfMedia: 1,
+      width: 3840,
+      height: 2160,
+    } as ImageProjectConfig);
+  })();
+
+  await test('Should refuse a non-numeric image width', () => {
+    try {
+      validateProjectConfig({
+        type: 'image',
+        modelId: 'rtx_vsr_pro',
+        positivePrompt: '',
+        numberOfMedia: 1,
+        width: '4096' as unknown as number,
+      } as ImageProjectConfig);
+      throw new Error('Should have refused a string width');
+    } catch (error) {
+      if (!(error instanceof SogniValidationError) || error.message !== 'Width must be a number') {
+        throw error;
+      }
+    }
+  })();
+
   // Test 17b: Audio project type guard
   await test('Should identify audio project config', () => {
     const audioConfig: AudioProjectConfig = {
