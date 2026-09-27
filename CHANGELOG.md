@@ -1,3 +1,10 @@
+## [4.6.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.6.1...v4.6.2) (2026-09-27)
+
+
+### Bug Fixes
+
+* **video:** let Wan 3 keep its 1080p sizes instead of the 1536 clamp ([2b37efe](https://github.com/Sogni-AI/sogni-intelligence-client/commit/2b37efed489a60c864ddf097fa4fa5b10ee54e5b))
+
 ## [4.6.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.6.0...v4.6.1) (2026-09-27)
 
 
