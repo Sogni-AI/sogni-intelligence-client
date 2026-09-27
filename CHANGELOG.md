@@ -1,3 +1,10 @@
+## [4.6.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.6.0...v4.6.1) (2026-09-27)
+
+
+### Bug Fixes
+
+* **validation:** let sogni-client own per-model image size limits ([4b8fddc](https://github.com/Sogni-AI/sogni-intelligence-client/commit/4b8fddce8da78f69196498e0d47792c2a5bb4aee))
+
 # [4.6.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.5.2...v4.6.0) (2026-09-27)
 
 
