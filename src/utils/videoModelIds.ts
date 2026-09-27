@@ -100,6 +100,11 @@ const MINIMAX_H3_MODEL_IDS = normalizedSet([
   ]),
   'minimax-h3-ref2va-fp8_r2v',
   'minimax-h3-ref2va-fp8_r2v_turbo',
+  // Balanced, the fixed 8-step tier: without these the wrapper sized its
+  // canvas by the generic 480-1536 envelope instead of the H3 grid.
+  ...['t2v', 'i2v', 'flf2v', 'r2v'].map(workflow => `minimax-h3-${workflow}-balanced`),
+  ...['t2v', 'i2v', 'flf2v'].map(workflow => `minimax-h3-fl2va-fp8_${workflow}_balanced`),
+  'minimax-h3-ref2va-fp8_r2v_balanced',
   ...MINIMAX_H3_TWO_STAGE_MODEL_IDS,
   ...MINIMAX_H3_AUDIO_GUIDE_MODEL_IDS,
 ]);
@@ -108,11 +113,20 @@ const MINIMAX_H3_MODEL_IDS = normalizedSet([
 // never as a first/last-frame canvas anchor. Keep this list separate from the
 // broader family registry: the wrapper uses it to decide whether a binary
 // `referenceImage` may define or resize the output canvas.
+// Every H3 Ref2VA tier belongs here, two-stage included: a two-stage reference
+// image is still loose context, and letting it define the canvas would crop the
+// requested video (and its keyframes) to the reference's shape.
 const LOOSE_REFERENCE_VIDEO_MODEL_IDS = normalizedSet([
   'minimax-h3-r2v',
   'minimax-h3-r2v-turbo',
+  'minimax-h3-r2v-balanced',
+  'minimax-h3-r2v-2stage',
+  'minimax-h3-r2v-balanced-2stage',
   'minimax-h3-ref2va-fp8_r2v',
   'minimax-h3-ref2va-fp8_r2v_turbo',
+  'minimax-h3-ref2va-fp8_r2v_balanced',
+  'minimax-h3-ref2va-fp8_r2v_2stage',
+  'minimax-h3-ref2va-fp8_r2v_balanced_2stage',
   'happyhorse-1.1-r2v',
 ]);
 
