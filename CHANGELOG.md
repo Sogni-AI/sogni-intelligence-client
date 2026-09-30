@@ -1,3 +1,10 @@
+## [4.6.4](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.6.3...v4.6.4) (2026-09-30)
+
+
+### Bug Fixes
+
+* **deps:** pin @sogni-ai/sogni-client 5.58.2 for R2 media links ([d7ff764](https://github.com/Sogni-AI/sogni-intelligence-client/commit/d7ff764802c7ba6b6c88218070aff14f71dd63d0))
+
 ## [4.6.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.6.2...v4.6.3) (2026-09-27)
 
 
