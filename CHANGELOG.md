@@ -1,3 +1,16 @@
+# [4.7.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.6.4...v4.7.0) (2026-10-02)
+
+
+### Bug Fixes
+
+* **client:** stop connect retry storms and never resubmit an accepted project ([30b743b](https://github.com/Sogni-AI/sogni-intelligence-client/commit/30b743be1f08601d097a7f12e8a41876a8044eb2))
+* **deps:** bump @sogni-ai/sogni-client to 5.60.0 for the Music 3 default ([67aeac5](https://github.com/Sogni-AI/sogni-intelligence-client/commit/67aeac514c97ba25b89058b6096256f3c1514bdf))
+
+
+### Features
+
+* **music:** compose for MiniMax Music 3 unless ACE-Step is named ([4be8598](https://github.com/Sogni-AI/sogni-intelligence-client/commit/4be8598e15becfcd997ccb71f761f75fc410299f))
+
 ## [4.6.4](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.6.3...v4.6.4) (2026-09-30)
 
 
