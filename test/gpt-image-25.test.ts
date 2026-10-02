@@ -118,6 +118,34 @@ test('excluded GPT variants never override another selection', () => {
   }
 });
 
+test('GPT Image 2 ruled out through a verb or model phrase never overrides another selection', () => {
+  for (const request of [
+    "Use Qwen Image 2512 only, don't switch to GPT Image 2. Create an image of a lighthouse.",
+    'Use Qwen Image 2512 only, don’t switch to GPT Image 2. Create an image of a lighthouse.',
+    'Generate the image with Qwen Image 2512. Never switch to GPT Image 2.',
+    'Please stop using GPT Image 2 and generate the image with Qwen Image 2512.',
+    'Qwen Image 2512 only. No third-party models like GPT Image 2. Make the image again.',
+    "I don't want GPT Image 2 for this image; keep it on Qwen Image 2512.",
+    "Don't let it switch to OpenAI. Create the poster image with Qwen Image 2512.",
+  ]) {
+    assert.equal(textRequestsGptImage2ImageModel(request), false, request);
+    assert.equal(getGptImage2ModelOverride('generate_image', 'qwen-2512', request), null, request);
+    assert.equal(getGptImage2ModelOverride('edit_image', 'qwen', request), null, request);
+  }
+});
+
+test('an unrelated word or a clause break keeps a later GPT Image 2 request', () => {
+  for (const request of [
+    "Don't forget to use GPT Image 2 for this poster image.",
+    'Not happy with that one, switch to GPT Image 2 and make the image again.',
+    'No, use GPT Image 2 to make the image.',
+    'I have no reference photo. Generate the image with GPT Image 2.',
+  ]) {
+    assert.equal(textRequestsGptImage2ImageModel(request), true, request);
+    assert.equal(getGptImage2ModelOverride('generate_image', 'qwen-2512', request), baseline, request);
+  }
+});
+
 test('2.5 qualities survive, auto is rejected, and baseline gains no 2.5 controls', () => {
   for (const model of [sunburst, flare] as const) {
     for (const quality of ['low', 'medium', 'high', 'xhigh', 'max'] as const) {

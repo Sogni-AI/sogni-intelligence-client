@@ -106,10 +106,22 @@ export function textRequestsGptImage2ImageModel(text: string): boolean {
     || /\b(?:images?|pictures?|photos?|portraits?|illustrations?|artwork|graphics?|renders?|text[-\s]?to[-\s]?image|generate|create|draw|render|make)\b/i.test(text);
 }
 
+// An exclusion word, then at most four words that keep it attached to the model
+// name ("don't switch to", "no third-party models like", "stop using"). Any
+// other word or punctuation ends the exclusion, so "don't forget to use X" and
+// "not X but use Y" still request the model that follows.
+const IMAGE_MODEL_EXCLUSION_PATTERN = new RegExp(
+  String.raw`\b(?:not|no|never|avoid|without|except|stop|quit|other\s+than|instead\s+of|rather\s+than|don['’]?t|`
+    + String.raw`(?:anything|any\s+model|nothing|everything)\s+but)\s+`
+    + String.raw`(?:(?:use|using|with|the|a|an|any|model|models|switch|switching|change|changing|go|going|move|moving|`
+    + String.raw`fall|falling|back|to|into|over|like|such\s+as|third[-\s]?party|vendor|external|other|want|need|let|it)\s+){0,4}`
+    + String.raw`["'“‘(]*$`,
+  'i',
+);
+
 /** Bounded exclusion immediately before a literal model name, not turn intent. */
 export function isNegatedImageModelMention(text: string, index: number): boolean {
-  return /\b(?:not|no|never|avoid|without|except|other\s+than|instead\s+of|rather\s+than|don'?t|dont|(?:anything|any\s+model|nothing|everything)\s+but)\s+(?:(?:use|using|with|the|model)\s+){0,3}["'“‘(]*$/i
-    .test(text.slice(Math.max(0, index - 64), index));
+  return IMAGE_MODEL_EXCLUSION_PATTERN.test(text.slice(Math.max(0, index - 64), index));
 }
 
 export function textExplicitlyAvoidsGptImageModel(text: string): boolean {
