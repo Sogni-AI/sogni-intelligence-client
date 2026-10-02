@@ -71,6 +71,9 @@ import {
   isAudioProjectConfig,
   waitFor,
   retry,
+  reconnectDecision,
+  isRetryableProjectSubmitError,
+  errorRetryAfterMs,
   getMaxContextImages,
   getVideoDimensionRules,
   isHappyHorseVideoModel,
@@ -120,6 +123,8 @@ interface InternalConfig {
   autoConnect: boolean;
   reconnect: boolean;
   reconnectInterval: number;
+  maxReconnectInterval: number;
+  maxReconnectAttempts: number;
   timeout: number;
   debug: boolean;
   authType: AuthType;
@@ -171,6 +176,8 @@ export class SogniClientWrapper extends EventEmitter {
       autoConnect: config.autoConnect !== false,
       reconnect: config.reconnect !== false,
       reconnectInterval: config.reconnectInterval || 5000,
+      maxReconnectInterval: config.maxReconnectInterval || 300000,
+      maxReconnectAttempts: config.maxReconnectAttempts ?? 10,
       timeout: config.timeout || 300000, // 5 minutes default
       debug: config.debug || false,
       authType: config.authType || (config.apiKey ? 'apiKey' : 'token'),
@@ -291,7 +298,10 @@ export class SogniClientWrapper extends EventEmitter {
 
     } catch (error) {
       this.log('Connection failed:', error);
-      
+      // A failed client must not linger: it would keep its socket and fight the
+      // next attempt's client over the same app id.
+      this.discardFailedClient();
+
       const sogniError = error instanceof Error && error.message.includes('auth')
         ? new SogniAuthenticationError('Authentication failed', undefined, error as Error)
         : new SogniConnectionError('Failed to connect to Sogni Supernet', undefined, error as Error);
@@ -307,7 +317,7 @@ export class SogniClientWrapper extends EventEmitter {
 
       // Attempt reconnection if enabled
       if (this.config.reconnect && !this.isReconnecting) {
-        this.scheduleReconnect();
+        this.scheduleReconnect(error);
       }
 
       throw sogniError;
@@ -755,6 +765,10 @@ export class SogniClientWrapper extends EventEmitter {
       ...projectParams
     } = preparedConfig;
 
+    // Once Sogni has accepted the project, any later failure carries its id so
+    // nothing resubmits it (it may still be rendering).
+    let createdProjectId: string | undefined;
+
     try {
       this.log('Creating project with config:', this.sanitizeConfig(preparedConfig));
 
@@ -767,6 +781,7 @@ export class SogniClientWrapper extends EventEmitter {
 
       // Create the project
       const project = await this.client!.projects.create(sdkParams);
+      createdProjectId = project.id;
 
       this.emit(ClientEvent.PROJECT_CREATED, project);
 
@@ -915,6 +930,8 @@ export class SogniClientWrapper extends EventEmitter {
         );
       }
 
+      if (createdProjectId) projectError.projectId = createdProjectId;
+
       this.emit(ClientEvent.PROJECT_FAILED, projectError.toErrorData());
 
       throw projectError;
@@ -922,7 +939,12 @@ export class SogniClientWrapper extends EventEmitter {
   }
 
   /**
-   * Create a project with retry logic
+   * Create a project, retrying only failures that happened before Sogni accepted
+   * it and are transient (network, 5xx, not yet connected). It never resubmits a
+   * project that exists (a failure or wait timeout after projects.create()
+   * carries `error.projectId`), never retries a refusal (4xx, socket refusal
+   * codes, validation, balance, auth), and retries a 429 only when the server's
+   * Retry-After is at most a minute, waiting that long.
    */
   async createProjectWithRetry(
     config: ProjectConfig,
@@ -935,6 +957,8 @@ export class SogniClientWrapper extends EventEmitter {
       {
         maxAttempts,
         initialDelay: retryDelay,
+        shouldRetry: (error) => isRetryableProjectSubmitError(error),
+        delayFor: (error, delay) => Math.max(delay, errorRetryAfterMs(error) ?? 0),
         onRetry: (attempt, error) => {
           this.log(`Retry attempt ${attempt} after error:`, error.message);
         },
@@ -1375,38 +1399,76 @@ export class SogniClientWrapper extends EventEmitter {
   }
 
   /**
-   * Schedule reconnection attempt
+   * Dispose an SDK client whose connect failed, without touching wrapper state.
    */
-  private scheduleReconnect(): void {
+  private discardFailedClient(): void {
+    const client = this.client;
+    this.client = null;
+    if (!client) return;
+    try {
+      if (typeof client.dispose === 'function') {
+        client.dispose();
+      } else if (client.apiClient && client.apiClient.socket) {
+        client.apiClient.socket.disconnect();
+      }
+    } catch (disposeError) {
+      this.log('Error disposing the failed client:', disposeError);
+    }
+  }
+
+  /**
+   * Schedule another connect attempt after a failed one, or stop for good.
+   * See reconnectDecision: refusals stop at once, a 429 waits for Retry-After,
+   * everything else backs off exponentially with jitter up to a capped count.
+   */
+  private scheduleReconnect(error?: unknown): void {
     if (this.reconnectTimer) {
+      return;
+    }
+
+    const attempt = this.connectionState.reconnectAttempts + 1;
+    const decision = reconnectDecision(error, attempt, {
+      baseMs: this.config.reconnectInterval,
+      maxMs: this.config.maxReconnectInterval,
+      maxAttempts: this.config.maxReconnectAttempts,
+    });
+    if (!decision.retry) {
+      this.isReconnecting = false;
+      const finalError = new SogniConnectionError(
+        `Stopped reconnecting to Sogni: ${decision.reason}`,
+        { reason: decision.reason, attempts: attempt - 1 },
+        error instanceof Error ? error : undefined
+      );
+      this.updateConnectionState({ status: 'failed' as ConnectionStatus, lastError: finalError.toErrorData() });
+      this.emit(ClientEvent.ERROR, finalError.toErrorData());
       return;
     }
 
     this.isReconnecting = true;
     this.updateConnectionState({
       status: 'reconnecting' as ConnectionStatus,
-      reconnectAttempts: this.connectionState.reconnectAttempts + 1,
+      reconnectAttempts: attempt,
     });
 
     this.emit(ClientEvent.RECONNECTING, this.connectionState.reconnectAttempts);
 
     this.reconnectTimer = setTimeout(async () => {
       this.reconnectTimer = null;
-      
+
       try {
         await this.connect();
         this.isReconnecting = false;
         this.emit(ClientEvent.RECONNECTED);
-      } catch (error) {
-        this.log('Reconnection failed:', error);
-        
+      } catch (reconnectError) {
+        this.log('Reconnection failed:', reconnectError);
+
         if (this.config.reconnect) {
-          this.scheduleReconnect();
+          this.scheduleReconnect(reconnectError);
         } else {
           this.isReconnecting = false;
         }
       }
-    }, this.config.reconnectInterval);
+    }, decision.delayMs);
   }
 
   /**

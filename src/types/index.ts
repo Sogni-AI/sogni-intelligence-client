@@ -168,7 +168,17 @@ export type AuthType = 'token' | 'cookies' | 'apiKey';
  * Base configuration fields shared by all auth types
  */
 interface BaseClientConfig {
-  /** Unique application identifier (auto-generated if not provided) */
+  /**
+   * Application identifier the socket knows this client by. Pass a STABLE id for
+   * any long-lived or restartable consumer (a server, bot, worker or CLI that
+   * resumes work): the SDK recovers in-flight and finished-while-away projects
+   * per app id (`projects.sync()`), so a new random id after a restart orphans
+   * them, and every new id also uses up one of the account's app-id
+   * registrations. Do not share one id between two processes running at the
+   * same time: the socket keeps only the newest connection per app id. When
+   * omitted, a random id is generated for this process (fine for one-shot
+   * scripts only).
+   */
   appId?: string;
 
   /** API key for API key authentication mode */
@@ -204,11 +214,22 @@ interface BaseClientConfig {
   /** Automatically connect on client creation */
   autoConnect?: boolean;
 
-  /** Automatically reconnect on connection loss */
+  /**
+   * Retry a failed connect. A connection that was established is kept alive by
+   * the SDK itself, which reconnects with capped backoff and re-syncs projects.
+   * Retries stop on refused credentials and socket refusals, honor Retry-After
+   * on a 429, and back off exponentially with jitter.
+   */
   reconnect?: boolean;
 
-  /** Interval between reconnection attempts in milliseconds */
+  /** First wait between connect attempts in milliseconds; doubles per attempt (default 5000) */
   reconnectInterval?: number;
+
+  /** Longest wait between connect attempts in milliseconds (default 300000) */
+  maxReconnectInterval?: number;
+
+  /** Connect attempts after the first failure before giving up and emitting an error (default 10) */
+  maxReconnectAttempts?: number;
 
   /** Default timeout for operations in milliseconds */
   timeout?: number;

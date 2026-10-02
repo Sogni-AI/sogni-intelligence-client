@@ -157,6 +157,20 @@ new SogniClientWrapper({ token, cookies });
 
 Connection management, reconnection, and credit/balance polling are handled automatically. Call `client.disconnect()` when finished.
 
+### App id and the request budget
+
+Pass a **stable `appId`** in any long-lived or restartable consumer (a server, bot, worker, or a CLI that resumes work):
+
+```typescript
+new SogniClientWrapper({ apiKey, appId: 'my-service-render-worker-1' });
+```
+
+- The socket recovers a client's in-flight and finished-while-away projects per app id (`projects.sync()` in the SDK). A new random id after a restart orphans them, and every new id uses up one of the account's app-id registrations. Omitting `appId` generates a random one per process, which is only fine for one-shot scripts.
+- Never run two processes with the same `appId` at the same time: the socket keeps only the newest connection per app id.
+- Wait for results with `waitForCompletion` / project events (socket), not by polling project status over REST. `api.sogni.ai` rate-limits per IP, and a blocked IP is blocked for everyone behind it.
+
+A failed connect is retried with exponential backoff and jitter (`reconnectInterval`, default 5 s, doubling up to `maxReconnectInterval`, default 5 min) for at most `maxReconnectAttempts` (default 10). It stops at once on refused credentials or a socket refusal and waits for `Retry-After` on a 429. Once connected, the SDK keeps the socket alive itself. `createProjectWithRetry` only resubmits failures from before Sogni accepted the project; a failure after that carries `error.projectId` and is never submitted twice.
+
 ## Generation surfaces
 
 The root wrapper exposes type‑safe project creation across every modality Sogni supports:

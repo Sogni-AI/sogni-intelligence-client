@@ -9,7 +9,16 @@ import type {
   VideoProjectConfig,
   AudioProjectConfig,
 } from '../types/index.js';
-import { SogniValidationError } from './errors.js';
+import {
+  SogniAuthenticationError,
+  SogniBalanceError,
+  SogniConfigurationError,
+  SogniConnectionError,
+  SogniModelNotFoundError,
+  SogniNetworkError,
+  SogniTimeoutError,
+  SogniValidationError,
+} from './errors.js';
 import { VIDEO_UPSCALE_MAX_OUTPUT, VIDEO_UPSCALE_MODEL_ID } from '../media/videoUpscale.js';
 import {
   WAN22_MAX_VIDEO_PIXELS,
@@ -288,6 +297,14 @@ export function validateClientConfig(config: SogniClientConfig): void {
 
   if (config.reconnectInterval !== undefined && (typeof config.reconnectInterval !== 'number' || config.reconnectInterval <= 0)) {
     throw new SogniValidationError('Reconnect interval must be a positive number');
+  }
+
+  if (config.maxReconnectInterval !== undefined && (typeof config.maxReconnectInterval !== 'number' || config.maxReconnectInterval <= 0)) {
+    throw new SogniValidationError('Max reconnect interval must be a positive number');
+  }
+
+  if (config.maxReconnectAttempts !== undefined && (!Number.isInteger(config.maxReconnectAttempts) || config.maxReconnectAttempts < 0)) {
+    throw new SogniValidationError('Max reconnect attempts must be a non-negative integer');
   }
 }
 
@@ -662,6 +679,10 @@ export async function retry<T>(
     maxDelay?: number;
     backoffFactor?: number;
     onRetry?: (attempt: number, error: Error) => void;
+    /** Return false to stop retrying and rethrow this error (default: retry every error). */
+    shouldRetry?: (error: Error, attempt: number) => boolean;
+    /** The wait before the next attempt, given the error and the backoff delay (e.g. to honor Retry-After). */
+    delayFor?: (error: Error, delay: number) => number;
   } = {}
 ): Promise<T> {
   const {
@@ -670,6 +691,8 @@ export async function retry<T>(
     maxDelay = 10000,
     backoffFactor = 2,
     onRetry,
+    shouldRetry,
+    delayFor,
   } = options;
 
   let lastError: Error;
@@ -681,7 +704,7 @@ export async function retry<T>(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
 
-      if (attempt === maxAttempts) {
+      if (attempt === maxAttempts || (shouldRetry && !shouldRetry(lastError, attempt))) {
         throw lastError;
       }
 
@@ -689,7 +712,7 @@ export async function retry<T>(
         onRetry(attempt, lastError);
       }
 
-      await sleep(delay);
+      await sleep(delayFor ? delayFor(lastError, delay) : delay);
       delay = Math.min(delay * backoffFactor, maxDelay);
     }
   }
@@ -818,4 +841,133 @@ export function throttle<T extends (...args: any[]) => any>(
       }, limitMs);
     }
   };
+}
+
+// ---------------------------------------------------------------------------
+// Request-budget-safe error classification
+//
+// api.sogni.ai rate-limits per IP, and many consumers of this library share an
+// IP (servers, bots, agent sandboxes). Retrying through a 429 or a refusal keeps
+// that IP blocked for everyone, and resubmitting a project that already exists
+// renders and bills it twice. These helpers decide what is safe to retry.
+// ---------------------------------------------------------------------------
+
+/** The error and the errors it wraps, outermost first (SogniError.originalError, Error.cause). */
+function errorChain(error: unknown): any[] {
+  const chain: any[] = [];
+  let current: any = error;
+  while (current && typeof current === 'object' && chain.length < 8 && !chain.includes(current)) {
+    chain.push(current);
+    current = current.originalError ?? current.cause;
+  }
+  return chain;
+}
+
+/** The HTTP status an error carries anywhere in its chain (timeouts excluded). */
+export function errorHttpStatus(error: unknown): number | undefined {
+  for (const entry of errorChain(error)) {
+    if (entry instanceof SogniTimeoutError) continue;
+    for (const value of [entry.status, entry.statusCode, entry.details?.originalStatusCode]) {
+      if (typeof value === 'number' && value >= 100 && value < 600) return value;
+    }
+  }
+  return undefined;
+}
+
+/** The server's Retry-After (the SDK's ApiError.retryAfter, in seconds) as milliseconds. */
+export function errorRetryAfterMs(error: unknown): number | undefined {
+  for (const entry of errorChain(error)) {
+    if (typeof entry.retryAfter === 'number' && Number.isFinite(entry.retryAfter) && entry.retryAfter >= 0) {
+      return entry.retryAfter * 1000;
+    }
+  }
+  return undefined;
+}
+
+/** A numeric Sogni socket refusal code (4000-4999) anywhere in the chain: never recoverable by retrying. */
+export function errorSocketRefusalCode(error: unknown): number | undefined {
+  for (const entry of errorChain(error)) {
+    if (typeof entry.code === 'number' && entry.code >= 4000 && entry.code < 5000) return entry.code;
+  }
+  return undefined;
+}
+
+const NETWORK_ERROR_CODES = new Set(['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'ENOTFOUND', 'EAI_AGAIN', 'EPIPE', 'ENETUNREACH', 'EHOSTUNREACH']);
+
+function isNetworkFailure(error: unknown): boolean {
+  return errorChain(error).some((entry) => entry instanceof SogniNetworkError
+    || (typeof entry.code === 'string' && (NETWORK_ERROR_CODES.has(entry.code) || entry.code.startsWith('UND_ERR')))
+    || (entry instanceof TypeError && /fetch failed|network/i.test(String(entry.message))));
+}
+
+export interface ReconnectDecision {
+  retry: boolean;
+  /** Wait before the next attempt (when retry is true). */
+  delayMs?: number;
+  /** Why it stops (when retry is false). */
+  reason?: string;
+}
+
+/**
+ * Whether, and when, to try connecting again after `attempt` failed connects.
+ * Stops on refused credentials and socket refusals; honors Retry-After on a
+ * 429; otherwise backs off exponentially with jitter up to `maxMs`, for at most
+ * `maxAttempts` attempts.
+ */
+export function reconnectDecision(
+  error: unknown,
+  attempt: number,
+  { baseMs, maxMs, maxAttempts, random = Math.random }: { baseMs: number; maxMs: number; maxAttempts: number; random?: () => number }
+): ReconnectDecision {
+  if (attempt > maxAttempts) {
+    return { retry: false, reason: `gave up after ${maxAttempts} reconnection attempt${maxAttempts === 1 ? '' : 's'}` };
+  }
+  const chain = errorChain(error);
+  const status = errorHttpStatus(error);
+  // The innermost error is the real one; the wrapper's own classification guesses from its message.
+  if (status === 401 || status === 403 || chain[chain.length - 1] instanceof SogniAuthenticationError) {
+    return { retry: false, reason: 'Sogni refused the credentials' };
+  }
+  const refusal = errorSocketRefusalCode(error);
+  if (refusal !== undefined) {
+    return { retry: false, reason: `the Sogni socket refused the connection (code ${refusal})` };
+  }
+  if (status !== undefined && status >= 400 && status < 500 && status !== 408 && status !== 429) {
+    return { retry: false, reason: `the request was refused (HTTP ${status})` };
+  }
+  const backoff = Math.min(maxMs, baseMs * 2 ** Math.max(0, attempt - 1));
+  const jittered = Math.round(backoff * (0.8 + random() * 0.4));
+  if (status === 429) {
+    return { retry: true, delayMs: Math.max(jittered, errorRetryAfterMs(error) ?? 0) };
+  }
+  return { retry: true, delayMs: jittered };
+}
+
+/**
+ * Whether a failed createProject() may be submitted again. Only a failure that
+ * happened before Sogni accepted the project qualifies, and only a transient one
+ * (network, 5xx, not yet connected). Never after a project id exists (it may
+ * still be rendering: a resubmit renders and bills it twice), never on a wait
+ * timeout, never on a refusal (4xx, socket refusal codes, validation, balance,
+ * auth), and a 429 only when the server's Retry-After is at most `maxRetryAfterMs`.
+ */
+export function isRetryableProjectSubmitError(error: unknown, { maxRetryAfterMs = 60_000 }: { maxRetryAfterMs?: number } = {}): boolean {
+  const chain = errorChain(error);
+  if (chain.some((entry) => typeof entry.projectId === 'string' && entry.projectId)) return false;
+  if (chain.some((entry) => entry instanceof SogniTimeoutError
+    || entry instanceof SogniValidationError
+    || entry instanceof SogniConfigurationError
+    || entry instanceof SogniModelNotFoundError
+    || entry instanceof SogniBalanceError
+    || entry instanceof SogniAuthenticationError)) {
+    return false;
+  }
+  if (errorSocketRefusalCode(error) !== undefined) return false;
+  const status = errorHttpStatus(error);
+  if (status === 429) {
+    const retryAfter = errorRetryAfterMs(error);
+    return retryAfter !== undefined && retryAfter <= maxRetryAfterMs;
+  }
+  if (status !== undefined) return status >= 500;
+  return isNetworkFailure(error) || chain.some((entry) => entry instanceof SogniConnectionError);
 }

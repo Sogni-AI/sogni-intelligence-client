@@ -12,6 +12,11 @@ export class SogniError extends Error {
   public readonly statusCode?: number;
   public readonly details?: any;
   public readonly originalError?: Error;
+  /**
+   * Set when the error happened after Sogni accepted the project: it exists and
+   * may still be running, so submitting it again would render and bill it twice.
+   */
+  public projectId?: string;
 
   constructor(message: string, code: string, statusCode?: number, details?: any, originalError?: Error) {
     super(message);

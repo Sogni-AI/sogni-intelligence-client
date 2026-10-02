@@ -79,6 +79,9 @@ async function main() {
   const imageUrl = toImageUrl(imageInput);
 
   const client = new SogniClientWrapper({
+    // A stable app id (never a new random one per run): the socket recovers this
+    // app's projects after a restart, and each new id uses up an app-id registration.
+    appId: process.env.SOGNI_APP_ID || 'sogni-intelligence-example-llm-chat-vision',
     username: process.env.SOGNI_USERNAME,
     password: process.env.SOGNI_PASSWORD,
   });
