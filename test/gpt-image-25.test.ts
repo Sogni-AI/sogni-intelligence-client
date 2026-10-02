@@ -131,6 +131,8 @@ test('GPT Image 2 ruled out through a verb or model phrase never overrides anoth
     'Never use third-party vendor models like GPT Image 2. Make the image with Qwen Image 2512.',
     "Don't ever use GPT Image 2. Make the image with Qwen Image 2512.",
     "I don't want you to use GPT Image 2. Make the image with Qwen Image 2512.",
+    'Can you stop using GPT Image 2 and make the image with Qwen Image 2512?',
+    'Would you quit using GPT Image 2 and make the image with Qwen Image 2512',
   ]) {
     assert.equal(textRequestsGptImage2ImageModel(request), false, request);
     assert.equal(getGptImage2ModelOverride('generate_image', 'qwen-2512', request), null, request);
@@ -160,6 +162,7 @@ test('suggestions and double negatives before GPT Image 2 stay requests', () => 
     "Why don't you switch to GPT Image 2 for the image?",
     'Use nothing but GPT Image 2 for this image.',
     'Is there any reason not to use GPT Image 2 for the image?',
+    "Don't you want to use GPT Image 2 for the image?",
   ]) {
     assert.equal(textRequestsGptImage2ImageModel(request), true, request);
     assert.equal(getGptImage2ModelOverride('generate_image', 'qwen-2512', request), baseline, request);
