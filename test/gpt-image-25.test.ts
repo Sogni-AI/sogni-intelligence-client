@@ -127,6 +127,10 @@ test('GPT Image 2 ruled out through a verb or model phrase never overrides anoth
     'Qwen Image 2512 only. No third-party models like GPT Image 2. Make the image again.',
     "I don't want GPT Image 2 for this image; keep it on Qwen Image 2512.",
     "Don't let it switch to OpenAI. Create the poster image with Qwen Image 2512.",
+    'Use only Qwen Image 2512 and do not switch to any third-party model like GPT Image 2. Make the image.',
+    'Never use third-party vendor models like GPT Image 2. Make the image with Qwen Image 2512.',
+    "Don't ever use GPT Image 2. Make the image with Qwen Image 2512.",
+    "I don't want you to use GPT Image 2. Make the image with Qwen Image 2512.",
   ]) {
     assert.equal(textRequestsGptImage2ImageModel(request), false, request);
     assert.equal(getGptImage2ModelOverride('generate_image', 'qwen-2512', request), null, request);
@@ -144,6 +148,24 @@ test('an unrelated word or a clause break keeps a later GPT Image 2 request', ()
     assert.equal(textRequestsGptImage2ImageModel(request), true, request);
     assert.equal(getGptImage2ModelOverride('generate_image', 'qwen-2512', request), baseline, request);
   }
+});
+
+test('suggestions and double negatives before GPT Image 2 stay requests', () => {
+  for (const request of [
+    'Why not switch to GPT Image 2 for this image?',
+    'Try Qwen first, if not switch to GPT Image 2 and make the image.',
+    'no go back to gpt image 2 and make the image again',
+    "Don't stop using GPT Image 2 for these images.",
+    'Why did you stop using GPT Image 2? Make the image with it again.',
+    "Why don't you switch to GPT Image 2 for the image?",
+    'Use nothing but GPT Image 2 for this image.',
+    'Is there any reason not to use GPT Image 2 for the image?',
+  ]) {
+    assert.equal(textRequestsGptImage2ImageModel(request), true, request);
+    assert.equal(getGptImage2ModelOverride('generate_image', 'qwen-2512', request), baseline, request);
+  }
+  assert.equal(getGptImage2ModelOverride('edit_image', 'qwen', "Don't stop using GPT 2.5 Sunburst for these edits."), sunburst);
+  assert.equal(getGptImage2ModelOverride('generate_image', 'qwen-2512', 'Why not switch to GPT 2.5 Flare for this image?'), flare);
 });
 
 test('2.5 qualities survive, auto is rejected, and baseline gains no 2.5 controls', () => {

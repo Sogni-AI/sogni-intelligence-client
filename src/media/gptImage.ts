@@ -106,22 +106,45 @@ export function textRequestsGptImage2ImageModel(text: string): boolean {
     || /\b(?:images?|pictures?|photos?|portraits?|illustrations?|artwork|graphics?|renders?|text[-\s]?to[-\s]?image|generate|create|draw|render|make)\b/i.test(text);
 }
 
-// An exclusion word, then at most four words that keep it attached to the model
-// name ("don't switch to", "no third-party models like", "stop using"). Any
-// other word or punctuation ends the exclusion, so "don't forget to use X" and
-// "not X but use Y" still request the model that follows.
+// An exclusion word, then at most six words that keep it attached to the model
+// name ("don't switch to", "do not switch to any third-party model like",
+// "stop using"). Any other word or punctuation ends the exclusion, so "don't
+// forget to use X" and "not X but use Y" still request the model that follows.
+// Suggestions and double negatives are not exclusions: "why not switch to X",
+// "if not switch to X", "no go back to X", "don't stop using X", "why did you
+// stop using X", "why don't you switch to X", and "nothing but X".
+const IMAGE_MODEL_EXCLUSION_WORD = [
+  String.raw`(?<!\b(?:why|if|whether|reason)\s+)not`,
+  String.raw`no(?!\s+(?:switch|go|change|move|let)\b)`,
+  'never',
+  'avoid',
+  'without',
+  'except',
+  String.raw`(?<!\b(?:don['’]?t|do\s+not|never|not|you|u)\s+)(?:stop|quit)`,
+  String.raw`other\s+than`,
+  String.raw`instead\s+of`,
+  String.raw`rather\s+than`,
+  String.raw`(?<!\bwhy\s+)don['’]?t`,
+  String.raw`(?:anything|any\s+model|everything)\s+but`,
+].join('|');
+const IMAGE_MODEL_EXCLUSION_LINK_WORD = [
+  'use', 'using', 'with', 'the', 'a', 'an', 'any', 'ever', 'you', 'model', 'models',
+  'switch', 'switching', 'change', 'changing', 'go', 'going', 'move', 'moving',
+  'fall', 'falling', 'back', 'to', 'into', 'over', 'like', String.raw`such\s+as`,
+  String.raw`third[-\s]?party`, 'vendor', 'external', 'other', 'want', 'need', 'let', 'it',
+].join('|');
 const IMAGE_MODEL_EXCLUSION_PATTERN = new RegExp(
-  String.raw`\b(?:not|no|never|avoid|without|except|stop|quit|other\s+than|instead\s+of|rather\s+than|don['’]?t|`
-    + String.raw`(?:anything|any\s+model|nothing|everything)\s+but)\s+`
-    + String.raw`(?:(?:use|using|with|the|a|an|any|model|models|switch|switching|change|changing|go|going|move|moving|`
-    + String.raw`fall|falling|back|to|into|over|like|such\s+as|third[-\s]?party|vendor|external|other|want|need|let|it)\s+){0,4}`
-    + String.raw`["'“‘(]*$`,
+  String.raw`\b(?:${IMAGE_MODEL_EXCLUSION_WORD})\s+(?:(?:${IMAGE_MODEL_EXCLUSION_LINK_WORD})\s+){0,6}["'“‘(]*$`,
   'i',
 );
+/** Long enough for an exclusion word plus six linking words. */
+const IMAGE_MODEL_EXCLUSION_WINDOW = 96;
 
 /** Bounded exclusion immediately before a literal model name, not turn intent. */
 export function isNegatedImageModelMention(text: string, index: number): boolean {
-  return IMAGE_MODEL_EXCLUSION_PATTERN.test(text.slice(Math.max(0, index - 64), index));
+  return IMAGE_MODEL_EXCLUSION_PATTERN.test(
+    text.slice(Math.max(0, index - IMAGE_MODEL_EXCLUSION_WINDOW), index),
+  );
 }
 
 export function textExplicitlyAvoidsGptImageModel(text: string): boolean {
