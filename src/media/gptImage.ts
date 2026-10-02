@@ -106,10 +106,59 @@ export function textRequestsGptImage2ImageModel(text: string): boolean {
     || /\b(?:images?|pictures?|photos?|portraits?|illustrations?|artwork|graphics?|renders?|text[-\s]?to[-\s]?image|generate|create|draw|render|make)\b/i.test(text);
 }
 
+// An exclusion word, then at most six words that keep it attached to the model
+// name ("don't switch to", "do not switch to any third-party model like",
+// "stop using"). Any other word or punctuation ends the exclusion, so "don't
+// forget to use X" and "not X but use Y" still request the model that follows.
+// Suggestions and double negatives are not exclusions: "why not switch to X",
+// "if not switch to X", "no go back to X", "don't stop using X", "why did you
+// stop using X", "why don't you switch to X", and "nothing but X".
+//
+// The words before an exclusion are checked in code rather than with regex
+// lookbehind, which older Safari versions cannot compile.
+const IMAGE_MODEL_EXCLUSION_WORD_PATTERN = new RegExp(
+  String.raw`\b(not|no|never|avoid|without|except|stop|quit|other\s+than|instead\s+of|rather\s+than|don['’]?t|`
+    + String.raw`(?:anything|any\s+model|everything)\s+but)(?=\s)`,
+  'gi',
+);
+const IMAGE_MODEL_EXCLUSION_LINK_WORD = [
+  String.raw`(?:want|need)\s+(?:you|u)`, 'use', 'using', 'with', 'the', 'a', 'an', 'any', 'ever',
+  'model', 'models', 'switch', 'switching', 'change', 'changing', 'go', 'going', 'move', 'moving',
+  'fall', 'falling', 'back', 'to', 'into', 'over', 'like', String.raw`such\s+as`,
+  String.raw`third[-\s]?party`, 'vendor', 'external', 'other', 'want', 'need', 'let', 'it',
+].join('|');
+const IMAGE_MODEL_EXCLUSION_TAIL_PATTERN = new RegExp(
+  String.raw`^\s+(?:(?:${IMAGE_MODEL_EXCLUSION_LINK_WORD})\s+){0,6}["'“‘(]*$`,
+  'i',
+);
+const SUGGESTION_BEFORE_NOT_PATTERN = /\b(?:why|if|whether|reason)\s+$/i;
+const VERB_AFTER_NO_PATTERN = /^\s+(?:switch|go|change|move|let)\b/i;
+const NEGATION_BEFORE_STOP_PATTERN =
+  /\b(?:don['’]?t|do\s+not|never|not|(?:did|didn['’]?t|why['’]?d)\s+(?:you|u))\s+$/i;
+const SUGGESTION_BEFORE_DONT_PATTERN = /\bwhy\s+$/i;
+/** Long enough for an exclusion word plus six linking words. */
+const IMAGE_MODEL_EXCLUSION_WINDOW = 96;
+
+function isSuggestionOrDoubleNegative(word: string, before: string, after: string): boolean {
+  if (word === 'not') return SUGGESTION_BEFORE_NOT_PATTERN.test(before);
+  if (word === 'no') return VERB_AFTER_NO_PATTERN.test(after);
+  if (word === 'stop' || word === 'quit') return NEGATION_BEFORE_STOP_PATTERN.test(before);
+  if (word.startsWith('don')) return SUGGESTION_BEFORE_DONT_PATTERN.test(before);
+  return false;
+}
+
 /** Bounded exclusion immediately before a literal model name, not turn intent. */
 export function isNegatedImageModelMention(text: string, index: number): boolean {
-  return /\b(?:not|no|never|avoid|without|except|other\s+than|instead\s+of|rather\s+than|don'?t|dont|(?:anything|any\s+model|nothing|everything)\s+but)\s+(?:(?:use|using|with|the|model)\s+){0,3}["'“‘(]*$/i
-    .test(text.slice(Math.max(0, index - 64), index));
+  const window = text.slice(Math.max(0, index - IMAGE_MODEL_EXCLUSION_WINDOW), index);
+  for (const match of window.matchAll(IMAGE_MODEL_EXCLUSION_WORD_PATTERN)) {
+    const start = match.index ?? 0;
+    const before = window.slice(0, start);
+    const after = window.slice(start + match[0].length);
+    if (!IMAGE_MODEL_EXCLUSION_TAIL_PATTERN.test(after)) continue;
+    if (isSuggestionOrDoubleNegative(match[1].toLowerCase(), before, after)) continue;
+    return true;
+  }
+  return false;
 }
 
 export function textExplicitlyAvoidsGptImageModel(text: string): boolean {
