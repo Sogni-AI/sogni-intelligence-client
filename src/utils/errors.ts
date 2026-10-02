@@ -3,6 +3,7 @@
  */
 
 import type { ErrorData } from '../types/index.js';
+import type { ModelConsentRequiredPayload } from '../media/modelConsentRequired.js';
 
 /**
  * Base error class for all Sogni-related errors
@@ -140,6 +141,27 @@ export class SogniModelNotFoundError extends SogniError {
   constructor(modelId: string) {
     super(`Model not found: ${modelId}`, 'MODEL_NOT_FOUND', 404, { modelId }, undefined);
     this.name = 'SogniModelNotFoundError';
+  }
+}
+
+/**
+ * Model consent refusal (Supernet error 4103): the account has not accepted the
+ * model's one-time likeness and consent agreement. Not retryable; the user must
+ * accept it in the Sogni app. `payload` is the typed tool-result payload.
+ */
+export class SogniModelConsentRequiredError extends SogniError {
+  public readonly payload: ModelConsentRequiredPayload;
+
+  constructor(payload: ModelConsentRequiredPayload, originalError?: Error) {
+    super(
+      payload.message,
+      'MODEL_CONSENT_REQUIRED',
+      403,
+      { errorCode: payload.errorCode, consentRequired: payload.consentRequired },
+      originalError,
+    );
+    this.name = 'SogniModelConsentRequiredError';
+    this.payload = payload;
   }
 }
 

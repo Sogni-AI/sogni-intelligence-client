@@ -5,7 +5,9 @@
  * runtime so all three speak the same Seedance error contract.
  */
 import {
+  modelConsentRequiredPayloadFromError,
   vendorModelPremiumPayloadFromError,
+  type ModelConsentRequiredPayload,
   type VendorModelPremiumRequiredPayload,
 } from '../../media/index.js';
 
@@ -328,7 +330,16 @@ export function seedanceTerminalPolicyErrorFromError(
 
 export function seedanceTerminalGenerationFailurePayloadFromError(
   error: unknown,
-): SeedanceTerminalGenerationFailurePayload | VendorModelPremiumRequiredPayload | null {
+):
+  | SeedanceTerminalGenerationFailurePayload
+  | VendorModelPremiumRequiredPayload
+  | ModelConsentRequiredPayload
+  | null {
+  // Seedance 2.5 Uncensored refuses with 4103 until the account accepts its
+  // likeness and consent agreement in the Sogni app; never a retryable failure.
+  const consentPayload = modelConsentRequiredPayloadFromError(error);
+  if (consentPayload) return consentPayload;
+
   const premiumPayload = vendorModelPremiumPayloadFromError(error);
   if (premiumPayload) return premiumPayload;
 

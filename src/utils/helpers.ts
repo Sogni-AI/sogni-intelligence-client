@@ -87,7 +87,10 @@ export function isSeedanceVideoModel(modelId: string): boolean {
   return isSeedanceVideoModelId(modelId);
 }
 
-/** Seedance 2.5 renders 4-30s and carries the larger reference budget. */
+/**
+ * Seedance 2.5 and Seedance 2.5 Uncensored render 4-30s and carry the larger
+ * reference budget.
+ */
 export function isSeedance25VideoModel(modelId: string): boolean {
   return isSeedance25VideoModelId(modelId);
 }

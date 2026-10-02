@@ -23,6 +23,11 @@ export const SEEDANCE_TOOL_MULTIMODAL_REFERENCE_GUIDANCE = `Seedance supports mu
 
 export const SEEDANCE_TOOL_V2V_REFERENCE_GUIDANCE = `Seedance V2V reads @Video1 holistically. Use it for restyling, motion transfer, extension, subject replacement, or scene transformation, and assign @Video1 a clear role such as source clip, camera movement, action timing, edit rhythm, or continuation anchor.`;
 
+// Seedance 2.5 Uncensored (seedance-2-5-spicy): Seedance 2.5 on a separate
+// uncensored account, gated by a one-time likeness and consent agreement.
+export const SEEDANCE_25_SPICY_MODEL_DESCRIPTION =
+  '"seedance2-5-spicy": Seedance 2.5 Uncensored — the uncensored variant of Seedance 2.5, with every mode, resolution, duration, reference limit, and output option described for "seedance2-5". Choose it only when the user asks for Seedance 2.5 Uncensored (including "Seedance Uncensored" or "Seedance Spicy") or for uncensored Seedance output; never swap it in for "seedance2-5" otherwise. Each account must accept a one-time likeness and consent agreement in the Sogni app before its first render; until then the job fails with error 4103, so tell the user to accept it in the Sogni app instead of retrying.';
+
 export const SEEDANCE_TOOL_AUDIO_REFERENCE_GUIDANCE = `For Seedance audio-reference prompts, preserve exact spoken dialogue when the user supplied it, and assign @Image1/@Audio1 roles. If the user asks for speech without words, describe the vocal performance without inventing quoted dialogue. Treat lip-sync, voice cloning, and real-human reference behavior as provider-sensitive rather than guaranteed.`;
 
 export const HAPPYHORSE_TOOL_REFERENCE_GUIDANCE = `HappyHorse 1.1 takes image references only and renders a native synchronized audio track (always on; do not set generateAudio or a negative prompt). Pick the model by mode: happyhorse-1.1-t2v for text-to-video (no reference image), happyhorse-1.1-i2v for image-to-video from a single first frame, and happyhorse-1.1-r2v for reference-to-video with 1 to 9 reference images. For r2v, tag the images in the prompt as [Image 1]…[Image 9] and assign each a clear role. HappyHorse does not accept reference videos or reference audios.`;

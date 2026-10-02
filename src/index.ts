@@ -125,7 +125,19 @@ export {
   SogniConfigurationError,
   SogniModelNotFoundError,
   SogniNetworkError,
+  SogniModelConsentRequiredError,
 } from './utils/errors.js';
+export {
+  MODEL_CONSENT_REQUIRED_ERROR,
+  MODEL_CONSENT_REQUIRED_ERROR_CODE,
+  MODEL_CONSENT_REQUIRED_MESSAGE,
+  modelConsentRequiredPayload,
+  modelConsentRequiredPayloadFromError,
+} from './media/modelConsentRequired.js';
+export type {
+  ModelConsentRequiredPayload,
+  ModelConsentRequirement,
+} from './media/modelConsentRequired.js';
 
 // Utilities
 export {
@@ -153,6 +165,7 @@ export {
 } from './utils/helpers.js';
 export type { VideoDimensionRules } from './utils/helpers.js';
 export {
+  isSeedance25SpicyVideoModelId,
   isSeedance25VideoModelId,
   isSeedanceVideoModelId,
   resolveSeedanceVideoModelId,

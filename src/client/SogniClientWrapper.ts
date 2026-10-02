@@ -60,8 +60,10 @@ import {
   SogniProjectError,
   SogniTimeoutError,
   SogniModelNotFoundError,
+  SogniModelConsentRequiredError,
   SogniValidationError,
 } from '../utils/errors.js';
+import { modelConsentRequiredPayloadFromError } from '../media/modelConsentRequired.js';
 import {
   generateAppId,
   validateClientConfig,
@@ -906,7 +908,18 @@ export class SogniClientWrapper extends EventEmitter {
       this.log('Project failed:', error);
       
       let projectError: SogniError;
-      if (error instanceof SogniTimeoutError || error instanceof SogniProjectError) {
+      const consentPayload = modelConsentRequiredPayloadFromError(error);
+      if (error instanceof SogniModelConsentRequiredError) {
+        projectError = error;
+      } else if (consentPayload) {
+        // 4103: the account has not accepted the model's one-time likeness and
+        // consent agreement. Surface it typed so callers ask the user to accept
+        // it in the Sogni app instead of retrying.
+        projectError = new SogniModelConsentRequiredError(
+          consentPayload,
+          error instanceof Error ? error : undefined,
+        );
+      } else if (error instanceof SogniTimeoutError || error instanceof SogniProjectError) {
         projectError = error;
       } else if (error instanceof SogniError) {
         projectError = new SogniProjectError(
@@ -965,7 +978,10 @@ export class SogniClientWrapper extends EventEmitter {
       {
         maxAttempts,
         initialDelay: retryDelay,
-        shouldRetry: (error) => isRetryableProjectSubmitError(error),
+        // A consent refusal fails the same way until the user accepts the
+        // agreement in the Sogni app, so never retry it.
+        shouldRetry: (error) =>
+          !(error instanceof SogniModelConsentRequiredError) && isRetryableProjectSubmitError(error),
         delayFor: (error, delay) => Math.max(delay, errorRetryAfterMs(error) ?? 0),
         onRetry: (attempt, error) => {
           this.log(`Retry attempt ${attempt} after error:`, error.message);

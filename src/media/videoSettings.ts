@@ -38,6 +38,7 @@ export type VideoModelId =
   | "seedance2"
   | "seedance2-mini"
   | "seedance2-5"
+  | "seedance2-5-spicy"
   | "happyhorse-1.1-t2v"
   | "happyhorse-1.1-i2v"
   | "happyhorse-1.1-r2v"
@@ -927,6 +928,17 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
   // per call, so its frame ceiling is double the 2.0 family's.
   "seedance2-5": {
     model: "seedance-2-5",
+    fps: 24,
+    dimensionDivisor: 1,
+    minDimension: 1,
+    maxDimension: 2206,
+    minFrames: 97,
+    maxFrames: 721,
+  },
+  // Seedance 2.5 Uncensored: the same model and limits as Seedance 2.5 under
+  // its own canonical id. Never map it to "seedance-2-5".
+  "seedance2-5-spicy": {
+    model: "seedance-2-5-spicy",
     fps: 24,
     dimensionDivisor: 1,
     minDimension: 1,

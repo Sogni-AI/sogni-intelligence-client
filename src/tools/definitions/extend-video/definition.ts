@@ -49,9 +49,9 @@ export const definition: ToolDefinition = {
         },
         videoModel: {
           type: 'string',
-          enum: ['auto', 'ltx25', 'ltx23', 'seedance2', 'seedance2-mini', 'seedance2-5'],
+          enum: ['auto', 'ltx25', 'ltx23', 'seedance2', 'seedance2-mini', 'seedance2-5', 'seedance2-5-spicy'],
           description:
-            'Which model to use for the new segment. Default: "auto" — preserve Seedance for a Seedance base and otherwise use LTX 2.5. Use ltx23 only for explicit rollback. Override only when the user explicitly requests a different model.',
+            'Which model to use for the new segment. Default: "auto" — preserve Seedance for a Seedance base and otherwise use LTX 2.5. Use ltx23 only for explicit rollback. "seedance2-5-spicy" is Seedance 2.5 Uncensored; use it only when the user asks for it. Override only when the user explicitly requests a different model.',
         },
         keepOriginalAudio: {
           type: 'boolean',

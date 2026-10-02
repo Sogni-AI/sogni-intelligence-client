@@ -9,6 +9,10 @@ export const SEEDANCE_VIDEO_MODEL_IDS = Object.freeze({
   standard: 'seedance-2-0',
   mini: 'seedance-2-0-mini',
   v25: 'seedance-2-5',
+  // Seedance 2.5 Uncensored: the same vendor model as Seedance 2.5 on a
+  // separate uncensored account. It shares every 2.5 capability but is its own
+  // id: never alias or rewrite it to seedance-2-5.
+  v25Spicy: 'seedance-2-5-spicy',
 } as const);
 
 export type SeedanceVideoModelId =
@@ -20,7 +24,7 @@ const SEEDANCE_VIDEO_MODEL_ID_SET: ReadonlySet<string> = new Set(
 
 const SEEDANCE_VIDEO_MODEL_ALIASES: Readonly<Record<string, SeedanceVideoModelId>> =
   Object.freeze({
-    // Public skill selectors are explicit aliases for the same three vendor
+    // Public skill selectors are explicit aliases for the registered vendor
     // contracts. Keep this list aligned with VIDEO_MODEL_ALIASES; do not
     // replace it with a Seedance prefix match.
     seedance2: SEEDANCE_VIDEO_MODEL_IDS.standard,
@@ -33,6 +37,14 @@ const SEEDANCE_VIDEO_MODEL_ALIASES: Readonly<Record<string, SeedanceVideoModelId
     'seedance2-5-t2v': SEEDANCE_VIDEO_MODEL_IDS.v25,
     'seedance2-5-ia2v': SEEDANCE_VIDEO_MODEL_IDS.v25,
     'seedance2-5-v2v': SEEDANCE_VIDEO_MODEL_IDS.v25,
+    'seedance2-5-spicy': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
+    'seedance2-5-spicy-t2v': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
+    'seedance2-5-spicy-ia2v': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
+    'seedance2-5-spicy-v2v': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
+    'seedance2-5-uncensored': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
+    'seedance-2-5-uncensored': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
+    'seedance-uncensored': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
+    'seedance-spicy': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
     // Retired backend id retained as an explicit compatibility alias. Mini is
     // its supported replacement; this is not a family-prefix fallback.
     'seedance-2-0-fast': SEEDANCE_VIDEO_MODEL_IDS.mini,
@@ -55,6 +67,16 @@ export function isSeedanceVideoModelId(modelId: string | null | undefined): bool
   return resolveSeedanceVideoModelId(modelId) !== null;
 }
 
+/**
+ * True for Seedance 2.5 and Seedance 2.5 Uncensored, which share every 2.5
+ * capability (4-30s, 1080p, the 30/10/10/50 reference budget, MOV, last frame).
+ */
 export function isSeedance25VideoModelId(modelId: string | null | undefined): boolean {
-  return resolveSeedanceVideoModelId(modelId) === SEEDANCE_VIDEO_MODEL_IDS.v25;
+  const resolved = resolveSeedanceVideoModelId(modelId);
+  return resolved === SEEDANCE_VIDEO_MODEL_IDS.v25 || resolved === SEEDANCE_VIDEO_MODEL_IDS.v25Spicy;
+}
+
+/** True only for Seedance 2.5 Uncensored (`seedance-2-5-spicy`). */
+export function isSeedance25SpicyVideoModelId(modelId: string | null | undefined): boolean {
+  return resolveSeedanceVideoModelId(modelId) === SEEDANCE_VIDEO_MODEL_IDS.v25Spicy;
 }
