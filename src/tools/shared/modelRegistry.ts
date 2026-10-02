@@ -149,10 +149,11 @@ export const MODELS_BY_TOOL: Record<string, ModelOption[]> = {
     { key: 'seedance2-mini', displayName: 'Seedance 2.0 Mini' },
     { key: 'seedance2-5', displayName: 'Seedance 2.5' },
   ],
+  // MiniMax Music 3 first: it is the default music model.
   generate_music: [
+    { key: 'music3', displayName: 'MiniMax Music 3' },
     { key: 'turbo', displayName: 'ACE-Step 1.5 Turbo' },
     { key: 'sft', displayName: 'ACE-Step 1.5 SFT' },
-    { key: 'music3', displayName: 'MiniMax Music 3' },
   ],
   // Three Qwen3-TTS checkpoints, picked by what the caller can supply rather
   // than by quality tier: a preset voice, a recording to clone, or a written

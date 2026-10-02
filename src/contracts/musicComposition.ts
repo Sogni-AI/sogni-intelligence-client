@@ -31,7 +31,11 @@ export interface LyricsGenerationResult {
 export type MusicCompositionTarget = 'ace' | 'music3';
 
 export interface MusicCompositionOptions {
-  /** Target music model; defaults to the ACE-Step structured format. */
+  /**
+   * Target music model. Defaults to MiniMax Music 3, the default music model
+   * (plain section tags plus a structured caption); pass 'ace' for the
+   * ACE-Step structured format.
+   */
   model?: MusicCompositionTarget;
   /** Requested song length in seconds — Music 3 sizes the lyric sheet to fill it. */
   targetDurationSeconds?: number;
@@ -214,7 +218,7 @@ export function buildLyricsMessages(
   randomTheme?: string,
   options?: MusicCompositionOptions,
 ): SogniChatMessage[] {
-  const music3 = options?.model === 'music3';
+  const music3 = options?.model !== 'ace';
   const messages: SogniChatMessage[] = [
     { role: 'system', content: withAdultRequesterDirective(music3 ? MUSIC3_LYRICS_SYSTEM_PROMPT : LYRICS_SYSTEM_PROMPT) },
   ];
@@ -244,7 +248,7 @@ export function buildInstrumentalMessages(
   randomTheme?: string,
   options?: MusicCompositionOptions,
 ): SogniChatMessage[] {
-  const music3 = options?.model === 'music3';
+  const music3 = options?.model !== 'ace';
   const messages: SogniChatMessage[] = [
     { role: 'system', content: withAdultRequesterDirective(music3 ? MUSIC3_INSTRUMENTAL_SYSTEM_PROMPT : INSTRUMENTAL_SYSTEM_PROMPT) },
   ];
@@ -318,7 +322,7 @@ export function checkMusicCompositionLimits(
   result: Pick<LyricsGenerationResult, 'lyrics' | 'caption'>,
   options?: MusicCompositionOptions,
 ): PromptLimitViolation[] {
-  const target: MusicCompositionTarget = options?.model === 'music3' ? 'music3' : 'ace';
+  const target: MusicCompositionTarget = options?.model === 'ace' ? 'ace' : 'music3';
   return checkGenerationPromptLimits(MUSIC_LIMIT_MODEL[target], {
     prompt: target === 'music3' ? result.caption ?? '' : '',
     lyrics: result.lyrics,
@@ -330,7 +334,7 @@ export function buildMusicCompositionLengthRepairMessage(
   violations: readonly PromptLimitViolation[],
   options?: MusicCompositionOptions,
 ): SogniChatMessage {
-  const target: MusicCompositionTarget = options?.model === 'music3' ? 'music3' : 'ace';
+  const target: MusicCompositionTarget = options?.model === 'ace' ? 'ace' : 'music3';
   return {
     role: 'user',
     content: `${promptLimitRepairInstruction(MUSIC_LIMIT_MODEL[target], violations)} Return the complete result through the same tool.`,

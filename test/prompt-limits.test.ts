@@ -145,15 +145,17 @@ test('ACE-Step and MiniMax Music 3 limit lyrics; composition results are checked
   assert.equal(aceOver[1].message, 'Your lyrics are 4,097 characters; ACE-Step accepts at most 4,096. Shorten it and submit again.');
 
   const lyrics = 'x'.repeat(4097);
-  const [composed] = checkMusicCompositionLimits({ lyrics, caption: null });
+  const [composed] = checkMusicCompositionLimits({ lyrics, caption: null }, { model: 'ace' });
   assert.equal(composed.field, 'lyrics');
   assert.deepEqual(checkMusicCompositionLimits({ lyrics, caption: 'caption' }, { model: 'music3' }), []);
+  // MiniMax Music 3 is the default target: no model means its limit, not ACE-Step's.
+  assert.deepEqual(checkMusicCompositionLimits({ lyrics, caption: 'caption' }), []);
   const longSheet = words(5000, 'la');
   const [music3] = checkMusicCompositionLimits({ lyrics: longSheet, caption: 'caption' }, { model: 'music3' });
   assert.equal(music3.field, 'promptWithLyrics');
   assert.equal(music3.measured, 5008);
 
-  const repair = buildMusicCompositionLengthRepairMessage([composed]);
+  const repair = buildMusicCompositionLengthRepairMessage([composed], { model: 'ace' });
   assert.equal(repair.role, 'user');
   assert.match(String(repair.content), /LENGTH REPAIR REQUIRED: the lyrics came to 4,097 characters; ACE-Step accepts at most 4,096, so aim under 3,270/);
   assert.match(String(repair.content), /Do not cut it off mid-sentence/);
@@ -164,10 +166,12 @@ test('LLM instructions carry each limit with headroom', () => {
   assert.match(promptLimitInstruction('happyhorse-1.1-i2v') ?? '', /counts as 2/);
   assert.match(promptLimitInstruction('wan_v2.2-14b-fp8_i2v') ?? '', /4,096 text tokens/);
   assert.equal(promptLimitInstruction('ltx25'), null);
-  const aceSystem = String(buildLyricsMessages('a song about rain', 'en', 'lofi')[0].content);
+  const aceSystem = String(buildLyricsMessages('a song about rain', 'en', 'lofi', undefined, { model: 'ace' })[0].content);
   assert.match(aceSystem, /ACE-Step accepts at most 4,096 characters of caption\/tags and at most 4,096 characters of lyrics/);
   const music3System = String(buildLyricsMessages('a song about rain', 'en', 'lofi', undefined, { model: 'music3' })[0].content);
   assert.match(music3System, /MiniMax Music 3 reads at most 5,000 tokens of caption and lyrics together/);
+  // MiniMax Music 3 is the default composition target.
+  assert.equal(String(buildLyricsMessages('a song about rain', 'en', 'lofi')[0].content), music3System);
   const repair = promptLimitRepairInstruction('minimax-h3-t2v', checkGenerationPromptLimits('minimax-h3-t2v', { prompt: 'x'.repeat(7500) }));
   assert.match(repair, /came to 7,500 characters; MiniMax H3 accepts at most 7,000, so aim under 5,600/);
 });
