@@ -1,3 +1,12 @@
+## [4.7.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.7.0...v4.7.1) (2026-10-02)
+
+
+### Bug Fixes
+
+* **media:** check exclusion context without regex lookbehind ([f579d1b](https://github.com/Sogni-AI/sogni-intelligence-client/commit/f579d1b7944cf07892e3238ed286180fd86aacf1))
+* **media:** keep excluded GPT image mentions from selecting GPT Image 2 ([570bda8](https://github.com/Sogni-AI/sogni-intelligence-client/commit/570bda8597a136025aa07888491817da39e70eb6))
+* **media:** keep suggestions and double negatives as GPT image requests ([e723e2c](https://github.com/Sogni-AI/sogni-intelligence-client/commit/e723e2c5951a0735d01a7bec294090106b579415))
+
 # [4.7.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.6.4...v4.7.0) (2026-10-02)
 
 
