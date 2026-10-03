@@ -1,3 +1,10 @@
+## [4.8.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.8.0...v4.8.1) (2026-10-03)
+
+
+### Bug Fixes
+
+* **context:** retain original user instructions during compaction ([db84823](https://github.com/Sogni-AI/sogni-intelligence-client/commit/db84823af2f23a0abdd5280ecbb8bfbd85620886))
+
 # [4.8.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.7.2...v4.8.0) (2026-10-03)
 
 
