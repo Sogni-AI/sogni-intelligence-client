@@ -106,10 +106,6 @@ interface MessageGroup {
 interface SummaryOptions {
   maxPromptChars: number;
   maxGeneratedItems: number;
-  /** Maximum chars of user-message text to include in the conversation-thread snippet. 0 disables narrative inclusion. */
-  maxUserIntentChars?: number;
-  /** Hard cap on the number of user intents pulled out of the trimmed window. */
-  maxUserIntents?: number;
 }
 
 function buildTokenEstimator(options: TrimConversationOptions = {}): TokenEstimator {
@@ -318,51 +314,19 @@ function truncateSummaryPrompt(prompt: string, maxChars: number): string {
 }
 
 /**
- * Extract a compact narrative of user intents from the trimmed groups.
- *
- * The existing summary path enumerates *what was generated*; this captures
- * *what was discussed* so the LLM keeps a thread of intent across rolling
- * compactions. Each intent is the first sentence (or ~80 chars) of a user
- * message in the trimmed window. Tool-result echoes and assistant turns
- * are skipped — the narrative is user-facing only.
+ * Keep original user text, including later corrections, in chronological order.
+ * There is no reliable deterministic way to infer which sentence is a lasting
+ * requirement. Old visual observations may compact, but their accompanying
+ * instructions must not be summarized into a different request.
  */
-function extractUserIntentsFromTrimmedGroups(
-  trimmedGroups: MessageGroup[],
-  options: SummaryOptions,
-): string[] {
-  const maxIntents = options.maxUserIntents ?? 0;
-  const maxChars = options.maxUserIntentChars ?? 0;
-  if (maxIntents <= 0 || maxChars <= 0) return [];
-
-  const intents: string[] = [];
-  for (const group of trimmedGroups) {
-    if (intents.length >= maxIntents) break;
-    for (const message of group.messages) {
-      if (message.role !== 'user') continue;
-      let text = '';
-      if (typeof message.content === 'string') {
-        text = message.content;
-      } else if (Array.isArray(message.content)) {
-        text = (message.content as Array<{ type: string; text?: string }>)
-          .filter((part) => part.type === 'text')
-          .map((part) => part.text || '')
-          .join(' ');
-      }
-      const cleaned = text
-        .replace(/\[Earlier:[^\]]*\]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-      if (!cleaned) continue;
-      const sentenceEnd = cleaned.search(/[.!?](\s|$)/);
-      const firstSentence = sentenceEnd > 0 ? cleaned.slice(0, sentenceEnd + 1) : cleaned;
-      const truncated = firstSentence.length > maxChars
-        ? `${firstSentence.slice(0, Math.max(0, maxChars - 1)).trim()}…`
-        : firstSentence;
-      if (truncated) intents.push(truncated);
-      if (intents.length >= maxIntents) break;
-    }
-  }
-  return intents;
+function preserveUserText(group: MessageGroup): ChatMessage[] {
+  return group.messages.flatMap((message): ChatMessage[] => {
+    if (message.role !== 'user') return [];
+    if (typeof message.content === 'string') return [message];
+    if (!Array.isArray(message.content)) return [];
+    const textParts = message.content.filter((part) => part.type === 'text');
+    return textParts.length > 0 ? [{ ...message, content: textParts }] : [];
+  });
 }
 
 function buildEnrichedSummary(
@@ -452,15 +416,10 @@ function buildEnrichedSummary(
   if (hasUpload) events.push('User uploaded media');
   if (generatedItems.length > 0) events.push(`Generated: ${generatedItems.join(', ')}`);
 
-  const userIntents = extractUserIntentsFromTrimmedGroups(trimmedGroups, options);
-  if (userIntents.length > 0) {
-    events.push(`Conversation thread: ${userIntents.join(' | ')}`);
-  }
-
   if (events.length === 0) return null;
 
   return {
-    role: 'user',
+    role: 'assistant',
     content: `[Earlier: ${events.join('. ')}. Details trimmed.]`,
   };
 }
@@ -472,12 +431,12 @@ function buildBoundedEnrichedSummary(
   estimator: TokenEstimator,
 ): { summary: ChatMessage | null; tokens: number } {
   const candidates: SummaryOptions[] = [
-    { maxPromptChars: 1_200, maxGeneratedItems: 60, maxUserIntents: 12, maxUserIntentChars: 160 },
-    { maxPromptChars: 800, maxGeneratedItems: 50, maxUserIntents: 10, maxUserIntentChars: 120 },
-    { maxPromptChars: 400, maxGeneratedItems: 40, maxUserIntents: 8, maxUserIntentChars: 100 },
-    { maxPromptChars: 200, maxGeneratedItems: 32, maxUserIntents: 6, maxUserIntentChars: 80 },
-    { maxPromptChars: 80, maxGeneratedItems: 24, maxUserIntents: 4, maxUserIntentChars: 60 },
-    { maxPromptChars: 0, maxGeneratedItems: 20, maxUserIntents: 0, maxUserIntentChars: 0 },
+    { maxPromptChars: 1_200, maxGeneratedItems: 60 },
+    { maxPromptChars: 800, maxGeneratedItems: 50 },
+    { maxPromptChars: 400, maxGeneratedItems: 40 },
+    { maxPromptChars: 200, maxGeneratedItems: 32 },
+    { maxPromptChars: 80, maxGeneratedItems: 24 },
+    { maxPromptChars: 0, maxGeneratedItems: 20 },
   ];
 
   for (const candidate of candidates) {
@@ -490,7 +449,7 @@ function buildBoundedEnrichedSummary(
 
   const trimmedMessageCount = trimmedGroups.reduce((sum, group) => sum + group.messages.length, 0);
   const fallback: ChatMessage = {
-    role: 'user',
+    role: 'assistant',
     content: `[Earlier: ${trimmedMessageCount} older messages were compacted to stay within context. Details trimmed.]`,
   };
   const fallbackTokens = estimator.estimateMessageTokens(fallback);
@@ -592,6 +551,9 @@ export function trimConversation(
 
   let dropCount = 0;
   let trimmableTotal = trimmable.reduce((sum, group) => sum + group.tokens, 0);
+  const retainedUserMessages = trimmable.map(preserveUserText);
+  const retainedUserTokens = retainedUserMessages.map((messages) => estimator.estimateTotalTokens(messages));
+  let preservedTokens = 0;
   const summaryTokenBudget = getSummaryTokenBudget(inputBudget);
   let summaryTokens = 0;
   while (dropCount < trimmable.length) {
@@ -602,8 +564,9 @@ export function trimConversation(
       estimator,
     );
     summaryTokens = summaryResult.tokens;
-    if (protectedTokens + trimmableTotal + summaryTokens <= inputBudget) break;
+    if (protectedTokens + trimmableTotal + preservedTokens + summaryTokens <= inputBudget) break;
     trimmableTotal -= trimmable[dropCount].tokens;
+    preservedTokens += retainedUserTokens[dropCount];
     dropCount += 1;
   }
 
@@ -613,24 +576,28 @@ export function trimConversation(
 
   const trimmedGroups = trimmable.slice(0, dropCount);
   const keptTrimmable = trimmable.slice(dropCount);
-  const trimmedCount = trimmedGroups.reduce((sum, group) => sum + group.messages.length, 0);
+  const preservedUserMessages = retainedUserMessages.slice(0, dropCount).flat();
+  const trimmedCount = trimmedGroups.reduce((sum, group) => sum + group.messages.length, 0)
+    - preservedUserMessages.length;
+  const retainedTokens = protectedTokens
+    + keptTrimmable.reduce((sum, group) => sum + group.tokens, 0)
+    + preservedTokens;
   const summaryResult = buildBoundedEnrichedSummary(
     trimmedGroups,
-    summaryTokenBudget,
+    Math.max(0, Math.min(summaryTokenBudget, inputBudget - retainedTokens)),
     mediaTools,
     estimator,
   );
   const summary = summaryResult.summary;
   summaryTokens = summaryResult.tokens;
-  const finalTotal = protectedTokens
-    + keptTrimmable.reduce((sum, group) => sum + group.tokens, 0)
-    + summaryTokens;
+  const finalTotal = retainedTokens + summaryTokens;
 
   if (finalTotal > inputBudget) {
     console.warn(`[CONTEXT] Trimmed payload (${finalTotal} tokens) exceeds input budget (${inputBudget}) after preserving full prompt manifest`);
   }
 
   const result: ChatMessage[] = [];
+  result.push(...preservedUserMessages);
   if (summary) result.push(summary);
   for (const group of keptTrimmable) result.push(...group.messages);
   for (const group of protectedGroups) result.push(...group.messages);
@@ -648,7 +615,7 @@ export function trimConversation(
     action: 'trimmed',
     messageCountAfter: result.length,
     groupCountBefore: groups.length,
-    groupCountAfter: keptTrimmable.length + protectedGroups.length + (summary ? 1 : 0),
+    groupCountAfter: preservedUserMessages.length + keptTrimmable.length + protectedGroups.length + (summary ? 1 : 0),
     trimmedGroups: trimmedGroups.length,
     keptGroups: keptTrimmable.length,
     protectedGroups: protectedGroups.length,
