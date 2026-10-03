@@ -54,6 +54,33 @@ export interface TrimConversationResult {
   summaryTokenBudget: number;
 }
 
+/** A complete input cannot fit without changing protected user content. */
+export class ContextBudgetExceededError extends Error {
+  readonly code = 'CONTEXT_BUDGET_EXCEEDED' as const;
+
+  constructor(readonly estimatedTokens: number, readonly inputBudget: number) {
+    super('This conversation is too large for the selected model. Shorten the request or start a new conversation.');
+    this.name = 'ContextBudgetExceededError';
+  }
+}
+
+/**
+ * Check the final payload before dispatch. The compaction action alone is not
+ * sufficient: a trimmed payload can still exceed its available input budget.
+ * This check never modifies the original request or its compaction result.
+ */
+export function assertContextFitsBudget(
+  result: Pick<TrimConversationResult, 'afterTokens' | 'inputBudget'>,
+): void {
+  if (!Number.isFinite(result.afterTokens) || result.afterTokens < 0
+      || !Number.isFinite(result.inputBudget) || result.inputBudget < 0) {
+    throw new RangeError('Context token estimates and input budget must be finite, nonnegative numbers.');
+  }
+  if (result.afterTokens > result.inputBudget) {
+    throw new ContextBudgetExceededError(result.afterTokens, result.inputBudget);
+  }
+}
+
 export interface TrimConversationOptions {
   minProtectedGroups?: number;
   unmaskableTools?: ReadonlySet<string>;
