@@ -1,3 +1,10 @@
+# [4.8.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.7.2...v4.8.0) (2026-10-03)
+
+
+### Features
+
+* **context:** expose a final request budget assertion ([70223fb](https://github.com/Sogni-AI/sogni-intelligence-client/commit/70223fb1fceb9646f9380c3b344f7672e7d4a7fc))
+
 ## [4.7.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.7.1...v4.7.2) (2026-10-03)
 
 
