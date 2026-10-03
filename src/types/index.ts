@@ -489,6 +489,9 @@ export interface ErrorData {
   
   /** Error message */
   message: string;
+
+  /** Coarse failure category supplied by the SDK, when available. */
+  vendorFailureCategory?: NonNullable<Project['error']>['vendorFailureCategory'];
   
   /** HTTP status code (if applicable) */
   statusCode?: number;
