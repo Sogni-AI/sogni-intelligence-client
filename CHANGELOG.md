@@ -1,3 +1,10 @@
+## [4.8.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.8.2...v4.8.3) (2026-10-03)
+
+
+### Bug Fixes
+
+* **projects:** retain SDK generation failure details ([aa2afb2](https://github.com/Sogni-AI/sogni-intelligence-client/commit/aa2afb251afc70b7eb6d5fa0c869bb0d2c981a71))
+
 ## [4.8.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.8.1...v4.8.2) (2026-10-03)
 
 
