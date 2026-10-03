@@ -49,6 +49,32 @@ test('constraints survive repeated compaction without restoring an obsolete corr
   assert.ok(secondResult.afterTokens <= 550);
 });
 
+test('repeated generated-media compaction does not retain synthetic observations as user requirements', () => {
+  const requirement = 'Keep the logo exact. Use the latest correction.';
+  const generated = (id: number): ChatMessage[] => [
+    { role: 'assistant', content: '', tool_calls: [{ id: `gen-${id}`, function: {
+      name: 'generate_image', arguments: JSON.stringify({ prompt: `Scene ${id}. ` + 'Detailed scene. '.repeat(160) }),
+    } }] },
+    { role: 'tool', tool_call_id: `gen-${id}`, name: 'generate_image',
+      content: JSON.stringify({ ok: true, resultCount: 1, startIndex: id }) },
+  ];
+  const first = trimConversation([user(requirement), filler(), ...generated(0), user('Continue.'), assistant('Ready.')], system, 200);
+  const firstSummary = first.messages.find((message) => typeof message.content === 'string'
+    && message.content.startsWith('[Earlier: Generated:'));
+  assert.ok(firstSummary);
+  assert.equal(firstSummary.role, 'assistant');
+  const nextCorrection = 'Replace that scene with the next one. Keep the logo.';
+  const second = trimConversation([...first.messages, user(nextCorrection), filler(), ...generated(1),
+    user('Continue again.'), assistant('Ready.')], system, 200);
+  assert.equal(userText(second.messages).filter((text) => text === requirement).length, 1);
+  assert.equal(userText(second.messages).filter((text) => text === nextCorrection).length, 1);
+  assert.ok(userText(second.messages).indexOf(requirement) < userText(second.messages).indexOf(nextCorrection));
+  assert.ok(!userText(second.messages).includes(firstSummary.content));
+  assert.ok(!second.messages.includes(firstSummary));
+  assert.ok(second.afterTokens <= second.inputBudget);
+  assert.equal(second.afterTokens, estimateTotalTokens(second.messages) + estimateTotalTokens([system]));
+});
+
 test('older media compacts without losing any accompanying text parts', () => {
   const messages: ChatMessage[] = [
     { role: 'user', content: [

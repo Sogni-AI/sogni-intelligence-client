@@ -419,7 +419,7 @@ function buildEnrichedSummary(
   if (events.length === 0) return null;
 
   return {
-    role: 'user',
+    role: 'assistant',
     content: `[Earlier: ${events.join('. ')}. Details trimmed.]`,
   };
 }
@@ -449,7 +449,7 @@ function buildBoundedEnrichedSummary(
 
   const trimmedMessageCount = trimmedGroups.reduce((sum, group) => sum + group.messages.length, 0);
   const fallback: ChatMessage = {
-    role: 'user',
+    role: 'assistant',
     content: `[Earlier: ${trimmedMessageCount} older messages were compacted to stay within context. Details trimmed.]`,
   };
   const fallbackTokens = estimator.estimateMessageTokens(fallback);
