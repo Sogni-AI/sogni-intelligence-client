@@ -12,6 +12,7 @@ export class SogniError extends Error {
   public readonly statusCode?: number;
   public readonly details?: any;
   public readonly originalError?: Error;
+  public vendorFailureCategory?: ErrorData['vendorFailureCategory'];
   /**
    * Set when the error happened after Sogni accepted the project: it exists and
    * may still be running, so submitting it again would render and bill it twice.
@@ -42,6 +43,7 @@ export class SogniError extends Error {
       statusCode: this.statusCode,
       details: this.details,
       originalError: this.originalError,
+      ...(this.vendorFailureCategory ? { vendorFailureCategory: this.vendorFailureCategory } : {}),
     };
   }
 
@@ -150,4 +152,3 @@ export class SogniNetworkError extends SogniError {
     this.name = 'SogniNetworkError';
   }
 }
-

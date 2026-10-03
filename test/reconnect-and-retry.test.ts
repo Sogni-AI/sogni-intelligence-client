@@ -9,8 +9,8 @@
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ApiError, SogniClient } from '@sogni-ai/sogni-client';
-import { SogniClientWrapper, SogniProjectError, SogniTimeoutError, SogniValidationError } from '../src';
+import { ApiError, Project, SogniClient } from '@sogni-ai/sogni-client';
+import { ClientEvent, SogniClientWrapper, SogniProjectError, SogniTimeoutError, SogniValidationError } from '../src';
 import { isRetryableProjectSubmitError, reconnectDecision } from '../src/utils/helpers.js';
 
 const BACKOFF = { baseMs: 5000, maxMs: 300_000, maxAttempts: 10, random: () => 0.5 };
@@ -127,5 +127,55 @@ test('createProjectWithRetry never resubmits a project that timed out while rend
   } finally {
     (client as any).client = null;
     await client.dispose();
+  }
+});
+
+test('completed SDK project waits preserve structured failure messages and categories', async () => {
+  const categories: NonNullable<Project['error']>['vendorFailureCategory'][] = [
+    'content_policy', 'input_validation', 'timeout', 'result_storage', 'cancelled', 'vendor_failed', undefined,
+  ];
+  for (const category of categories) {
+    const { client } = wrapperWith({});
+    const failedEvents: any[] = [];
+    client.on(ClientEvent.PROJECT_FAILED, error => failedEvents.push(error));
+    const project = new Project(
+      { type: 'video', modelId: 'test-model', numberOfMedia: 1, positivePrompt: 'a mug' } as any,
+      { api: { _emitQueueChanged() {} } as any, logger: { debug() {}, info() {}, warn() {}, error() {} } },
+    );
+    let submitted = 0;
+    (client as any).client = {
+      projects: { create: async () => { submitted++; return project; } },
+    };
+    (client as any).connectionState.isConnected = true;
+    const rawError = {
+      code: 5000,
+      message: 'This service declined the generation.',
+      ...(category ? { vendorFailureCategory: category } : {}),
+    };
+    try {
+      const pending = client.createVideoProject({
+        modelId: 'test-model', positivePrompt: 'a mug', numberOfMedia: 1,
+        waitForCompletion: true, autoResizeVideoAssets: false,
+      } as any);
+      setImmediate(() => project._update({ status: 'failed', error: rawError }));
+      await assert.rejects(pending, (error: any) => {
+        assert(error instanceof SogniProjectError);
+        assert.equal(error.message, rawError.message);
+        assert.equal(error.vendorFailureCategory, category);
+        assert.equal(error.projectId, project.id);
+        assert.equal(error.details.originalCode, rawError.code);
+        assert.equal(isRetryableProjectSubmitError(error), false);
+        return true;
+      });
+      assert.equal(submitted, 1);
+      assert.equal(failedEvents.length, 1);
+      assert.equal(failedEvents[0].message, rawError.message);
+      assert.equal(failedEvents[0].vendorFailureCategory, category);
+      if (!category) assert.equal('vendorFailureCategory' in failedEvents[0], false);
+    } finally {
+      project._dispose();
+      (client as any).client = null;
+      await client.dispose();
+    }
   }
 });

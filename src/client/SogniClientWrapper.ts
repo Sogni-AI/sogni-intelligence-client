@@ -924,6 +924,14 @@ export class SogniClientWrapper extends EventEmitter {
           undefined,
           error,
         );
+      } else if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+        // SDK completion waits reject ErrorData, which is not an Error instance.
+        const sdkError = error as NonNullable<Project['error']>;
+        projectError = new SogniProjectError(
+          sdkError.message || 'Project creation failed',
+          { originalCode: sdkError.code },
+        );
+        projectError.vendorFailureCategory = sdkError.vendorFailureCategory;
       } else {
         projectError = new SogniProjectError(
           String(error || 'Project creation failed'),
