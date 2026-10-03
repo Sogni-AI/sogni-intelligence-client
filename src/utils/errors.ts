@@ -6,6 +6,27 @@ import type { ErrorData } from '../types/index.js';
 import type { ModelConsentRequiredPayload } from '../media/modelConsentRequired.js';
 
 /**
+ * The human-readable reason carried by anything thrown or rejected. The Sogni
+ * SDK rejects job and project waits with its plain `ErrorData` object
+ * (`{code, message}`), not an Error, so `String(error)` on it yields
+ * "[object Object]" and loses the reason.
+ */
+export function errorMessageOf(error: unknown, fallback = 'Unknown error'): string {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'string') return error || fallback;
+  if (typeof error === 'object' && error !== null) {
+    const { message } = error as { message?: unknown };
+    return typeof message === 'string' && message.trim() ? message : fallback;
+  }
+  return error === undefined || error === null ? fallback : String(error);
+}
+
+/** A non-Error object rejection such as the SDK's `ErrorData`. */
+export function isErrorRecord(error: unknown): error is Record<string, unknown> {
+  return typeof error === 'object' && error !== null && !(error instanceof Error);
+}
+
+/**
  * Base error class for all Sogni-related errors
  */
 export class SogniError extends Error {
@@ -60,7 +81,14 @@ export class SogniError extends Error {
       return new SogniError(error.message, code, undefined, undefined, error);
     }
 
-    return new SogniError(String(error), code);
+    if (isErrorRecord(error)) {
+      return new SogniError(errorMessageOf(error), code, undefined, {
+        originalCode: error.code,
+        originalDetails: error,
+      });
+    }
+
+    return new SogniError(errorMessageOf(error), code);
   }
 }
 

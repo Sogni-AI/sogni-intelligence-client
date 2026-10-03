@@ -10,6 +10,7 @@
  */
 import type { LegacyToolErrorCategory } from '../result.js';
 import { textRequiresVendorModelPremiumSpark } from '../../media/index.js';
+import { errorMessageOf } from '../../utils/errors.js';
 
 export interface ClassifiedError {
   category: LegacyToolErrorCategory;
@@ -23,7 +24,7 @@ export function classifyError(error: unknown): ClassifiedError {
     return { category: 'permanent_failure', message: 'Unknown error', retryable: false };
   }
 
-  const message = error instanceof Error ? error.message : String(error);
+  const message = errorMessageOf(error);
   const lowerMsg = message.toLowerCase();
 
   if (textRequiresVendorModelPremiumSpark(lowerMsg)) {

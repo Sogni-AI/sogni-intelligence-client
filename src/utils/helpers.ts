@@ -14,6 +14,7 @@ import {
   SogniBalanceError,
   SogniConfigurationError,
   SogniConnectionError,
+  SogniError,
   SogniModelNotFoundError,
   SogniNetworkError,
   SogniTimeoutError,
@@ -705,7 +706,7 @@ export async function retry<T>(
     try {
       return await fn();
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
+      lastError = error instanceof Error ? error : SogniError.fromError(error);
 
       if (attempt === maxAttempts || (shouldRetry && !shouldRetry(lastError, attempt))) {
         throw lastError;

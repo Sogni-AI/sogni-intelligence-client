@@ -62,6 +62,8 @@ import {
   SogniModelNotFoundError,
   SogniModelConsentRequiredError,
   SogniValidationError,
+  errorMessageOf,
+  isErrorRecord,
 } from '../utils/errors.js';
 import { modelConsentRequiredPayloadFromError } from '../media/modelConsentRequired.js';
 import {
@@ -937,17 +939,22 @@ export class SogniClientWrapper extends EventEmitter {
           undefined,
           error,
         );
-      } else if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
-        // SDK completion waits reject ErrorData, which is not an Error instance.
-        const sdkError = error as NonNullable<Project['error']>;
+      } else if (isErrorRecord(error)) {
+        // project.waitForCompletion() rejects with the SDK's ErrorData
+        // ({code, message}) for every job the socket fails. Keep its reason,
+        // code and failure category; stringifying it produced "[object Object]".
+        const sdkError = error as Partial<NonNullable<Project['error']>>;
         projectError = new SogniProjectError(
-          sdkError.message || 'Project creation failed',
-          { originalCode: sdkError.code },
+          errorMessageOf(error, 'Project creation failed'),
+          {
+            originalCode: error.code,
+            originalDetails: error,
+          },
         );
         projectError.vendorFailureCategory = sdkError.vendorFailureCategory;
       } else {
         projectError = new SogniProjectError(
-          String(error || 'Project creation failed'),
+          errorMessageOf(error, 'Project creation failed'),
         );
       }
 

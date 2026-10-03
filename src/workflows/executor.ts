@@ -37,6 +37,7 @@
  *   Stub in M3, full impl in M5.
  */
 
+import { errorMessageOf } from '../utils/errors.js';
 import { resolveBindings } from './bindings.js';
 import { computeStaleStageIds, persistedRun, walkStages } from './validation.js';
 import type { RunStore, ToolDispatcher } from './executor-ports.js';
@@ -167,7 +168,7 @@ export async function* executeRun<
           run = yield* runInteractiveStage(run, stage, options);
         }
       } catch (err) {
-        const error = err instanceof Error ? err : new Error(String(err));
+        const error = err instanceof Error ? err : new Error(errorMessageOf(err));
         run = await mutateRun(run, {
           state: 'failed',
           stages: setStageState(run.stages, stage.id, {
@@ -205,7 +206,7 @@ export async function* executeRun<
     yield { type: 'run_completed', run };
     return run;
   } catch (err) {
-    const error = err instanceof Error ? err : new Error(String(err));
+    const error = err instanceof Error ? err : new Error(errorMessageOf(err));
     run = await mutateRun(run, { state: 'failed' }, options.store);
     yield { type: 'run_failed', error, run };
     return run;
@@ -395,7 +396,7 @@ async function* runBatchStage<Context, Callbacks, Progress>(
     try {
       resolvedArgs = resolveBindings(itemStage.args, itemCtx) as Record<string, unknown>;
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = errorMessageOf(err);
       options.onSlotEvent?.({ phase: 'failed', ...slotBase, attempt: 1, error: message });
       return { idx, itemId, error: message };
     }
@@ -421,7 +422,7 @@ async function* runBatchStage<Context, Callbacks, Progress>(
         options.onSlotEvent?.({ phase: 'completed', ...slotBase, attempt, version });
         return { idx, itemId, version };
       } catch (err) {
-        lastError = err instanceof Error ? err.message : String(err);
+        lastError = errorMessageOf(err);
         // Fall through to retry while attempts remain.
       }
     }
