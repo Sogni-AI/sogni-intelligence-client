@@ -1,3 +1,10 @@
+## [4.8.4](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.8.3...v4.8.4) (2026-10-03)
+
+
+### Bug Fixes
+
+* **deps:** align generation failure category contract ([8807f18](https://github.com/Sogni-AI/sogni-intelligence-client/commit/8807f183462c8094659048fb3930941fb97f7321))
+
 ## [4.8.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.8.2...v4.8.3) (2026-10-03)
 
 
