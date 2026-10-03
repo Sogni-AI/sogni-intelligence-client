@@ -1,3 +1,10 @@
+## [4.7.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.7.1...v4.7.2) (2026-10-03)
+
+
+### Bug Fixes
+
+* **prompts:** preserve scene text during batch preparation ([1911896](https://github.com/Sogni-AI/sogni-intelligence-client/commit/19118968693829e21ee987478aca92b4781d536d))
+
 ## [4.7.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.7.0...v4.7.1) (2026-10-02)
 
 
