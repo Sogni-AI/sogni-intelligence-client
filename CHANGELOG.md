@@ -1,3 +1,10 @@
+## [4.8.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.8.1...v4.8.2) (2026-10-03)
+
+
+### Bug Fixes
+
+* **contracts:** preserve authored image batch content ([9ffd3f6](https://github.com/Sogni-AI/sogni-intelligence-client/commit/9ffd3f63e3bee1be74c072567f54e5f5f2c2cd45))
+
 ## [4.8.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.8.0...v4.8.1) (2026-10-03)
 
 
