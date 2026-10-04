@@ -778,6 +778,9 @@ export function classifySkillError(error: unknown): ClassifiedSkillError {
 const TOOL_RESULT_BEGIN = '[[TOOL_RESULT_BEGIN]]';
 const TOOL_RESULT_END = '[[TOOL_RESULT_END]]';
 
+const SYSTEM_BLOCK_PATTERN = /<system>[\s\S]*?<\/system>/gi;
+const TOOL_CALL_BLOCK_PATTERN = /<tool_call>[\s\S]*?<\/tool_call>/gi;
+
 const HARD_STRIP_PATTERNS: RegExp[] = [
   /<\|im_start\|>/gi,
   /<\|im_end\|>/gi,
@@ -792,10 +795,47 @@ const HARD_STRIP_PATTERNS: RegExp[] = [
   /\[\/INST\]/gi,
   /<<SYS>>/gi,
   /<<\/SYS>>/gi,
-  /<system>[\s\S]*?<\/system>/gi,
-  /<tool_call>[\s\S]*?<\/tool_call>/gi,
+  SYSTEM_BLOCK_PATTERN,
+  TOOL_CALL_BLOCK_PATTERN,
   /<\/?(?:user|assistant|tool)>/gi,
 ];
+
+/**
+ * Linear-time stand-ins for the two block patterns, which take quadratic
+ * time under `test` and `replace` when a tool result holds many openings
+ * without a closing tag: each opening scans to the end of the text and
+ * fails. A stand-in matches wherever its original could start, but an
+ * unclosed opening consumes the rest of the text in one pass, which is
+ * then kept as it is, matching the original (no closing tag after one
+ * opening means none after any later opening either). Group 1 is set
+ * exactly when the original pattern matches, so the cleaned text and the
+ * stripped signals are identical for every input. The originals stay in
+ * HARD_STRIP_PATTERNS because the signal labels are built from them.
+ */
+const LINEAR_HARD_STRIP_SCANS: ReadonlyMap<RegExp, RegExp> = new Map([
+  [SYSTEM_BLOCK_PATTERN, /<system>(?:[\s\S]*?(<\/system>)|[\s\S]*)/gi],
+  [TOOL_CALL_BLOCK_PATTERN, /<tool_call>(?:[\s\S]*?(<\/tool_call>)|[\s\S]*)/gi],
+]);
+
+/**
+ * `input` with every match of `pattern` replaced by a space, or null when
+ * `pattern` does not match, in linear time for the two block patterns.
+ */
+function replaceHardStripPattern(input: string, pattern: RegExp): string | null {
+  const scan = LINEAR_HARD_STRIP_SCANS.get(pattern);
+  if (!scan) {
+    const matched = pattern.test(input);
+    pattern.lastIndex = 0;
+    return matched ? input.replace(pattern, ' ') : null;
+  }
+  let matched = false;
+  const replaced = input.replace(scan, (block: string, closing: string | undefined) => {
+    if (closing === undefined) return block;
+    matched = true;
+    return ' ';
+  });
+  return matched ? replaced : null;
+}
 
 const SUSPICIOUS_PHRASE_PATTERNS: RegExp[] = [
   /\bignore\s+(?:all\s+)?(?:previous|prior|the\s+above)\s+instructions?\b/gi,
@@ -829,12 +869,11 @@ export function sanitizeToolMessageContent(input: string): SanitizationResult {
   let cleaned = input;
   const signals: string[] = [];
   for (const pattern of HARD_STRIP_PATTERNS) {
-    if (pattern.test(cleaned)) {
-      pattern.lastIndex = 0;
-      cleaned = cleaned.replace(pattern, ' ');
+    const stripped = replaceHardStripPattern(cleaned, pattern);
+    if (stripped !== null) {
+      cleaned = stripped;
       signals.push(`stripped:${pattern.source.replace(/\\\|/g, '|').slice(0, 40)}`);
     }
-    pattern.lastIndex = 0;
   }
   for (const pattern of SUSPICIOUS_PHRASE_PATTERNS) {
     if (pattern.test(cleaned)) {
