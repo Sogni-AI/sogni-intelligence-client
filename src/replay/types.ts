@@ -94,6 +94,40 @@ export interface RunRecordAuditResult {
 }
 
 /**
+ * One LLM call the agent loop made during the run. Carries the
+ * identifiers that join a failed turn to the network's job logs; no
+ * prompt or completion text.
+ */
+export interface RunRecordLlmCall {
+  /** Network LLM job id. */
+  job_id?: string;
+  /** Model the call was dispatched against. */
+  model?: string;
+  /** Worker that served the call. */
+  worker_name?: string;
+  finish_reason?: string;
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  duration_ms?: number;
+}
+
+/**
+ * How the turn ended, written by the producer that ran the loop. Tool
+ * failures already live in `rounds[].tool_results`; this records what
+ * they cannot show: an LLM call that died, a planner or transport error
+ * before any tool ran, or a cancellation.
+ */
+export interface RunRecordOutcome {
+  status: 'completed' | 'failed' | 'cancelled';
+  /** Machine-readable failure code, e.g. `llm_worker_interrupted`. */
+  error_code?: string;
+  /** Failure message as the loop saw it, truncated by the producer. */
+  error_message?: string;
+  /** LLM calls in execution order (the producer bounds the list). */
+  llm_calls?: ReadonlyArray<RunRecordLlmCall>;
+}
+
+/**
  * Canonical RunRecord shape. JSON-serializable. Bumped via
  * `RUN_RECORD_SCHEMA_VERSION` whenever the shape changes.
  */
@@ -128,6 +162,8 @@ export interface RunRecord {
   asset_ids: ReadonlyArray<string>;
   /** Aggregated cost; populated when billing data is available. */
   total_cost?: RunRecordCostBreakdown;
+  /** How the turn ended. Absent on records from producers that predate it. */
+  outcome?: RunRecordOutcome;
   /** True when `redactRunRecord` ran. Always true for persisted records. */
   redacted: boolean;
 }

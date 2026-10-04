@@ -59,6 +59,30 @@ test('records filter every nested field, including extensions and audit messages
   assert.deepEqual(redactRunRecord(result as unknown as ReturnType<typeof emptyRunRecord>), result);
 });
 
+test('a turn outcome keeps its diagnostics and loses credentials in its message', () => {
+  const record = {
+    ...emptyRunRecord(),
+    outcome: {
+      status: 'failed' as const,
+      error_code: 'llm_worker_interrupted',
+      error_message: `Streaming job timed out; apiKey=${EXAMPLE_KEY}`,
+      llm_calls: [{
+        job_id: '5CF7173A-EDFC-439D-B3E4-179D65A62E8D',
+        model: 'deepseek-v4-flash-vision-exp-dspark-1m',
+        worker_name: 'sparks #873',
+        finish_reason: 'stop',
+        prompt_tokens: 17763,
+        completion_tokens: 108,
+        duration_ms: 19605,
+      }],
+    },
+  };
+  const result = redactRunRecord(record);
+  assert.equal(result.outcome?.error_message, 'Streaming job timed out; apiKey=[REDACTED]');
+  assert.deepEqual(result.outcome?.llm_calls, record.outcome.llm_calls);
+  assert.equal(result.outcome?.error_code, 'llm_worker_interrupted');
+});
+
 test('provider keys with separators are filtered in full on repeated calls', () => {
   for (const prefix of ['sk-', 'sk-proj-', 'sk-ant-']) {
     const key = `${prefix}${'a'.repeat(24)}_${'b'.repeat(24)}-${'c'.repeat(24)}`;

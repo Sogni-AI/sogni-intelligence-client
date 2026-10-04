@@ -11,6 +11,8 @@ export type {
   RunRecordToolResult,
   RunRecordCostBreakdown,
   RunRecordAuditResult,
+  RunRecordLlmCall,
+  RunRecordOutcome,
 } from './types.js';
 
 export {
