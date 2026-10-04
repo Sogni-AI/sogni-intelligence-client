@@ -1,3 +1,10 @@
+## [4.9.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.9.2...v4.9.3) (2026-10-04)
+
+
+### Bug Fixes
+
+* **deps:** take sogni-protocol 1.0.0-alpha.47 and sogni-client 5.60.7 ([58ca22a](https://github.com/Sogni-AI/sogni-intelligence-client/commit/58ca22ae686739af5870d8e34a2410299eda616e))
+
 ## [4.9.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.9.1...v4.9.2) (2026-10-04)
 
 
