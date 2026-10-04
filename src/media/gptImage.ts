@@ -221,7 +221,13 @@ export function textSuggestsGptImage2DefaultImageModel(text: string): boolean {
   return asksForStoryboardImage || asksForCharacterSheetImage || asksForVideoStoryboardImage || asksForComplexRender || asksForTextOrLayoutPrecision;
 }
 
-const GPT_IMAGE_25_REQUEST_PATTERN = /\bgpt[-\s]*(?:image[-\s]*)?2\.5(?!\d|\.\d)(?:[-\s]*\(?\s*(sunburst|flare))?\b/i;
+// The variant tail reads `[-\s]*(?:\(\s*)?` before the name. The older
+// `[-\s]*\(?\s*` accepted exactly the same text, but without the paren its
+// two whitespace runs could split one gap in every possible way, so a long
+// run of spaces after "2.5" with no variant name backtracked quadratically
+// on every turn's message. Only one span can match from any start, so the
+// matches, their positions and the captured variant are unchanged.
+const GPT_IMAGE_25_REQUEST_PATTERN = /\bgpt[-\s]*(?:image[-\s]*)?2\.5(?!\d|\.\d)(?:[-\s]*(?:\(\s*)?(sunburst|flare))?\b/i;
 const GPT_IMAGE_25_NAMED_VARIANT_PATTERN = /\b(?:use|using|with)\s+(sunburst|flare)\s+(?:image\s+)?model\b/i;
 
 /**

@@ -11,6 +11,12 @@ import test from 'node:test';
 import { HARD_STRIP_PATTERNS, sanitizeUntrustedString } from '../src/workflows/primitives/sanitizer.js';
 import { sanitizeToolMessageContent } from '../src/public-skill-runtime/index.js';
 import { stripThinkBlocksFromText } from '../src/tools/shared/llmHelpers.js';
+import {
+  GPT_IMAGE_25_FLARE_MODEL_KEY,
+  GPT_IMAGE_25_SUNBURST_MODEL_KEY,
+  isNegatedImageModelMention,
+  textRequestedGptImage25Variant,
+} from '../src/media/gptImage.js';
 
 const ADVERSARIAL_LENGTH = 200_000;
 // The fixed scans finish 200,000 characters in about a millisecond; the old
@@ -270,3 +276,55 @@ for (const [label, unit] of [
     assertFast('stripThinkBlocksFromText', () => stripThinkBlocksFromText(input));
   });
 }
+
+// ---------------------------------------------------------------------------
+// media/gptImage.ts textRequestedGptImage25Variant
+// ---------------------------------------------------------------------------
+
+const ORIGINAL_GPT_IMAGE_25_REQUEST_PATTERN = /\bgpt[-\s]*(?:image[-\s]*)?2\.5(?!\d|\.\d)(?:[-\s]*\(?\s*(sunburst|flare))?\b/i;
+const GPT_IMAGE_25_NAMED_VARIANT_PATTERN = /\b(?:use|using|with)\s+(sunburst|flare)\s+(?:image\s+)?model\b/i;
+
+function originalTextRequestedGptImage25Variant(text: string | null | undefined) {
+  if (!text) return null;
+  const positiveMatch = (pattern: RegExp) => [...text.matchAll(new RegExp(pattern.source, 'gi'))]
+    .find((match) => !isNegatedImageModelMention(text, match.index!));
+  const requested = positiveMatch(ORIGINAL_GPT_IMAGE_25_REQUEST_PATTERN);
+  const named = positiveMatch(GPT_IMAGE_25_NAMED_VARIANT_PATTERN);
+  if (!requested && !named) return null;
+  const variant = (requested?.[1] ?? named?.[1])?.toLowerCase();
+  if (variant === 'sunburst') return GPT_IMAGE_25_SUNBURST_MODEL_KEY;
+  if (variant === 'flare') return GPT_IMAGE_25_FLARE_MODEL_KEY;
+  return 'unspecified';
+}
+
+const GPT_IMAGE_TOKENS = [
+  'gpt', 'GPT', 'Gpt', 'gpt-', 'image', 'IMAGE', 'image-', '2.5', '2.55', '2.5.1', '2.50', '2', '.5', '-', ' ',
+  '\t', '\n', '\u00a0', '(', ')', 'sunburst', 'Sunburst', 'flare', 'FLARE', 'sunburstx', 'x', '9', 'not ',
+  "don't use ", 'use ', 'with ', ' model', 'chatgpt', '_',
+];
+
+const GPT_IMAGE_EDGE_CASES = [
+  'use gpt image 2.5',
+  'gpt-image-2.5 (sunburst)',
+  'GPT 2.5 - ( flare ) please',
+  'gpt2.5flare',
+  'gpt 2.5  -  sunburstx',
+  'gpt 2.55 sunburst',
+  'gpt 2.5.1 flare',
+  'not gpt 2.5, use gpt image 2.5 sunburst',
+  "don't use gpt-2.5 flare",
+  'gpt image 2.5 (\tsunburst',
+  'gpt 2.5 (- flare',
+  'use flare image model',
+];
+
+test('textRequestedGptImage25Variant matches its original regex implementation', () => {
+  for (const input of [...GPT_IMAGE_EDGE_CASES, ...tokenSoup(GPT_IMAGE_TOKENS, 0x25)]) {
+    assert.equal(textRequestedGptImage25Variant(input), originalTextRequestedGptImage25Variant(input), JSON.stringify(input));
+  }
+});
+
+test('textRequestedGptImage25Variant reads a long run of spaces after "2.5" in linear time', () => {
+  const input = 'gpt 2.5' + ' '.repeat(ADVERSARIAL_LENGTH - 8) + 'x';
+  assertFast('textRequestedGptImage25Variant', () => textRequestedGptImage25Variant(input));
+});
