@@ -1,3 +1,10 @@
+## [4.9.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.9.1...v4.9.2) (2026-10-04)
+
+
+### Bug Fixes
+
+* **deps:** take sogni-client 5.60.6 so reconnects cannot crash Node hosts ([d69987a](https://github.com/Sogni-AI/sogni-intelligence-client/commit/d69987a8979d41ecc643f9b5b648dc7c03dd0bfe))
+
 ## [4.9.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.9.0...v4.9.1) (2026-10-04)
 
 
