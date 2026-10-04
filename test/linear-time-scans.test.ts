@@ -17,6 +17,8 @@ import {
   isNegatedImageModelMention,
   textRequestedGptImage25Variant,
 } from '../src/media/gptImage.js';
+import { validateAndNormalizeHostedToolArguments } from '../src/contracts/hostedToolValidation.js';
+import { definition as generateVideo } from '../src/tools/definitions/generate-video/definition.js';
 
 const ADVERSARIAL_LENGTH = 200_000;
 // The fixed scans finish 200,000 characters in about a millisecond; the old
@@ -328,3 +330,71 @@ test('textRequestedGptImage25Variant reads a long run of spaces after "2.5" in l
   const input = 'gpt 2.5' + ' '.repeat(ADVERSARIAL_LENGTH - 8) + 'x';
   assertFast('textRequestedGptImage25Variant', () => textRequestedGptImage25Variant(input));
 });
+
+// ---------------------------------------------------------------------------
+// contracts/hostedToolValidation.ts MiniMax H3 source-audio checks
+// ---------------------------------------------------------------------------
+
+const ORIGINAL_AUDIO_REUSE_TASK = /\[[^\]\n]*\baudio reuse\b[^\]\n]*\]/;
+const ORIGINAL_NON_DIEGETIC_AUDIO_ONE = /non_diegetic_music:\s*[\s\S]*<Audio\s+1>/;
+const ORIGINAL_AUDIO_REFERENCE_TASK = /\[[^\]\n]*\baudio reference\b[^\]\n]*\]/;
+const REUSE_TASK_ERROR = 'MiniMax H3 sourceAudioPolicy="reuse_exact" requires the official "audio reuse" summary task';
+const NON_DIEGETIC_ERROR = 'MiniMax H3 sourceAudioPolicy="reuse_exact" requires non_diegetic_music to name <Audio 1> directly';
+const REFERENCE_TASK_ERROR = 'MiniMax H3 sourceAudioPolicy="reference_only" requires the official "audio reference" summary task';
+
+function h3SourceAudioErrors(prompt: string, sourceAudioPolicy: 'reuse_exact' | 'reference_only'): string[] {
+  return validateAndNormalizeHostedToolArguments([generateVideo], 'generate_video', {
+    prompt,
+    videoModel: 'minimax-h3-r2v',
+    referenceVideoIndices: [-1],
+    sourceAudioPolicy,
+  }).errors;
+}
+
+const H3_PROMPT_TOKENS = [
+  '[', ']', '\n', 'audio reuse', 'audio reference', 'Audio reuse', 'audio reuses', 'xaudio reuse', '_audio reuse',
+  'audio  reuse', ' ', 'x', '-', '.', 'non_diegetic_music:', 'non_diegetic_music', '<Audio 1>', '<Audio\t1>',
+  '<Audio1>', '<audio 1>', '<Audio 12>', ':', 'fully_copy', '\u00a0',
+];
+
+const H3_PROMPT_EDGE_CASES = [
+  '',
+  '[audio reuse]',
+  '[task: audio reuse of the source]',
+  '[audio reuse',
+  'audio reuse]',
+  '[audio\nreuse]',
+  '[x] audio reuse [y]',
+  '[[audio reuse]',
+  '[audio reuse]]',
+  '[audio reuses]',
+  '[_audio reuse]',
+  '[audio reference]',
+  '[one]\n[audio reference two]',
+  'non_diegetic_music: <Audio 1>',
+  'non_diegetic_music:<Audio\t1>',
+  '<Audio 1> non_diegetic_music:',
+  'non_diegetic_music: <Audio1>',
+  'non_diegetic_music:\n\nsong <Audio 1>',
+  '[audio reuse] <Audio 1>: fully_copy non_diegetic_music: <Audio 1>',
+];
+
+test('MiniMax H3 source-audio checks match their original regexes', () => {
+  for (const input of [...H3_PROMPT_EDGE_CASES, ...tokenSoup(H3_PROMPT_TOKENS, 0x3a)]) {
+    const reuse = h3SourceAudioErrors(input, 'reuse_exact');
+    assert.equal(reuse.includes(REUSE_TASK_ERROR), !ORIGINAL_AUDIO_REUSE_TASK.test(input), JSON.stringify(input));
+    assert.equal(reuse.includes(NON_DIEGETIC_ERROR), !ORIGINAL_NON_DIEGETIC_AUDIO_ONE.test(input), JSON.stringify(input));
+    const reference = h3SourceAudioErrors(input, 'reference_only');
+    assert.equal(reference.includes(REFERENCE_TASK_ERROR), !ORIGINAL_AUDIO_REFERENCE_TASK.test(input), JSON.stringify(input));
+  }
+});
+
+for (const [label, prompt, policy] of [
+  ['an unclosed "[audio reuse" run', repeatTo('[audio reuse '), 'reuse_exact'],
+  ['spaces after non_diegetic_music:', 'non_diegetic_music:' + ' '.repeat(ADVERSARIAL_LENGTH - 20) + 'x', 'reuse_exact'],
+  ['an unclosed "[audio reference" run', repeatTo('[audio reference '), 'reference_only'],
+] as const) {
+  test(`MiniMax H3 source-audio checks read ${label} in linear time`, () => {
+    assertFast('validateAndNormalizeHostedToolArguments', () => h3SourceAudioErrors(prompt, policy));
+  });
+}
