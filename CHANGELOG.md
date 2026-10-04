@@ -1,3 +1,11 @@
+## [4.9.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.9.0...v4.9.1) (2026-10-04)
+
+
+### Bug Fixes
+
+* **deps:** adopt SDK generation tracking recovery fixes ([ff99606](https://github.com/Sogni-AI/sogni-intelligence-client/commit/ff996068d5036e9a0186df0ad50333d9351b0390))
+* **deps:** adopt SDK generation tracking recovery fixes ([e422dd6](https://github.com/Sogni-AI/sogni-intelligence-client/commit/e422dd6b229d12e8a557a7a15b8e31cd8f47c1a1))
+
 # [4.9.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.8.4...v4.9.0) (2026-10-04)
 
 
