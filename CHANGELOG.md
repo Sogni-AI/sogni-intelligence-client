@@ -1,3 +1,10 @@
+# [4.9.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.8.4...v4.9.0) (2026-10-04)
+
+
+### Features
+
+* **replay:** record how a turn ended in the run record ([ca6b485](https://github.com/Sogni-AI/sogni-intelligence-client/commit/ca6b4852a60be26d4564b51691c01c2bb4620922))
+
 ## [4.8.4](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.8.3...v4.8.4) (2026-10-03)
 
 
