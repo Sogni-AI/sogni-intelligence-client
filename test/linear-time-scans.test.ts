@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { HARD_STRIP_PATTERNS, sanitizeUntrustedString } from '../src/workflows/primitives/sanitizer.js';
 import { sanitizeToolMessageContent } from '../src/public-skill-runtime/index.js';
+import { stripThinkBlocksFromText } from '../src/tools/shared/llmHelpers.js';
 
 const ADVERSARIAL_LENGTH = 200_000;
 // The fixed scans finish 200,000 characters in about a millisecond; the old
@@ -219,5 +220,53 @@ for (const [label, unit] of [
   test(`sanitizeToolMessageContent strips unterminated ${label} in linear time`, () => {
     const input = repeatTo(unit);
     assertFast('sanitizeToolMessageContent', () => sanitizeToolMessageContent(input));
+  });
+}
+
+// ---------------------------------------------------------------------------
+// tools/shared/llmHelpers.ts stripThinkBlocksFromText
+// ---------------------------------------------------------------------------
+
+function originalStripThinkBlocksFromText(content: string): string {
+  return content
+    .replace(/<think>[\s\S]*?<\/think>\s*/g, '')
+    .replace(/<tool_call>[\s\S]*?<\/tool_call>\s*/g, '')
+    .trimStart();
+}
+
+const THINK_TOKENS = [
+  '<think>', '</think>', '<THINK>', '</Think>', '<tool_call>', '</tool_call>', '<TOOL_CALL>', '</tool_call',
+  '<think', 'think>', ' ', '\n', '\t', '\u00a0', '\u3000', '\ufeff', '\u2028', 'x', 'reply', '<', '/', '>',
+];
+
+const THINK_EDGE_CASES = [
+  '',
+  '<think>',
+  '<think></think>',
+  '<think>plan</think>   answer',
+  '  <think>plan</think>\n\n answer',
+  '<think>outer<think>inner</think>tail</think>',
+  '<think>closed</think><think>open',
+  '<tool_call>{}</tool_call>\n<tool_call>{}',
+  '<THINK>not stripped</THINK>',
+  '<think>a</think>\u00a0\u3000\ufeffb',
+  '<tool_call><think>x</think></tool_call>after',
+];
+
+test('stripThinkBlocksFromText matches its original regex implementation', () => {
+  for (const input of [...THINK_EDGE_CASES, ...tokenSoup(THINK_TOKENS, 0x7417)]) {
+    assert.equal(stripThinkBlocksFromText(input), originalStripThinkBlocksFromText(input), JSON.stringify(input));
+  }
+  assert.equal(stripThinkBlocksFromText(null), null);
+  assert.equal(stripThinkBlocksFromText(undefined), undefined);
+});
+
+for (const [label, unit] of [
+  ['<think> openings', '<think>'],
+  ['<tool_call> openings', '<tool_call>'],
+] as const) {
+  test(`stripThinkBlocksFromText keeps unterminated ${label} in linear time`, () => {
+    const input = repeatTo(unit);
+    assertFast('stripThinkBlocksFromText', () => stripThinkBlocksFromText(input));
   });
 }
