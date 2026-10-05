@@ -282,7 +282,9 @@ export function textRequestsGptImage2Version(text: string | null | undefined): b
  * The GPT Image 2.5 model a default lands on: Sunburst for a complex render,
  * storyboard or sheet, otherwise Flare.
  */
-export function defaultGptImageModelForText(text: string | null | undefined): string {
+export function defaultGptImageModelForText(
+  text: string | null | undefined,
+): typeof GPT_IMAGE_DETAIL_DEFAULT_MODEL_KEY | typeof GPT_IMAGE_DEFAULT_MODEL_KEY {
   return text && textSuggestsGptImage2DefaultImageModel(text)
     ? GPT_IMAGE_DETAIL_DEFAULT_MODEL_KEY
     : GPT_IMAGE_DEFAULT_MODEL_KEY;
