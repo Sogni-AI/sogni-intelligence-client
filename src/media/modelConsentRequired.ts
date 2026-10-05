@@ -1,7 +1,7 @@
 /**
  * Model consent refusal (Supernet error 4103).
  *
- * Seedance 2.5 Uncensored (`seedance-2-5-spicy`) renders only after the account
+ * Seedance 2.5 Uncensored (`seedance-2-5-uncensored`) renders only after the account
  * accepts a one-time likeness and consent agreement in a Sogni app. Until then
  * the socket refuses every job for that model with error 4103 and a
  * `consentRequired` object naming the agreement. Retrying cannot succeed, and no
@@ -17,7 +17,7 @@ export const MODEL_CONSENT_REQUIRED_ERROR_CODE = 4103;
 export const MODEL_CONSENT_REQUIRED_MESSAGE =
   'Seedance 2.5 Uncensored requires a one-time likeness and consent agreement. Review and accept it in the Sogni app, then try again.';
 
-/** The agreement named by a 4103 refusal, e.g. `{ key: 'seedance-2-5-spicy', version: 1 }`. */
+/** The agreement named by a 4103 refusal, e.g. `{ key: 'seedance-2-5-uncensored', version: 1 }`. */
 export interface ModelConsentRequirement {
   key: string;
   version: number;

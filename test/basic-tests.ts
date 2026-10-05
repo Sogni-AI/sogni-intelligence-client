@@ -1238,11 +1238,11 @@ async function runTests() {
       'seedance-2-0',
       'seedance-2-0-mini',
       'seedance-2-5',
-      'seedance-2-5-spicy',
+      'seedance-2-5-uncensored',
       'seedance2',
       'seedance2-mini',
       'seedance2-5',
-      'seedance2-5-spicy',
+      'seedance2-5-uncensored',
     ]) {
       if (!isSeedanceVideoModel(modelId) || !isSeedanceModel(modelId)) {
         throw new Error(`Registered Seedance model was not recognized: ${modelId}`);
@@ -1253,25 +1253,23 @@ async function runTests() {
     }
     // Seedance 2.5 Uncensored shares every 2.5 capability under its own id and
     // must never resolve to the censored seedance-2-5 account.
-    for (const spicy of [
-      'seedance-2-5-spicy',
-      'seedance2-5-spicy',
-      'seedance2-5-spicy-t2v',
-      'seedance2-5-spicy-ia2v',
-      'seedance2-5-spicy-v2v',
-      'seedance2-5-uncensored',
+    for (const uncensored of [
       'seedance-2-5-uncensored',
+      'seedance2-5-uncensored',
+      'seedance2-5-uncensored-t2v',
+      'seedance2-5-uncensored-ia2v',
+      'seedance2-5-uncensored-v2v',
       'seedance-uncensored',
       'seedance-spicy',
     ]) {
-      if (!isSeedance25VideoModel(spicy)) {
-        throw new Error(`Seedance 2.5 Uncensored did not receive the 2.5 capability contract: ${spicy}`);
+      if (!isSeedance25VideoModel(uncensored)) {
+        throw new Error(`Seedance 2.5 Uncensored did not receive the 2.5 capability contract: ${uncensored}`);
       }
-      if (resolveSeedanceVideoModelId(spicy) !== 'seedance-2-5-spicy') {
-        throw new Error(`Seedance 2.5 Uncensored alias did not resolve to its own id: ${spicy}`);
+      if (resolveSeedanceVideoModelId(uncensored) !== 'seedance-2-5-uncensored') {
+        throw new Error(`Seedance 2.5 Uncensored alias did not resolve to its own id: ${uncensored}`);
       }
-      if (resolveVideoModelAlias(spicy, 't2v') !== 'seedance-2-5-spicy') {
-        throw new Error(`Seedance 2.5 Uncensored video alias did not resolve to its own id: ${spicy}`);
+      if (resolveVideoModelAlias(uncensored, 't2v') !== 'seedance-2-5-uncensored') {
+        throw new Error(`Seedance 2.5 Uncensored video alias did not resolve to its own id: ${uncensored}`);
       }
     }
     if (resolveSeedanceVideoModelId('seedance2-5') !== 'seedance-2-5') {
@@ -1282,7 +1280,10 @@ async function runTests() {
     }
     for (const unknown of [
       'seedance-2-5-ultra',
-      'seedance-2-5-spicy-ultra',
+      'seedance-2-5-uncensored-ultra',
+      // The pre-rename Seedance 2.5 Uncensored names are not registered.
+      'seedance-2-5-spicy',
+      'seedance2-5-spicy',
       'seedance-2-0-future',
       'seedance-3-0',
       'seedance-2-0_t2v',
@@ -1306,7 +1307,7 @@ async function runTests() {
         throw new Error(`Unknown Seedance SKU inherited the internal model_ref format: ${unknown}`);
       }
     }
-    for (const selection of ['seedance2', 'seedance2-mini', 'seedance2-5', 'seedance2-5-spicy']) {
+    for (const selection of ['seedance2', 'seedance2-mini', 'seedance2-5', 'seedance2-5-uncensored']) {
       if (!isSeedanceModelSelection(selection)) {
         throw new Error(`Explicit Seedance CLI alias was not recognized: ${selection}`);
       }

@@ -1136,7 +1136,7 @@ export const VIDEO_GENERATION_SKILL: SkillManifest = {
   constraints: [
     'For My Personas video requests, default to image_editing first to produce a conditioned scene image before animation. Use direct video only when the user explicitly asks to animate an existing persona image/reference or no source image is available for a voice-only request.',
     'Wan 3.0 Enhanced uses exact Sogni model id wan3.0-spicy-video (MuleRouter provider id w3.0-video): 2-30 seconds at 30 fps, 480p/720p/1080p, native audio, prompt expansion, adaptive/fixed ratios, and up to 10 image/5 video/5 audio references. First/last-frame mode and loose-reference mode are mutually exclusive. It has no document/web context, watermark, negative prompt, source-video edit, or extend mode.',
-    'Seedance 2.5 Uncensored uses selector seedance2-5-spicy (Sogni model id seedance-2-5-spicy): the same modes, 480p/720p/1080p, 4-30 seconds at 24 fps, reference limits, MOV and last-frame options as seedance2-5. Use it only when the user asks for Seedance 2.5 Uncensored, Seedance Uncensored, or Seedance Spicy, and never swap it for seedance2-5. Each account must accept a one-time likeness and consent agreement in the Sogni app first; error 4103 means it has not, so tell the user to accept it there and do not retry.',
+    'Seedance 2.5 Uncensored uses selector seedance2-5-uncensored (Sogni model id seedance-2-5-uncensored): the same modes, 480p/720p/1080p, 4-30 seconds at 24 fps, reference limits, MOV and last-frame options as seedance2-5. Use it only when the user asks for Seedance 2.5 Uncensored, Seedance Uncensored, or Seedance Spicy, and never swap it for seedance2-5. Each account must accept a one-time likeness and consent agreement in the Sogni app first; error 4103 means it has not, so tell the user to accept it there and do not retry.',
     'MiniMax H3 two-stage: 1080p and 2K H3 delivery is its own selector, not an option. minimax-h3-fasth3-t2v-turbo-2stage on generate_video (animate_photo carries minimax-h3-fasth3-i2v-turbo-2stage and minimax-h3-fasth3-flf2v-turbo-2stage) renders the FastH3 canvas, then the worker enlarges it 2x and refines it, so the clip is delivered at twice the canvas with the same length and audio. targetResolution names the delivered class: 1080 renders a 544px short-edge canvas (960x544 becomes 1920x1088) for 10 Spark per second, 1440 or omitted renders the 768p canvas for 2K (1344x768 becomes 2688x1536) for 16 Spark per second, and 720 renders a 384px canvas (672x384 becomes 1344x768) for the regular FastH3 price of 4 Spark per second. Choose it when the user asks for 1080p, 1440p or 2K H3 output, for two-stage output, or for the sharpest/best H3 quality, and send the same prompt contract, durations and LoRAs as the matching FastH3 selector; keep ordinary 768p FastH3 output on the regular FastH3 selector at targetResolution 768. Reference-to-video has its own two-stage selectors on generate_video: minimax-h3-r2v-2stage (Standard, 20 steps) and minimax-h3-r2v-balanced-2stage (Balanced, 8 steps) take exactly the references, prompt contract, durations and LoRAs of minimax-h3-r2v and minimax-h3-r2v-balanced, deliver twice the canvas, and read targetResolution the same way; each bills its tier\'s rate plus the two-stage surcharge of the delivered class. Keep the one-stage R2V selectors for ordinary 768p output.',
     `${MINIMAX_H3_KEYFRAMES_GUIDANCE} On generate_video only the MiniMax H3 reference-to-video selectors take keyframes, never text-to-video; the keyframe images are not references and do not go in referenceImageIndices.`,
   ],
@@ -1485,12 +1485,12 @@ function compactSceneVideoPrompt(project: StoryboardProject, scene: SceneSpec, r
 
 function publicSeedanceVideoModelFromInput(
   input: PublicStoryboardAdapterCompileInput,
-): 'seedance2-mini' | 'seedance2' | 'seedance2-5' | 'seedance2-5-spicy' {
+): 'seedance2-mini' | 'seedance2' | 'seedance2-5' | 'seedance2-5-uncensored' {
   const requestedModelId = String(input.options?.requestedModelId ?? '').trim().toLowerCase();
   if (!requestedModelId || requestedModelId === 'seedance') return 'seedance2-5';
   const resolved = resolveVideoModelAlias(requestedModelId, 't2v');
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25) return 'seedance2-5';
-  if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25Spicy) return 'seedance2-5-spicy';
+  if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored) return 'seedance2-5-uncensored';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2vMini) return 'seedance2-mini';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v) return 'seedance2';
   throw new Error(`No Seedance storyboard execution contract is registered for model "${requestedModelId}".`);
@@ -1905,7 +1905,7 @@ export const SEEDANCE_WORKFLOW_MODELS = Object.freeze({
   t2v25: SEEDANCE_VIDEO_MODEL_IDS.v25,
   // Seedance 2.5 Uncensored: the same workflows and limits as Seedance 2.5
   // under its own id, which must never be rewritten to seedance-2-5.
-  t2v25Spicy: SEEDANCE_VIDEO_MODEL_IDS.v25Spicy
+  t2v25Uncensored: SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored
 });
 
 // Alibaba HappyHorse 1.1 — three discrete vendor models (no mini variant).
@@ -2160,7 +2160,7 @@ export const VIDEO_MODEL_REGISTRY = Object.freeze({
     supportsNativeAudio: true
   },
   // Seedance 2.5 Uncensored shares the Seedance 2.5 contract.
-  [SEEDANCE_WORKFLOW_MODELS.t2v25Spicy]: {
+  [SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored]: {
     workflow: 't2v',
     family: 'seedance2',
     defaultWidth: 1280,
@@ -2315,15 +2315,13 @@ export const VIDEO_MODEL_ALIASES: Readonly<Record<string, string>> = Object.free
   'seedance2-5-ia2v': SEEDANCE_WORKFLOW_MODELS.t2v25,
   'seedance2-5-v2v': SEEDANCE_WORKFLOW_MODELS.t2v25,
   // Seedance 2.5 Uncensored, including its friendly names. Each resolves to
-  // seedance-2-5-spicy, never to seedance-2-5.
-  'seedance2-5-spicy': SEEDANCE_WORKFLOW_MODELS.t2v25Spicy,
-  'seedance2-5-spicy-t2v': SEEDANCE_WORKFLOW_MODELS.t2v25Spicy,
-  'seedance2-5-spicy-ia2v': SEEDANCE_WORKFLOW_MODELS.t2v25Spicy,
-  'seedance2-5-spicy-v2v': SEEDANCE_WORKFLOW_MODELS.t2v25Spicy,
-  'seedance2-5-uncensored': SEEDANCE_WORKFLOW_MODELS.t2v25Spicy,
-  'seedance-2-5-uncensored': SEEDANCE_WORKFLOW_MODELS.t2v25Spicy,
-  'seedance-uncensored': SEEDANCE_WORKFLOW_MODELS.t2v25Spicy,
-  'seedance-spicy': SEEDANCE_WORKFLOW_MODELS.t2v25Spicy,
+  // seedance-2-5-uncensored, never to seedance-2-5.
+  'seedance2-5-uncensored': SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored,
+  'seedance2-5-uncensored-t2v': SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored,
+  'seedance2-5-uncensored-ia2v': SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored,
+  'seedance2-5-uncensored-v2v': SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored,
+  'seedance-uncensored': SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored,
+  'seedance-spicy': SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored,
   wan3: WAN3_WORKFLOW_MODEL,
   'wan3.0': WAN3_WORKFLOW_MODEL,
   'wan3-video': WAN3_WORKFLOW_MODEL,
@@ -3972,7 +3970,7 @@ export interface StoryboardVideoHostedWorkflowBuildOptions {
   imageOutputFormat?: 'png' | 'jpg' | 'jpeg' | 'webp';
   imageWidth?: number;
   imageHeight?: number;
-  videoModel?: 'seedance2' | 'seedance2-mini' | 'seedance2-5' | 'seedance2-5-spicy' | string;
+  videoModel?: 'seedance2' | 'seedance2-mini' | 'seedance2-5' | 'seedance2-5-uncensored' | string;
   videoDurationSec?: number;
   videoTargetResolution?: number;
   generateAudio?: boolean;

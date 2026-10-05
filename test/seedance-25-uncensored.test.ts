@@ -18,7 +18,7 @@ import {
 } from '../src/public-skill-runtime/index.js';
 import {
   MODELS_BY_TOOL,
-  SEEDANCE_25_SPICY_MODEL_DESCRIPTION,
+  SEEDANCE_25_UNCENSORED_MODEL_DESCRIPTION,
   animatePhotoDefinition,
   extendVideoDefinition,
   generateVideoDefinition,
@@ -30,12 +30,12 @@ import {
 } from '../src/tools/index.js';
 import { getVideoModelConfig } from '../src/media/index.js';
 
-const SPICY_ID = 'seedance-2-5-spicy';
+const UNCENSORED_ID = 'seedance-2-5-uncensored';
 const SOCKET_MESSAGE =
   'Seedance 2.5 Uncensored requires a one-time likeness and consent agreement. Review and accept it in the Sogni app, then try again.';
-const CONSENT = { key: SPICY_ID, version: 1, modelId: SPICY_ID };
+const CONSENT = { key: UNCENSORED_ID, version: 1, modelId: UNCENSORED_ID };
 
-test('every Seedance 2.5 tool enum lists seedance2-5-spicy right after seedance2-5', () => {
+test('every Seedance 2.5 tool enum lists seedance2-5-uncensored right after seedance2-5', () => {
   for (const definition of [
     generateVideoDefinition,
     soundToVideoDefinition,
@@ -46,21 +46,21 @@ test('every Seedance 2.5 tool enum lists seedance2-5-spicy right after seedance2
     const values = definition.function.parameters.properties.videoModel.enum as string[];
     const index = values.indexOf('seedance2-5');
     assert.ok(index >= 0, definition.function.name);
-    assert.equal(values[index + 1], 'seedance2-5-spicy', definition.function.name);
+    assert.equal(values[index + 1], 'seedance2-5-uncensored', definition.function.name);
   }
   const animateValues = animatePhotoDefinition.function.parameters.properties.videoModel.enum as string[];
-  assert.equal(animateValues.includes('seedance2-5-spicy'), false);
+  assert.equal(animateValues.includes('seedance2-5-uncensored'), false);
   // The shared wording is exported from ./tools so downstream patch layers quote it exactly.
   for (const definition of [generateVideoDefinition, soundToVideoDefinition, videoToVideoDefinition]) {
     const description = definition.function.parameters.properties.videoModel.description as string;
-    assert.ok(description.includes(SEEDANCE_25_SPICY_MODEL_DESCRIPTION), definition.function.name);
+    assert.ok(description.includes(SEEDANCE_25_UNCENSORED_MODEL_DESCRIPTION), definition.function.name);
   }
-  assert.match(SEEDANCE_25_SPICY_MODEL_DESCRIPTION, /error 4103/);
+  assert.match(SEEDANCE_25_UNCENSORED_MODEL_DESCRIPTION, /error 4103/);
 });
 
 test('Seedance 2.5 Uncensored is named Seedance 2.5 Uncensored, never Spicy', () => {
   for (const tool of ['generate_video', 'sound_to_video', 'video_to_video']) {
-    const option = MODELS_BY_TOOL[tool]?.find(candidate => candidate.key === 'seedance2-5-spicy');
+    const option = MODELS_BY_TOOL[tool]?.find(candidate => candidate.key === 'seedance2-5-uncensored');
     assert.ok(option, tool);
     assert.match(option.displayName, /^Seedance 2\.5 Uncensored/);
     assert.doesNotMatch(option.displayName, /spicy/i);
@@ -68,21 +68,21 @@ test('Seedance 2.5 Uncensored is named Seedance 2.5 Uncensored, never Spicy', ()
 });
 
 test('Seedance 2.5 Uncensored keeps its own id with the Seedance 2.5 limits', () => {
-  const config = getVideoModelConfig('seedance2-5-spicy');
-  assert.equal(config.model, SPICY_ID);
+  const config = getVideoModelConfig('seedance2-5-uncensored');
+  assert.equal(config.model, UNCENSORED_ID);
   assert.equal(config.maxFrames, getVideoModelConfig('seedance2-5').maxFrames);
   assert.equal(config.maxDimension, getVideoModelConfig('seedance2-5').maxDimension);
 
-  const builtin = getBuiltinVideoModelConfig(SPICY_ID);
+  const builtin = getBuiltinVideoModelConfig(UNCENSORED_ID);
   assert.ok(builtin);
   assert.equal(builtin.maxFrames, 721);
 
-  assert.deepEqual(getSeedanceReferenceLimits(SPICY_ID), getSeedanceReferenceLimits('seedance-2-5'));
-  assert.deepEqual(getSeedanceReferenceLimits('seedance2-5-spicy'), { images: 30, videos: 10, audios: 10, assets: 50 });
+  assert.deepEqual(getSeedanceReferenceLimits(UNCENSORED_ID), getSeedanceReferenceLimits('seedance-2-5'));
+  assert.deepEqual(getSeedanceReferenceLimits('seedance2-5-uncensored'), { images: 30, videos: 10, audios: 10, assets: 50 });
 
   const project: VideoProjectConfig = {
     type: 'video',
-    modelId: SPICY_ID,
+    modelId: UNCENSORED_ID,
     positivePrompt: 'A slow dolly through a neon street at night',
     duration: 30,
   };
@@ -101,19 +101,19 @@ test('the Seedance storyboard adapter keeps the uncensored selector at 1080p and
     storyline,
     userIntentText: 'Create a 24-second storyboard video with Seedance 2.5 Uncensored.',
     frameCount: 2,
-    videoModel: 'seedance2-5-spicy',
+    videoModel: 'seedance2-5-uncensored',
     videoDurationSec: 24,
   });
-  assert.equal(plan.video.model, 'seedance2-5-spicy');
+  assert.equal(plan.video.model, 'seedance2-5-uncensored');
   assert.equal(plan.video.duration, 24);
-  assert.equal(plan.input.steps[1]?.arguments.videoModel, 'seedance2-5-spicy');
+  assert.equal(plan.input.steps[1]?.arguments.videoModel, 'seedance2-5-uncensored');
   assert.equal(plan.input.steps[1]?.arguments.targetResolution, 1080);
 
-  const clip = compileForModel('seedance2-5-spicy', plan.storyboardProject, {
+  const clip = compileForModel('seedance2-5-uncensored', plan.storyboardProject, {
     stage: 'scene_clip',
     scene: { ...plan.storyboardProject.scenes[0], durationSec: 28 },
   });
-  assert.equal(clip.args.videoModel, 'seedance2-5-spicy');
+  assert.equal(clip.args.videoModel, 'seedance2-5-uncensored');
   assert.equal(clip.args.targetResolution, 1080);
   assert.equal(clip.args.duration, 28);
 });
@@ -194,7 +194,7 @@ test('the wrapper throws a typed consent error and never retries it', async () =
   };
   await assert.rejects(
     wrapper.createProjectWithRetry(
-      { type: 'video', modelId: SPICY_ID, positivePrompt: 'test' } as VideoProjectConfig,
+      { type: 'video', modelId: UNCENSORED_ID, positivePrompt: 'test' } as VideoProjectConfig,
       { maxAttempts: 3, retryDelay: 1 },
     ),
     (error: unknown) => {
@@ -230,7 +230,7 @@ test('createProject turns the SDK 4103 job error into SogniModelConsentRequiredE
   await assert.rejects(
     wrapper.createProject({
       type: 'video',
-      modelId: SPICY_ID,
+      modelId: UNCENSORED_ID,
       positivePrompt: 'A slow dolly through a neon street at night',
       duration: 5,
       numberOfMedia: 1,
@@ -242,5 +242,5 @@ test('createProject turns the SDK 4103 job error into SogniModelConsentRequiredE
       return true;
     },
   );
-  assert.equal(createdModel, SPICY_ID);
+  assert.equal(createdModel, UNCENSORED_ID);
 });

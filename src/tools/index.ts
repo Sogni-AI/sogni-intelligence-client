@@ -67,7 +67,7 @@ export {
 } from '../contracts/toolPromptMarkers.js';
 // Seedance 2.5 Uncensored videoModel wording, re-exported so the creative-agent
 // patch layers quote it exactly.
-export { SEEDANCE_25_SPICY_MODEL_DESCRIPTION } from '../contracts/toolPromptMarkers.js';
+export { SEEDANCE_25_UNCENSORED_MODEL_DESCRIPTION } from '../contracts/toolPromptMarkers.js';
 // MiniMax H3 FastH3 audio-guide sound_to_video guidance, re-exported so the
 // creative-agent patch layers reuse the exact wording instead of copying it.
 export {

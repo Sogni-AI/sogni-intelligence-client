@@ -94,7 +94,7 @@ export const MODELS_BY_TOOL: Record<string, ModelOption[]> = {
     { key: 'seedance2', displayName: 'Seedance 2.0' },
     { key: 'seedance2-mini', displayName: 'Seedance 2.0 Mini' },
     { key: 'seedance2-5', displayName: 'Seedance 2.5' },
-    { key: 'seedance2-5-spicy', displayName: 'Seedance 2.5 Uncensored' },
+    { key: 'seedance2-5-uncensored', displayName: 'Seedance 2.5 Uncensored' },
     { key: 'minimax-h3-t2v', displayName: 'MiniMax H3 (Text to Video)' },
     { key: 'minimax-h3-t2v-turbo', displayName: 'MiniMax H3 LightX2V Turbo (Text to Video)' },
     { key: 'minimax-h3-fasth3-t2v-turbo', displayName: 'MiniMax H3 FastH3 Turbo (Text to Video)' },
@@ -129,7 +129,7 @@ export const MODELS_BY_TOOL: Record<string, ModelOption[]> = {
     { key: 'seedance2', displayName: 'Seedance 2.0 Image+Audio' },
     { key: 'seedance2-mini', displayName: 'Seedance 2.0 Mini Image+Audio' },
     { key: 'seedance2-5', displayName: 'Seedance 2.5 Image+Audio' },
-    { key: 'seedance2-5-spicy', displayName: 'Seedance 2.5 Uncensored Image+Audio' },
+    { key: 'seedance2-5-uncensored', displayName: 'Seedance 2.5 Uncensored Image+Audio' },
     { key: 'ltx25-ia2v', displayName: 'LTX 2.5 Image+Audio' },
     { key: 'ltx25-a2v', displayName: 'LTX 2.5 Audio Only' },
     { key: 'ltx23-ia2v', displayName: 'LTX 2.3 Image+Audio' },
@@ -150,7 +150,7 @@ export const MODELS_BY_TOOL: Record<string, ModelOption[]> = {
     { key: 'seedance2', displayName: 'Seedance 2.0' },
     { key: 'seedance2-mini', displayName: 'Seedance 2.0 Mini' },
     { key: 'seedance2-5', displayName: 'Seedance 2.5' },
-    { key: 'seedance2-5-spicy', displayName: 'Seedance 2.5 Uncensored' },
+    { key: 'seedance2-5-uncensored', displayName: 'Seedance 2.5 Uncensored' },
   ],
   // MiniMax Music 3 first: it is the default music model.
   generate_music: [

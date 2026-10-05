@@ -12,7 +12,7 @@ export const SEEDANCE_VIDEO_MODEL_IDS = Object.freeze({
   // Seedance 2.5 Uncensored: the same vendor model as Seedance 2.5 on a
   // separate uncensored account. It shares every 2.5 capability but is its own
   // id: never alias or rewrite it to seedance-2-5.
-  v25Spicy: 'seedance-2-5-spicy',
+  v25Uncensored: 'seedance-2-5-uncensored',
 } as const);
 
 export type SeedanceVideoModelId =
@@ -37,14 +37,12 @@ const SEEDANCE_VIDEO_MODEL_ALIASES: Readonly<Record<string, SeedanceVideoModelId
     'seedance2-5-t2v': SEEDANCE_VIDEO_MODEL_IDS.v25,
     'seedance2-5-ia2v': SEEDANCE_VIDEO_MODEL_IDS.v25,
     'seedance2-5-v2v': SEEDANCE_VIDEO_MODEL_IDS.v25,
-    'seedance2-5-spicy': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
-    'seedance2-5-spicy-t2v': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
-    'seedance2-5-spicy-ia2v': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
-    'seedance2-5-spicy-v2v': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
-    'seedance2-5-uncensored': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
-    'seedance-2-5-uncensored': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
-    'seedance-uncensored': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
-    'seedance-spicy': SEEDANCE_VIDEO_MODEL_IDS.v25Spicy,
+    'seedance2-5-uncensored': SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored,
+    'seedance2-5-uncensored-t2v': SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored,
+    'seedance2-5-uncensored-ia2v': SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored,
+    'seedance2-5-uncensored-v2v': SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored,
+    'seedance-uncensored': SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored,
+    'seedance-spicy': SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored,
     // Retired backend id retained as an explicit compatibility alias. Mini is
     // its supported replacement; this is not a family-prefix fallback.
     'seedance-2-0-fast': SEEDANCE_VIDEO_MODEL_IDS.mini,
@@ -73,10 +71,10 @@ export function isSeedanceVideoModelId(modelId: string | null | undefined): bool
  */
 export function isSeedance25VideoModelId(modelId: string | null | undefined): boolean {
   const resolved = resolveSeedanceVideoModelId(modelId);
-  return resolved === SEEDANCE_VIDEO_MODEL_IDS.v25 || resolved === SEEDANCE_VIDEO_MODEL_IDS.v25Spicy;
+  return resolved === SEEDANCE_VIDEO_MODEL_IDS.v25 || resolved === SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored;
 }
 
-/** True only for Seedance 2.5 Uncensored (`seedance-2-5-spicy`). */
-export function isSeedance25SpicyVideoModelId(modelId: string | null | undefined): boolean {
-  return resolveSeedanceVideoModelId(modelId) === SEEDANCE_VIDEO_MODEL_IDS.v25Spicy;
+/** True only for Seedance 2.5 Uncensored (`seedance-2-5-uncensored`). */
+export function isSeedance25UncensoredVideoModelId(modelId: string | null | undefined): boolean {
+  return resolveSeedanceVideoModelId(modelId) === SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored;
 }

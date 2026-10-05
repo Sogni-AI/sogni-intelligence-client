@@ -165,7 +165,7 @@ export {
 } from './utils/helpers.js';
 export type { VideoDimensionRules } from './utils/helpers.js';
 export {
-  isSeedance25SpicyVideoModelId,
+  isSeedance25UncensoredVideoModelId,
   isSeedance25VideoModelId,
   isSeedanceVideoModelId,
   resolveSeedanceVideoModelId,
