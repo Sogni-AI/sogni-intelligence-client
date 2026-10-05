@@ -1,3 +1,10 @@
+## [4.10.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.10.1...v4.10.2) (2026-10-05)
+
+
+### Bug Fixes
+
+* **media:** type the GPT image default helper as the 2.5 model keys ([9d793e0](https://github.com/Sogni-AI/sogni-intelligence-client/commit/9d793e0129c118ef2327add085d996041dd368bf))
+
 ## [4.10.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.10.0...v4.10.1) (2026-10-05)
 
 
