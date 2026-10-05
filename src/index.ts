@@ -126,6 +126,7 @@ export {
   SogniModelNotFoundError,
   SogniNetworkError,
   SogniModelConsentRequiredError,
+  SogniModelNotYetAvailableError,
 } from './utils/errors.js';
 export {
   MODEL_CONSENT_REQUIRED_ERROR,
@@ -138,6 +139,15 @@ export type {
   ModelConsentRequiredPayload,
   ModelConsentRequirement,
 } from './media/modelConsentRequired.js';
+export {
+  MODEL_NOT_YET_AVAILABLE_ERROR,
+  MODEL_NOT_YET_AVAILABLE_ERROR_CODE,
+  MODEL_NOT_YET_AVAILABLE_FALLBACK_MESSAGE,
+  modelNotYetAvailablePayload,
+  modelNotYetAvailablePayloadFromError,
+  textIndicatesModelNotYetAvailable,
+} from './media/modelNotYetAvailable.js';
+export type { ModelNotYetAvailablePayload } from './media/modelNotYetAvailable.js';
 
 // Utilities
 export {

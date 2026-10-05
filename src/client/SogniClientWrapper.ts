@@ -61,11 +61,13 @@ import {
   SogniTimeoutError,
   SogniModelNotFoundError,
   SogniModelConsentRequiredError,
+  SogniModelNotYetAvailableError,
   SogniValidationError,
   errorMessageOf,
   isErrorRecord,
 } from '../utils/errors.js';
 import { modelConsentRequiredPayloadFromError } from '../media/modelConsentRequired.js';
+import { modelNotYetAvailablePayloadFromError } from '../media/modelNotYetAvailable.js';
 import {
   generateAppId,
   validateClientConfig,
@@ -911,7 +913,8 @@ export class SogniClientWrapper extends EventEmitter {
       
       let projectError: SogniError;
       const consentPayload = modelConsentRequiredPayloadFromError(error);
-      if (error instanceof SogniModelConsentRequiredError) {
+      const notYetAvailablePayload = consentPayload ? null : modelNotYetAvailablePayloadFromError(error);
+      if (error instanceof SogniModelConsentRequiredError || error instanceof SogniModelNotYetAvailableError) {
         projectError = error;
       } else if (consentPayload) {
         // 4103: the account has not accepted the model's one-time likeness and
@@ -919,6 +922,13 @@ export class SogniClientWrapper extends EventEmitter {
         // it in the Sogni app instead of retrying.
         projectError = new SogniModelConsentRequiredError(
           consentPayload,
+          error instanceof Error ? error : undefined,
+        );
+      } else if (notYetAvailablePayload) {
+        // 4104: the network holds this model. Keep the socket's message, which
+        // names models to try instead; retrying cannot succeed.
+        projectError = new SogniModelNotYetAvailableError(
+          notYetAvailablePayload,
           error instanceof Error ? error : undefined,
         );
       } else if (error instanceof SogniTimeoutError || error instanceof SogniProjectError) {
@@ -986,9 +996,12 @@ export class SogniClientWrapper extends EventEmitter {
         maxAttempts,
         initialDelay: retryDelay,
         // A consent refusal fails the same way until the user accepts the
-        // agreement in the Sogni app, so never retry it.
+        // agreement in the Sogni app, and a held model until the server makes
+        // it available, so never retry either.
         shouldRetry: (error) =>
-          !(error instanceof SogniModelConsentRequiredError) && isRetryableProjectSubmitError(error),
+          !(error instanceof SogniModelConsentRequiredError)
+          && !(error instanceof SogniModelNotYetAvailableError)
+          && isRetryableProjectSubmitError(error),
         delayFor: (error, delay) => Math.max(delay, errorRetryAfterMs(error) ?? 0),
         onRetry: (attempt, error) => {
           this.log(`Retry attempt ${attempt} after error:`, error.message);

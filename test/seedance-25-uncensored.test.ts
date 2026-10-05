@@ -4,9 +4,13 @@ import {
   MODEL_CONSENT_REQUIRED_ERROR,
   MODEL_CONSENT_REQUIRED_ERROR_CODE,
   MODEL_CONSENT_REQUIRED_MESSAGE,
+  MODEL_NOT_YET_AVAILABLE_ERROR,
+  MODEL_NOT_YET_AVAILABLE_ERROR_CODE,
   SogniClientWrapper,
   SogniModelConsentRequiredError,
+  SogniModelNotYetAvailableError,
   modelConsentRequiredPayloadFromError,
+  modelNotYetAvailablePayloadFromError,
   validateProjectConfig,
   type VideoProjectConfig,
 } from '../src/index.js';
@@ -243,4 +247,136 @@ test('createProject turns the SDK 4103 job error into SogniModelConsentRequiredE
     },
   );
   assert.equal(createdModel, UNCENSORED_ID);
+});
+
+const HELD_MESSAGE =
+  'This model is not yet available, try Wan 3 Spicy or MiniMax H3 video in the meantime.';
+
+test('4104 refusals map to a non-retryable payload with the socket message verbatim', () => {
+  const sdkError = { code: 4104, message: HELD_MESSAGE };
+  const payload = modelNotYetAvailablePayloadFromError(sdkError);
+  assert.ok(payload);
+  assert.equal(payload.error, MODEL_NOT_YET_AVAILABLE_ERROR);
+  assert.equal(payload.errorCode, MODEL_NOT_YET_AVAILABLE_ERROR_CODE);
+  assert.equal(payload.errorCode, 4104);
+  assert.equal(payload.message, HELD_MESSAGE);
+  assert.equal(payload.retryPolicy, 'manual_user_confirmation');
+  assert.equal(payload.nextAction, 'wait_for_user');
+  assert.equal('consentRequired' in payload, false);
+  // Not a consent refusal.
+  assert.equal(modelConsentRequiredPayloadFromError(sdkError), null);
+
+  // The raw socket jobError, the REST estimate ApiError body, and wrapped causes
+  // all keep the socket's own wording, not the wrapper's.
+  const socketJobError = {
+    error: '4104',
+    isFromWorker: false,
+    modelId: UNCENSORED_ID,
+    error_message: HELD_MESSAGE,
+  };
+  assert.deepEqual(modelNotYetAvailablePayloadFromError(socketJobError), {
+    error: MODEL_NOT_YET_AVAILABLE_ERROR,
+    errorCode: 4104,
+    message: HELD_MESSAGE,
+    retryPolicy: 'manual_user_confirmation',
+    nextAction: 'wait_for_user',
+    modelId: UNCENSORED_ID,
+  });
+  const estimateError = Object.assign(new Error(HELD_MESSAGE), {
+    status: 403,
+    payload: { status: 'error', errorCode: 4104, message: HELD_MESSAGE },
+  });
+  assert.equal(modelNotYetAvailablePayloadFromError(estimateError)?.message, HELD_MESSAGE);
+  const wrapped = new Error(`All 1 video generation jobs failed: ${HELD_MESSAGE}`, { cause: sdkError });
+  assert.equal(modelNotYetAvailablePayloadFromError(wrapped)?.message, HELD_MESSAGE);
+  assert.equal(modelNotYetAvailablePayloadFromError(4104)?.error, MODEL_NOT_YET_AVAILABLE_ERROR);
+
+  // The estimate endpoint answers HTTP 400 with the plain-text message, which
+  // the SDK turns into ApiError { errorCode: 400, message }; and a wrapper may
+  // keep only the text. Both still map, with the socket's sentence verbatim.
+  const plainTextEstimateError = Object.assign(new Error(HELD_MESSAGE), {
+    status: 400,
+    payload: { status: 'error', errorCode: 400, message: HELD_MESSAGE },
+  });
+  assert.equal(modelNotYetAvailablePayloadFromError(plainTextEstimateError)?.message, HELD_MESSAGE);
+  assert.equal(
+    modelNotYetAvailablePayloadFromError(new Error(`All 1 video generation jobs failed: ${HELD_MESSAGE}`))?.message,
+    HELD_MESSAGE,
+  );
+
+  for (const unrelated of [
+    null,
+    4103,
+    { code: 4103, message: SOCKET_MESSAGE, consentRequired: CONSENT },
+    { code: 4102, message: 'This prompt is too long for the model.' },
+    new Error('Vendor job failed: timeout'),
+  ]) {
+    assert.equal(modelNotYetAvailablePayloadFromError(unrelated), null);
+  }
+});
+
+test('the public skill classifier reports 4104 as non-retryable with the socket message', () => {
+  for (const error of [{ code: 4104, message: HELD_MESSAGE }, new Error(HELD_MESSAGE)]) {
+    assert.deepEqual(classifySkillError(error), {
+      error_type: 'MODEL_UNAVAILABLE',
+      category: 'model_unavailable',
+      message: HELD_MESSAGE,
+      retryable: false,
+    });
+  }
+});
+
+test('Seedance failure mapping reports 4104 as a held model, not a retryable vendor failure', () => {
+  const payload = seedanceTerminalGenerationFailurePayloadFromError(
+    new Error(`All 1 video generation jobs failed: ${HELD_MESSAGE}`, {
+      cause: { code: 4104, message: HELD_MESSAGE },
+    }),
+  );
+  assert.ok(payload);
+  assert.equal(payload.error, MODEL_NOT_YET_AVAILABLE_ERROR);
+  assert.equal(payload.message, HELD_MESSAGE);
+  assert.equal('reportIssue' in payload, false);
+  assert.equal(payload.nextAction, 'wait_for_user');
+});
+
+test('createProject turns the SDK 4104 job error into SogniModelNotYetAvailableError, never retried', async () => {
+  const wrapper = new SogniClientWrapper({ username: 'test-user', password: 'test-pass', autoConnect: false });
+  let created = 0;
+  (wrapper as any).client = {
+    projects: {
+      create: async () => {
+        created++;
+        return {
+          id: 'project-held',
+          jobs: [],
+          on: () => {},
+          // The SDK rejects with its plain ErrorData object, not an Error.
+          waitForCompletion: () => Promise.reject({ code: 4104, message: HELD_MESSAGE }),
+        };
+      },
+    },
+  };
+  (wrapper as any).connectionState = { ...(wrapper as any).connectionState, isConnected: true };
+
+  await assert.rejects(
+    wrapper.createProjectWithRetry(
+      {
+        type: 'video',
+        modelId: UNCENSORED_ID,
+        positivePrompt: 'A slow dolly through a neon street at night',
+        duration: 5,
+        numberOfMedia: 1,
+      } as VideoProjectConfig,
+      { maxAttempts: 3, retryDelay: 1 },
+    ),
+    (error: unknown) => {
+      assert.ok(error instanceof SogniModelNotYetAvailableError);
+      assert.equal(error.code, 'MODEL_NOT_YET_AVAILABLE');
+      assert.equal(error.message, HELD_MESSAGE);
+      assert.equal(error.payload.message, HELD_MESSAGE);
+      assert.equal(modelNotYetAvailablePayloadFromError(error)?.message, HELD_MESSAGE);
+      return true;
+    },
+  );
+  assert.equal(created, 1);
 });

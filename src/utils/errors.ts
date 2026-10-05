@@ -4,6 +4,7 @@
 
 import type { ErrorData } from '../types/index.js';
 import type { ModelConsentRequiredPayload } from '../media/modelConsentRequired.js';
+import type { ModelNotYetAvailablePayload } from '../media/modelNotYetAvailable.js';
 
 /**
  * The human-readable reason carried by anything thrown or rejected. The Sogni
@@ -189,6 +190,27 @@ export class SogniModelConsentRequiredError extends SogniError {
       originalError,
     );
     this.name = 'SogniModelConsentRequiredError';
+    this.payload = payload;
+  }
+}
+
+/**
+ * Model not yet available (Supernet error 4104): the network holds this model,
+ * e.g. released to staging but not production. Not retryable. The message is
+ * the socket's, verbatim; `payload` is the typed tool-result payload.
+ */
+export class SogniModelNotYetAvailableError extends SogniError {
+  public readonly payload: ModelNotYetAvailablePayload;
+
+  constructor(payload: ModelNotYetAvailablePayload, originalError?: Error) {
+    super(
+      payload.message,
+      'MODEL_NOT_YET_AVAILABLE',
+      403,
+      { errorCode: payload.errorCode, ...(payload.modelId ? { modelId: payload.modelId } : {}) },
+      originalError,
+    );
+    this.name = 'SogniModelNotYetAvailableError';
     this.payload = payload;
   }
 }

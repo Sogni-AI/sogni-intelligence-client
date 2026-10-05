@@ -6,6 +6,7 @@ export * from './gptImage.js';
 export * from './characterSheet.js';
 export * from './vendorModelPremium.js';
 export * from './modelConsentRequired.js';
+export * from './modelNotYetAvailable.js';
 export * from './videoAppSettings.js';
 export * from './musicSettings.js';
 export * from './speechSettings.js';

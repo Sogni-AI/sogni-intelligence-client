@@ -24,6 +24,7 @@ import { resolveRegisteredImageReferenceModelId } from '../utils/imageReferenceM
 import { isGptImageModel, normalizeGptImageModelAlias } from '../media/gptImage.js';
 import { WAN22_MAX_VIDEO_PIXELS } from '../media/videoSettings.js';
 import { modelConsentRequiredPayloadFromError } from '../media/modelConsentRequired.js';
+import { modelNotYetAvailablePayloadFromError } from '../media/modelNotYetAvailable.js';
 import { MINIMAX_H3_KEYFRAMES_GUIDANCE } from '../contracts/toolPromptMarkers.js';
 
 type LtxWorkflow = 't2v' | 'i2v' | 'ia2v' | 'a2v' | 'v2v';
@@ -647,6 +648,18 @@ export function classifySkillError(error: unknown): ClassifiedSkillError {
       error_type: 'PERMISSION_REQUIRED',
       category: 'permission_required',
       message: consentPayload.message,
+      retryable: false,
+    };
+  }
+
+  // 4104: the network holds the model. Report the socket's message as is;
+  // retrying cannot succeed until the model is made available.
+  const notYetAvailablePayload = modelNotYetAvailablePayloadFromError(error);
+  if (notYetAvailablePayload) {
+    return {
+      error_type: 'MODEL_UNAVAILABLE',
+      category: 'model_unavailable',
+      message: notYetAvailablePayload.message,
       retryable: false,
     };
   }

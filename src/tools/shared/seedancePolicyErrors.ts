@@ -6,8 +6,10 @@
  */
 import {
   modelConsentRequiredPayloadFromError,
+  modelNotYetAvailablePayloadFromError,
   vendorModelPremiumPayloadFromError,
   type ModelConsentRequiredPayload,
+  type ModelNotYetAvailablePayload,
   type VendorModelPremiumRequiredPayload,
 } from '../../media/index.js';
 
@@ -334,11 +336,17 @@ export function seedanceTerminalGenerationFailurePayloadFromError(
   | SeedanceTerminalGenerationFailurePayload
   | VendorModelPremiumRequiredPayload
   | ModelConsentRequiredPayload
+  | ModelNotYetAvailablePayload
   | null {
   // Seedance 2.5 Uncensored refuses with 4103 until the account accepts its
   // likeness and consent agreement in the Sogni app; never a retryable failure.
   const consentPayload = modelConsentRequiredPayloadFromError(error);
   if (consentPayload) return consentPayload;
+
+  // 4104: the network holds the model. The socket's message names models to
+  // try instead; never a retryable failure.
+  const notYetAvailablePayload = modelNotYetAvailablePayloadFromError(error);
+  if (notYetAvailablePayload) return notYetAvailablePayload;
 
   const premiumPayload = vendorModelPremiumPayloadFromError(error);
   if (premiumPayload) return premiumPayload;
