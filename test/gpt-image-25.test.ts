@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+  defaultGptImageModelForText, GPT_IMAGE_DEFAULT_MODEL_KEY, GPT_IMAGE_DETAIL_DEFAULT_MODEL_KEY,
   getGptImage2ModelOverride, getGptImageCapabilities, isGptImageModel,
   normalizeGptImageModelAlias, normalizeGptImageQuality,
-  textRequestedGptImage25Variant, textRequestsGptImage2ImageModel,
+  textRequestedGptImage25Variant, textRequestsGptImage2ImageModel, textRequestsGptImage2Version,
 } from '../src/media/gptImage.js';
 import { resolveImageEditModelForProfile } from '../src/media/imageEditRouting.js';
 import { applyGenerationJobOverridesToArgs } from '../src/media/generationJob.js';
@@ -39,7 +40,13 @@ test('exact GPT variants survive aliases, model preferences, prompt profiles and
   });
   for (const model of [baseline, sunburst, flare] as const) {
     assert.equal(normalizeGptImageModelAlias(model.toUpperCase()), model);
-    assert.equal(getGptImage2ModelOverride('edit_image', model, 'Edit the portrait'), null);
+    // GPT Image 2 is never a default: unless the user asked for it, a call
+    // carrying it renders on GPT Image 2.5.
+    assert.equal(
+      getGptImage2ModelOverride('edit_image', model, 'Edit the portrait'),
+      model === baseline ? flare : null,
+    );
+    assert.equal(getGptImage2ModelOverride('edit_image', model, 'Edit the portrait', { gptImage2Requested: true }), null);
     assert.equal(resolveImageEditModelForProfile({ imageEditProfile: 'identity_sensitive_portrait', explicitModelPreference: model }), model);
     assert.equal(resolveRegisteredImageReferenceModelId(model), 'gpt-image-2');
     assert.equal(resolveImagePromptAuthoringProfile(model, 'edit')?.id, `${model}-edit`);
@@ -53,10 +60,56 @@ test('exact GPT variants survive aliases, model preferences, prompt profiles and
   assert.equal(normalizeGptImageModelAlias('Sunburst'), sunburst);
   assert.equal(normalizeGptImageModelAlias('GPT Image 2.5 Flare'), flare);
   assert.equal(normalizeGptImageModelAlias('GPT Image 2.5'), flare);
-  assert.equal(normalizeGptImageModelAlias('OpenAI'), baseline);
+  // A GPT name without a version is the GPT Image 2.5 default, never 2.0.
+  assert.equal(normalizeGptImageModelAlias('OpenAI'), flare);
   assert.equal(normalizeGptImageModelAlias('GPT Image 2.0'), baseline);
   assert.equal(storyboardAdapterRegistry.getAdapter('gpt_image_2.5_sunburst')?.modelId, sunburst);
   assert.equal(isGptImageModel('gpt-image-3'), false);
+});
+
+test('GPT Image 2 is never a default: generic GPT requests and complex renders land on 2.5', () => {
+  for (const alias of ['gpt', 'GPT Image', 'ChatGPT', 'chatgpt-image', 'OpenAI', 'open-ai-image']) {
+    assert.equal(normalizeGptImageModelAlias(alias), flare, alias);
+  }
+  for (const alias of ['gpt-image-2', 'GPT Image 2', 'gpt2', 'GPT-2', 'gpt-image-2.0']) {
+    assert.equal(normalizeGptImageModelAlias(alias), baseline, alias);
+  }
+  for (const request of [
+    'Generate the image with GPT Image 2.',
+    'Use GPT-2 for this poster image',
+    'make it with gpt-image-2',
+    'Edit with GPT Image 2.0, please.',
+  ]) {
+    assert.equal(textRequestsGptImage2Version(request), true, request);
+  }
+  for (const request of [
+    'Use GPT Image 2.5 for this poster image',
+    'Make a poster with ChatGPT',
+    "Don't use GPT Image 2 for this one.",
+    'Create a poster image',
+  ]) {
+    assert.equal(textRequestsGptImage2Version(request), false, request);
+  }
+  // A generic GPT request renders on Flare; a complex render, storyboard or
+  // sheet renders on Sunburst.
+  assert.equal(getGptImage2ModelOverride('generate_image', 'qwen-2512', 'Make a cozy cabin image with ChatGPT'), flare);
+  assert.equal(
+    getGptImage2ModelOverride('generate_image', undefined, 'Create a 6-panel storyboard sheet image with timing labels and foley notes'),
+    sunburst,
+  );
+  assert.equal(getGptImage2ModelOverride('generate_image', 'gpt', 'Make a cozy cabin image'), flare);
+  // A GPT Image 2 call the user did not ask for moves to 2.5.
+  assert.equal(getGptImage2ModelOverride('generate_image', baseline, 'Make a cozy cabin image'), flare);
+  assert.equal(
+    getGptImage2ModelOverride('edit_image', baseline, 'Create a 6-panel storyboard sheet image with timing labels and foley notes'),
+    sunburst,
+  );
+  assert.equal(getGptImage2ModelOverride('generate_image', baseline, 'Make a cozy cabin image', { gptImage2Requested: true }), null);
+  assert.equal(getGptImage2ModelOverride('generate_image', 'qwen-2512', 'Make a cozy cabin image with GPT Image 2'), baseline);
+  assert.equal(defaultGptImageModelForText('Make a cozy cabin image'), flare);
+  assert.equal(defaultGptImageModelForText(undefined), flare);
+  assert.equal(GPT_IMAGE_DEFAULT_MODEL_KEY, flare);
+  assert.equal(GPT_IMAGE_DETAIL_DEFAULT_MODEL_KEY, sunburst);
 });
 
 test('requested variants override stale selections while existing defaults stay intact', () => {

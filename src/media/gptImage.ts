@@ -12,6 +12,15 @@ export const GPT_IMAGE_MODEL_IDS = ['gpt-image-2', 'gpt-image-2.5-sunburst', 'gp
 export type GptImageModelId = (typeof GPT_IMAGE_MODEL_IDS)[number];
 export const GPT_IMAGE_25_SUNBURST_MODEL_KEY = 'gpt-image-2.5-sunburst';
 export const GPT_IMAGE_25_FLARE_MODEL_KEY = 'gpt-image-2.5-flare';
+/**
+ * GPT Image 2 runs only when the user names it ("GPT Image 2", "GPT-2",
+ * gpt-image-2). Every default that lands on a GPT image model is GPT Image
+ * 2.5: Flare, the speed-optimized variant, for a request that names GPT
+ * without a version, and Sunburst, the quality-optimized variant, for complex
+ * renders, storyboards and character sheets.
+ */
+export const GPT_IMAGE_DEFAULT_MODEL_KEY = GPT_IMAGE_25_FLARE_MODEL_KEY;
+export const GPT_IMAGE_DETAIL_DEFAULT_MODEL_KEY = GPT_IMAGE_25_SUNBURST_MODEL_KEY;
 
 export function isGptImageModel(value: unknown): value is GptImageModelId {
   return typeof value === 'string' && (GPT_IMAGE_MODEL_IDS as readonly string[]).includes(value);
@@ -52,7 +61,8 @@ export const GPT_IMAGE_QUALITY_BY_TIER: Record<string, GptImageQuality> = {
   pro: 'high',
 };
 
-const GPT_IMAGE_MODEL_ALIAS_VALUES = [
+/** Names that ask for a GPT image model without a version: the 2.5 default. */
+const GPT_IMAGE_GENERIC_ALIAS_VALUES = [
   'chatgpt',
   'chatgpt-image',
   'chat-gpt',
@@ -63,6 +73,10 @@ const GPT_IMAGE_MODEL_ALIAS_VALUES = [
   'open-ai-image',
   'gpt',
   'gpt-image',
+] as const;
+
+/** Names that ask for GPT Image 2 itself. */
+const GPT_IMAGE_2_ALIAS_VALUES = [
   'gpt2',
   'gpt-2',
   'gpt2-image',
@@ -73,7 +87,12 @@ const GPT_IMAGE_MODEL_ALIAS_VALUES = [
   GPT_IMAGE_MODEL_KEY,
 ] as const;
 
-export const GPT_IMAGE_MODEL_ALIASES: ReadonlySet<string> = new Set(GPT_IMAGE_MODEL_ALIAS_VALUES);
+const GPT_IMAGE_GENERIC_ALIASES: ReadonlySet<string> = new Set(GPT_IMAGE_GENERIC_ALIAS_VALUES);
+
+export const GPT_IMAGE_MODEL_ALIASES: ReadonlySet<string> = new Set([
+  ...GPT_IMAGE_GENERIC_ALIAS_VALUES,
+  ...GPT_IMAGE_2_ALIAS_VALUES,
+]);
 
 const GPT_IMAGE_25_ALIASES: Readonly<Record<string, GptImageModelId>> = {
   'gpt-image-2.5-sunburst': GPT_IMAGE_25_SUNBURST_MODEL_KEY,
@@ -94,6 +113,7 @@ export function normalizeGptImageModelAlias(value: unknown): string | undefined 
   const normalized = value.trim().toLowerCase().replace(/[_\s]+/g, '-')
     .replace(/^gpt-?(2\.5)(?=-|$)/, 'gpt-image-$1');
   if (Object.prototype.hasOwnProperty.call(GPT_IMAGE_25_ALIASES, normalized)) return GPT_IMAGE_25_ALIASES[normalized];
+  if (GPT_IMAGE_GENERIC_ALIASES.has(normalized)) return GPT_IMAGE_DEFAULT_MODEL_KEY;
   if (GPT_IMAGE_MODEL_ALIASES.has(normalized)) return GPT_IMAGE_MODEL_KEY;
   return value;
 }
@@ -244,10 +264,38 @@ export function textRequestedGptImage25Variant(
   return 'unspecified';
 }
 
+// "2.5" is a different model; a sentence-ending period after "GPT Image 2" is not.
+const GPT_IMAGE_2_REQUEST_PATTERN = /\bgpt[-\s]*(?:image[-\s]*)?2(?:\.0)?(?!\.?\d)\b/gi;
+
+/**
+ * Whether a message names GPT Image 2 itself ("GPT Image 2", "GPT-2",
+ * gpt-image-2, "GPT Image 2.0"), not GPT Image 2.5 and not a negated mention.
+ * This is the only text that selects GPT Image 2.
+ */
+export function textRequestsGptImage2Version(text: string | null | undefined): boolean {
+  if (!text) return false;
+  return [...text.matchAll(GPT_IMAGE_2_REQUEST_PATTERN)]
+    .some(match => !isNegatedImageModelMention(text, match.index!));
+}
+
+/**
+ * The GPT Image 2.5 model a default lands on: Sunburst for a complex render,
+ * storyboard or sheet, otherwise Flare.
+ */
+export function defaultGptImageModelForText(text: string | null | undefined): string {
+  return text && textSuggestsGptImage2DefaultImageModel(text)
+    ? GPT_IMAGE_DETAIL_DEFAULT_MODEL_KEY
+    : GPT_IMAGE_DEFAULT_MODEL_KEY;
+}
+
 export function getGptImage2ModelOverride(
   toolName: string,
   currentModel: unknown,
   latestUserText: string,
+  options: {
+    /** The user asked for GPT Image 2 earlier (a typed planner preference or saved choice). */
+    gptImage2Requested?: boolean;
+  } = {},
 ): string | null {
   if (!GPT_IMAGE_TOOL_NAMES.has(toolName)) return null;
   if (textExplicitlyAvoidsGptImageModel(latestUserText)) return null;
@@ -262,12 +310,17 @@ export function getGptImage2ModelOverride(
     const requested = requested25 === 'unspecified' ? GPT_IMAGE_25_FLARE_MODEL_KEY : requested25;
     return currentModel === requested ? null : requested;
   }
-  if (/\bgpt[-\s]*image[-\s]*2(?:\.0)?(?![.\d])\b/i.test(latestUserText)) {
+  if (textRequestsGptImage2Version(latestUserText)) {
     return currentModel === GPT_IMAGE_MODEL_KEY ? null : GPT_IMAGE_MODEL_KEY;
   }
   const normalizedModel = normalizeGptImageModelAlias(currentModel);
   if (isGptImageModel(normalizedModel)) {
-    return currentModel === normalizedModel ? null : normalizedModel;
+    // GPT Image 2 is never a default: a call carrying it that the user did not
+    // ask for renders on GPT Image 2.5 instead.
+    const target = normalizedModel === GPT_IMAGE_MODEL_KEY && !options.gptImage2Requested
+      ? defaultGptImageModelForText(latestUserText)
+      : normalizedModel;
+    return currentModel === target ? null : target;
   }
 
   const explicitlyRequestedGptImage = textRequestsGptImage2ImageModel(latestUserText);
@@ -278,7 +331,7 @@ export function getGptImage2ModelOverride(
     && textSuggestsGptImage2DefaultImageModel(latestUserText);
 
   return explicitlyRequestedGptImage || shouldUseComplexRenderDefault
-    ? GPT_IMAGE_MODEL_KEY
+    ? defaultGptImageModelForText(latestUserText)
     : null;
 }
 
