@@ -1,3 +1,10 @@
+# [4.10.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.9.3...v4.10.0) (2026-10-05)
+
+
+### Features
+
+* **media:** default every GPT image choice to GPT Image 2.5 ([83cdf96](https://github.com/Sogni-AI/sogni-intelligence-client/commit/83cdf963901242fab1991c8a3d53e3144b3ff882))
+
 ## [4.9.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.9.2...v4.9.3) (2026-10-04)
 
 
