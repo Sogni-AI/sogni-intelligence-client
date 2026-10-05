@@ -1,3 +1,10 @@
+## [4.10.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.10.0...v4.10.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* **deps:** take sogni-client 5.60.8 so large inline media parses ([29d9d66](https://github.com/Sogni-AI/sogni-intelligence-client/commit/29d9d6635216d232f6ab35a5badf50268b085663))
+
 # [4.10.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.9.3...v4.10.0) (2026-10-05)
 
 
