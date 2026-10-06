@@ -1,3 +1,17 @@
+# [4.11.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.10.2...v4.11.0) (2026-10-06)
+
+
+### Bug Fixes
+
+* **client:** keep the socket's reason when a project fails ([c6a4089](https://github.com/Sogni-AI/sogni-intelligence-client/commit/c6a4089c1b1bc19a37d5469306bf099dda67db02))
+
+
+### Features
+
+* **errors:** treat socket error 4104 as a held model that is not retryable ([2f2575a](https://github.com/Sogni-AI/sogni-intelligence-client/commit/2f2575a45a370f57ef9c961869683b36ae82876b))
+* **video:** add Seedance 2.5 Uncensored and the 4103 consent error ([b016262](https://github.com/Sogni-AI/sogni-intelligence-client/commit/b016262ff9234c921da1e9b232244f3bb0127f4e))
+* **video:** rename Seedance 2.5 Uncensored to seedance-2-5-uncensored ([5c4ccd5](https://github.com/Sogni-AI/sogni-intelligence-client/commit/5c4ccd57ac1ab09268fc630c9c8f30366a0cbd75))
+
 ## [4.10.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.10.1...v4.10.2) (2026-10-05)
 
 
