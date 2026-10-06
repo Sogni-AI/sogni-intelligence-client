@@ -210,6 +210,22 @@ export function stripThinkBlocks(
   };
 }
 
+// Linear-time batch strips. Each scan removes a closed block and the
+// whitespace after it, as the old `<think>[\s\S]*?</think>\s*` pattern
+// (global, case-sensitive) and its `<tool_call>` twin did. Those scanned to
+// the end of the text once per unclosed opening, so a reply holding many
+// openings without a closing tag took quadratic time. Here an unclosed
+// opening makes the second alternative consume the rest of the text in one
+// pass, and removeClosedBlock returns that text unchanged. The old patterns
+// left it alone too: no closing tag after one opening means none after any
+// later opening. Group 1 is set only for a closed block.
+const THINK_BLOCK_SCAN = /<think>(?:[\s\S]*?(<\/think>)\s*|[\s\S]*)/g;
+const TOOL_CALL_BLOCK_SCAN = /<tool_call>(?:[\s\S]*?(<\/tool_call>)\s*|[\s\S]*)/g;
+
+function removeClosedBlock(block: string, closing: string | undefined): string {
+  return closing === undefined ? block : '';
+}
+
 /**
  * Batch variant of `stripThinkBlocks` for non-streaming contexts where the
  * full assistant message text is already in hand (e.g. `/v1/chat/completions`
@@ -221,12 +237,15 @@ export function stripThinkBlocks(
  * Use the streaming `stripThinkBlocks` when consuming SSE chunks; tags can
  * span chunks so streaming consumers need the (insideThink, insideToolCall)
  * state machine. Batch callers don't need state.
+ *
+ * Runs in linear time; see THINK_BLOCK_SCAN. An unclosed block is left in
+ * place, as before.
  */
 export function stripThinkBlocksFromText<T extends string | null | undefined>(content: T): T {
   if (content == null) return content;
   const cleaned = (content as string)
-    .replace(/<think>[\s\S]*?<\/think>\s*/g, '')
-    .replace(/<tool_call>[\s\S]*?<\/tool_call>\s*/g, '')
+    .replace(THINK_BLOCK_SCAN, removeClosedBlock)
+    .replace(TOOL_CALL_BLOCK_SCAN, removeClosedBlock)
     .trimStart();
   return cleaned as T;
 }

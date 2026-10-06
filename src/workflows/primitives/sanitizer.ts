@@ -76,6 +76,14 @@ export class SanitizerError extends Error {
   }
 }
 
+// The four strip patterns that are quadratic under String.prototype.replace,
+// named so `stripPattern` can apply them in linear time (see
+// LINEAR_STRIP_SCANS below).
+const UNTRUSTED_USER_INPUT_OPEN_PATTERN = /<UNTRUSTED_USER_INPUT(?:\s[^>]*)?>/gi;
+const UNTRUSTED_USER_BRIEF_OPEN_PATTERN = /<UNTRUSTED_USER_BRIEF(?:\s[^>]*)?>/gi;
+const SYSTEM_BLOCK_PATTERN = /<system>[\s\S]*?<\/system>/gi;
+const TOOL_CALL_BLOCK_PATTERN = /<tool_call>[\s\S]*?<\/tool_call>/gi;
+
 /**
  * Untrusted-block delimiter tags this sanitizer knows about. Both the
  * `UNTRUSTED_USER_INPUT` form (used by sogni-api) and the
@@ -84,9 +92,9 @@ export class SanitizerError extends Error {
  * inside.
  */
 const DELIMITER_PATTERNS: readonly RegExp[] = [
-  /<UNTRUSTED_USER_INPUT(?:\s[^>]*)?>/gi,
+  UNTRUSTED_USER_INPUT_OPEN_PATTERN,
   /<\/UNTRUSTED_USER_INPUT>/gi,
-  /<UNTRUSTED_USER_BRIEF(?:\s[^>]*)?>/gi,
+  UNTRUSTED_USER_BRIEF_OPEN_PATTERN,
   /<\/UNTRUSTED_USER_BRIEF>/gi,
 ];
 
@@ -110,8 +118,8 @@ const CHAT_TEMPLATE_PATTERNS: readonly RegExp[] = [
   /\[\/INST\]/gi,
   /<<SYS>>/gi,
   /<<\/SYS>>/gi,
-  /<system>[\s\S]*?<\/system>/gi,
-  /<tool_call>[\s\S]*?<\/tool_call>/gi,
+  SYSTEM_BLOCK_PATTERN,
+  TOOL_CALL_BLOCK_PATTERN,
 ];
 
 /**
@@ -123,11 +131,53 @@ const CHAT_TEMPLATE_PATTERNS: readonly RegExp[] = [
  * ambiguous), then delimiter forgeries. Control-char stripping happens
  * separately in `sanitizeUntrustedString` because it's a character-class
  * regex applied byte-by-byte, not a tag matcher.
+ *
+ * Four of these patterns (the `<system>` and `<tool_call>` blocks and
+ * the two attribute-bearing delimiter openings) take quadratic time
+ * under `String.prototype.replace` when the text holds many openings
+ * without a terminator. `sanitizeUntrustedString` applies them in linear
+ * time with identical output; apply this list yourself only to input of
+ * bounded length.
  */
 export const HARD_STRIP_PATTERNS: readonly RegExp[] = Object.freeze([
   ...CHAT_TEMPLATE_PATTERNS,
   ...DELIMITER_PATTERNS,
 ]);
+
+/**
+ * Linear-time stand-ins for the four quadratic entries above. Each
+ * original scans to the end of the text for its terminator (a closing
+ * tag, or the `>` that ends an opening with attributes) and fails when
+ * there is none, once per opening. A long run of unterminated openings,
+ * such as a pasted chat message, therefore costs O(n²) in a call that
+ * runs on every turn.
+ *
+ * A stand-in starts matching wherever its original could. When the
+ * terminator is missing it consumes the rest of the text in one pass
+ * instead of failing, and {@link stripPattern} hands that text back
+ * unchanged. That is exactly what the original does: if no terminator
+ * follows one opening, none follows any later opening either, so the
+ * original leaves the rest of the text alone. Group 1 is non-empty
+ * precisely when the original pattern matches, so the output is
+ * identical for every input.
+ */
+const LINEAR_STRIP_SCANS: ReadonlyMap<RegExp, RegExp> = new Map([
+  [SYSTEM_BLOCK_PATTERN, /<system>(?:[\s\S]*?(<\/system>)|[\s\S]*)/gi],
+  [TOOL_CALL_BLOCK_PATTERN, /<tool_call>(?:[\s\S]*?(<\/tool_call>)|[\s\S]*)/gi],
+  [UNTRUSTED_USER_INPUT_OPEN_PATTERN, /<UNTRUSTED_USER_INPUT(?:\s[^>]*)?(>?)/gi],
+  [UNTRUSTED_USER_BRIEF_OPEN_PATTERN, /<UNTRUSTED_USER_BRIEF(?:\s[^>]*)?(>?)/gi],
+]);
+
+/**
+ * `text.replace(pattern, '')` for any pattern in
+ * {@link HARD_STRIP_PATTERNS}, in linear time for the four entries
+ * that would otherwise be quadratic.
+ */
+function stripPattern(text: string, pattern: RegExp): string {
+  const scan = LINEAR_STRIP_SCANS.get(pattern);
+  if (!scan) return text.replace(pattern, '');
+  return text.replace(scan, (match: string, terminator: string | undefined) => (terminator ? '' : match));
+}
 
 // ---------------------------------------------------------------------------
 // Field-tag surface (creative-agent planner / classifier / storyboard)
@@ -260,7 +310,7 @@ function sanitizeFieldTagged(raw: unknown, field: SanitizeField): SanitizeResult
   }
   let cleaned = raw;
   for (const pattern of HARD_STRIP_PATTERNS) {
-    cleaned = cleaned.replace(pattern, '');
+    cleaned = stripPattern(cleaned, pattern);
   }
   cleaned = cleaned.trim();
   if (cleaned.length > FIELD_CAPS[field]) {
@@ -348,11 +398,11 @@ export function sanitizeUntrustedString(
   let cleaned = input.replace(CONTROL_CHARS_RE, '');
 
   for (const pattern of CHAT_TEMPLATE_PATTERNS) {
-    cleaned = cleaned.replace(pattern, '');
+    cleaned = stripPattern(cleaned, pattern);
   }
   if (stripDelimiters) {
     for (const pattern of DELIMITER_PATTERNS) {
-      cleaned = cleaned.replace(pattern, '');
+      cleaned = stripPattern(cleaned, pattern);
     }
   }
 

@@ -217,6 +217,41 @@ function minimaxH3KeyframeArgumentErrors(toolName: string, args: Record<string, 
   }).errors;
 }
 
+// The MiniMax H3 source-audio checks below run on the prompt argument of
+// every gated generate_video call, including durable workflow steps a caller
+// submits directly. They used to be single regexes that take cubic or
+// quadratic time on a crafted prompt; each helper returns the same boolean
+// in linear time.
+
+/**
+ * Whether one bracketed run on a single line, `[` ... `]` with no `]` or
+ * newline inside, contains `phrase`. Equivalent to testing
+ * `\[[^\]\n]*` + phrase + `[^\]\n]*\]`. Each match of the scan starts at the
+ * first `[` of a line segment and consumes that segment whether or not a
+ * `]` closes it, so no character is read twice. Testing the inner text from
+ * the first `[` covers every `[` the regex could start from, and its edges
+ * sit next to `[` and `]`, which a word-boundary check treats as the ends
+ * of the text.
+ */
+function bracketedRunContains(text: string, phrase: RegExp): boolean {
+  for (const run of text.matchAll(/\[[^\]\n]*(\]?)/g)) {
+    if (run[1] && phrase.test(run[0].slice(1, -1))) return true;
+  }
+  return false;
+}
+
+/**
+ * Equivalent to testing `non_diegetic_music:\s*[\s\S]*<Audio\s+1>`. The
+ * `\s*[\s\S]*` part accepts any text, so it holds when an `<Audio 1>` tag
+ * (any whitespace before the 1) appears anywhere after the first
+ * `non_diegetic_music:`.
+ */
+function namesAudioOneAfterNonDiegeticMusic(prompt: string): boolean {
+  const marker = 'non_diegetic_music:';
+  const at = prompt.indexOf(marker);
+  return at !== -1 && /<Audio\s+1>/.test(prompt.slice(at + marker.length));
+}
+
 interface SchemaValidationContext {
   skipEnumProperties: Set<string>;
   coercePrimitives: boolean;
@@ -608,18 +643,18 @@ export function validateAndNormalizeHostedToolArguments(
     if (acceptsSourceAudioPolicy && hasSourceMedia && typeof cleanedRecord.prompt === 'string') {
       const prompt = cleanedRecord.prompt;
       if (sourceAudioPolicy === 'reuse_exact') {
-        if (!/\[[^\]\n]*\baudio reuse\b[^\]\n]*\]/.test(prompt)) {
+        if (!bracketedRunContains(prompt, /\baudio reuse\b/)) {
           context.errors.push('MiniMax H3 sourceAudioPolicy="reuse_exact" requires the official "audio reuse" summary task');
         }
         if (!/<Audio\s+1>\s*:\s*fully_copy\b/.test(prompt)) {
           context.errors.push('MiniMax H3 sourceAudioPolicy="reuse_exact" requires <Audio 1>: fully_copy in retention_analysis');
         }
-        if (!/non_diegetic_music:\s*[\s\S]*<Audio\s+1>/.test(prompt)) {
+        if (!namesAudioOneAfterNonDiegeticMusic(prompt)) {
           context.errors.push('MiniMax H3 sourceAudioPolicy="reuse_exact" requires non_diegetic_music to name <Audio 1> directly');
         }
       } else if (
         sourceAudioPolicy === 'reference_only'
-        && !/\[[^\]\n]*\baudio reference\b[^\]\n]*\]/.test(prompt)
+        && !bracketedRunContains(prompt, /\baudio reference\b/)
       ) {
         context.errors.push('MiniMax H3 sourceAudioPolicy="reference_only" requires the official "audio reference" summary task');
       }
