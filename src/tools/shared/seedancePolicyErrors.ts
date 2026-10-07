@@ -338,8 +338,9 @@ export function seedanceTerminalGenerationFailurePayloadFromError(
   | ModelConsentRequiredPayload
   | ModelNotYetAvailablePayload
   | null {
-  // Seedance 2.5 Uncensored refuses with 4103 until the account accepts its
-  // likeness and consent agreement in the Sogni app; never a retryable failure.
+  // Seedance 2.5 Uncensored and Seedance 2.0 Mini Uncensored refuse with 4103
+  // until the account accepts their shared likeness and consent agreement in
+  // the Sogni app; never a retryable failure.
   const consentPayload = modelConsentRequiredPayloadFromError(error);
   if (consentPayload) return consentPayload;
 

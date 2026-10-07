@@ -79,9 +79,9 @@ export const definition: ToolDefinition = {
         },
         videoModel: {
           type: 'string',
-          enum: ['auto', 'ltx25', 'ltx23', 'wan22', 'seedance2', 'seedance2-mini', 'seedance2-5', 'seedance2-5-uncensored'],
+          enum: ['auto', 'ltx25', 'ltx23', 'wan22', 'seedance2', 'seedance2-mini', 'seedance2-mini-uncensored', 'seedance2-5', 'seedance2-5-uncensored'],
           description:
-            'Which model to use for the new segment. Default: "auto" — preserve Seedance or WAN for matching base clips and otherwise use LTX 2.5. Use ltx23 only for explicit rollback. "seedance2-5-uncensored" is Seedance 2.5 Uncensored; use it only when the user asks for it. Override only when the user explicitly requests a different model.',
+            'Which model to use for the new segment. Default: "auto" — preserve Seedance or WAN for matching base clips and otherwise use LTX 2.5. Use ltx23 only for explicit rollback. "seedance2-5-uncensored" is Seedance 2.5 Uncensored and "seedance2-mini-uncensored" is Seedance 2.0 Mini Uncensored (the same 480p/720p and 4-15s replacement windows as "seedance2-mini"); use either only when the user asks for it. Override only when the user explicitly requests a different model.',
         },
         keepOriginalAudio: {
           type: 'boolean',

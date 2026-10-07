@@ -1,13 +1,17 @@
 /**
  * Model consent refusal (Supernet error 4103).
  *
- * Seedance 2.5 Uncensored (`seedance-2-5-uncensored`) renders only after the account
- * accepts a one-time likeness and consent agreement in a Sogni app. Until then
- * the socket refuses every job for that model with error 4103 and a
- * `consentRequired` object naming the agreement. Retrying cannot succeed, and no
- * SDK, agent, or API-key session may accept the agreement on the user's behalf:
- * the user has to accept it in the Sogni app.
+ * Seedance 2.5 Uncensored (`seedance-2-5-uncensored`) and Seedance 2.0 Mini
+ * Uncensored (`seedance-2-0-mini-uncensored`) render only after the account
+ * accepts a one-time likeness and consent agreement in a Sogni app. Both share
+ * one agreement (key `seedance-2-5-uncensored`). Until the account accepts it
+ * the socket refuses every job for either model with error 4103 and a
+ * `consentRequired` object naming the agreement and the refused model. Retrying
+ * cannot succeed, and no SDK, agent, or API-key session may accept the agreement
+ * on the user's behalf: the user has to accept it in the Sogni app.
  */
+import { isSeedanceMiniUncensoredVideoModelId } from '../utils/seedanceModelIds.js';
+
 
 export const MODEL_CONSENT_REQUIRED_ERROR = 'model_consent_required';
 
@@ -17,7 +21,14 @@ export const MODEL_CONSENT_REQUIRED_ERROR_CODE = 4103;
 export const MODEL_CONSENT_REQUIRED_MESSAGE =
   'Seedance 2.5 Uncensored requires a one-time likeness and consent agreement. Review and accept it in the Sogni app, then try again.';
 
-/** The agreement named by a 4103 refusal, e.g. `{ key: 'seedance-2-5-uncensored', version: 1 }`. */
+/** The same refusal when the refused job asked for Seedance 2.0 Mini Uncensored. */
+export const SEEDANCE_MINI_UNCENSORED_CONSENT_REQUIRED_MESSAGE =
+  'Seedance 2.0 Mini Uncensored requires a one-time likeness and consent agreement. Review and accept it in the Sogni app, then try again.';
+
+/**
+ * The agreement named by a 4103 refusal, e.g.
+ * `{ key: 'seedance-2-5-uncensored', version: 2, modelId: 'seedance-2-0-mini-uncensored' }`.
+ */
 export interface ModelConsentRequirement {
   key: string;
   version: number;
@@ -27,11 +38,24 @@ export interface ModelConsentRequirement {
 export interface ModelConsentRequiredPayload {
   error: typeof MODEL_CONSENT_REQUIRED_ERROR;
   errorCode: typeof MODEL_CONSENT_REQUIRED_ERROR_CODE;
-  message: typeof MODEL_CONSENT_REQUIRED_MESSAGE;
+  message: typeof MODEL_CONSENT_REQUIRED_MESSAGE | typeof SEEDANCE_MINI_UNCENSORED_CONSENT_REQUIRED_MESSAGE;
   retryPolicy: 'manual_user_confirmation';
   nextAction: 'wait_for_user';
   consentRequired?: ModelConsentRequirement;
   technicalError?: string;
+}
+
+// The socket names the refused model in consentRequired.modelId; the shared
+// agreement key is the same for both uncensored Seedance models. A refusal that
+// arrives as text only names the model in the socket's own sentence.
+function consentRequiredMessageFor(
+  consentRequired: ModelConsentRequirement | null | undefined,
+  text: string | undefined,
+): ModelConsentRequiredPayload['message'] {
+  const namesMiniUncensored = consentRequired?.modelId
+    ? isSeedanceMiniUncensoredVideoModelId(consentRequired.modelId)
+    : /\bSeedance 2\.0 Mini Uncensored requires\b/i.test(text ?? '');
+  return namesMiniUncensored ? SEEDANCE_MINI_UNCENSORED_CONSENT_REQUIRED_MESSAGE : MODEL_CONSENT_REQUIRED_MESSAGE;
 }
 
 export function modelConsentRequiredPayload(
@@ -41,7 +65,7 @@ export function modelConsentRequiredPayload(
   return {
     error: MODEL_CONSENT_REQUIRED_ERROR,
     errorCode: MODEL_CONSENT_REQUIRED_ERROR_CODE,
-    message: MODEL_CONSENT_REQUIRED_MESSAGE,
+    message: consentRequiredMessageFor(consentRequired, technicalError),
     retryPolicy: 'manual_user_confirmation',
     nextAction: 'wait_for_user',
     ...(consentRequired ? { consentRequired: { ...consentRequired } } : {}),

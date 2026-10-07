@@ -7,6 +7,7 @@ import type { ToolDefinition } from '../types.js';
 import { LITERAL_PROMPT_OVERRIDE } from '../../../contracts/promptOverrideMarker.js';
 import {
   SEEDANCE_25_UNCENSORED_MODEL_DESCRIPTION,
+  SEEDANCE_MINI_UNCENSORED_MODEL_DESCRIPTION,
   SEEDANCE_TOOL_V2V_REFERENCE_GUIDANCE,
 } from '../../../contracts/toolPromptMarkers.js';
 import { VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE } from '../../../contracts/promptLimits.js';
@@ -89,7 +90,7 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
         negativePrompt: {
           type: "string",
           description:
-            "Advanced non-Seedance only. Use this field only when the user explicitly asks to set a separate negative prompt. For ordinary avoid/no/don't constraints on LTX 2.3 or WAN 2.2, translate them into affirmative production constraints inside prompt instead; do not move them here. Do not set when controlMode is seedance-v2v or videoModel is seedance2/seedance2-mini/seedance2-5/seedance2-5-uncensored.",
+            "Advanced non-Seedance only. Use this field only when the user explicitly asks to set a separate negative prompt. For ordinary avoid/no/don't constraints on LTX 2.3 or WAN 2.2, translate them into affirmative production constraints inside prompt instead; do not move them here. Do not set when controlMode is seedance-v2v or videoModel is seedance2/seedance2-mini/seedance2-mini-uncensored/seedance2-5/seedance2-5-uncensored.",
         },
         outputFormat: {
           "type": "string",
@@ -105,10 +106,12 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
         },
         videoModel: {
           type: "string",
-          enum: ["ltx25-v2v", "ltx23-v2v", "wan22-animate", "seedance2", "seedance2-mini", "seedance2-5", "seedance2-5-uncensored"],
+          enum: ["ltx25-v2v", "ltx23-v2v", "wan22-animate", "seedance2", "seedance2-mini", "seedance2-mini-uncensored", "seedance2-5", "seedance2-5-uncensored"],
           description:
             'Model selector for this video-to-video request. Usually omit: non-Seedance controls default to "ltx25-v2v"; use "ltx23-v2v" only for rollback. LTX 2.5 Fast, HQ, and Pro currently use the release-validated official Distilled workflow for canny, pose, depth, detailer, inpaint, and outpaint. Dev is not publicly routed until upstream publishes and Sogni validates an official ComfyUI Dev recipe. For controlMode="seedance-v2v", Seedance quality is selected only by model: use "seedance2-mini" for faster/lower-cost drafts and use "seedance2" for full-quality Seedance or 1080p/4K. "seedance2-5" supports 480p/720p/1080p, 4-30s at 24 fps, native audio, and first/last-frame conditioning; keep "seedance2" for 4K. ' +
-            SEEDANCE_25_UNCENSORED_MODEL_DESCRIPTION,
+            SEEDANCE_25_UNCENSORED_MODEL_DESCRIPTION +
+            ' ' +
+            SEEDANCE_MINI_UNCENSORED_MODEL_DESCRIPTION,
         },
         generateAudio: {
           type: "boolean",
@@ -118,7 +121,7 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
         targetResolution: {
           type: "number",
           description:
-            'Seedance V2V only. Short-side output resolution target in pixels. Use when the user asks for a bare named resolution such as "480p", "720p", "1080p", "2160p", or "4K" without exact dimensions. Seedance V2V full supports 4K; Seedance V2V Mini and Fast support 480p and 720p only; Seedance 2.5 also supports 1080p, so never set 4K for "seedance2-5" or "seedance2-5-uncensored". Preserve the source video shape instead of forcing landscape pixels.',
+            'Seedance V2V only. Short-side output resolution target in pixels. Use when the user asks for a bare named resolution such as "480p", "720p", "1080p", "2160p", or "4K" without exact dimensions. Seedance V2V full supports 4K; Seedance V2V Mini (including "seedance2-mini-uncensored") and Fast support 480p and 720p only; Seedance 2.5 also supports 1080p, so never set 4K for "seedance2-5" or "seedance2-5-uncensored". Preserve the source video shape instead of forcing landscape pixels.',
         },
         sourceImageIndex: {
           type: "number",

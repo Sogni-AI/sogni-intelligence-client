@@ -16,6 +16,7 @@ import {
 import { normalizeSignalSource } from '../contracts/turnPolicy.js';
 import {
   isSeedance25VideoModelId,
+  isSeedanceMiniVideoModelId,
   isSeedanceVideoModelId,
   SEEDANCE_VIDEO_MODEL_IDS,
 } from '../utils/seedanceModelIds.js';
@@ -1144,12 +1145,13 @@ export const VIDEO_GENERATION_SKILL: SkillManifest = {
   id: 'video_generation',
   name: 'Video generation',
   description:
-    'Text-to-video synthesis with LTX, Wan, Seedance, HappyHorse, and MiniMax H3, including Wan 3.0 Enhanced through MuleRouter and Seedance 2.5 Uncensored. Use when the user wants a new video clip generated from a prompt or loose reference set.',
+    'Text-to-video synthesis with LTX, Wan, Seedance, HappyHorse, and MiniMax H3, including Wan 3.0 Enhanced through MuleRouter, Seedance 2.5 Uncensored and Seedance 2.0 Mini Uncensored. Use when the user wants a new video clip generated from a prompt or loose reference set.',
   toolNames: ['generate_video'],
   constraints: [
     'For My Personas video requests, default to image_editing first to produce a conditioned scene image before animation. Use direct video only when the user explicitly asks to animate an existing persona image/reference or no source image is available for a voice-only request.',
     'Wan 3.0 Enhanced uses exact Sogni model id wan3.0-spicy-video (MuleRouter provider id w3.0-video): 2-30 seconds at 30 fps, 480p/720p/1080p, native audio, prompt expansion, adaptive/fixed ratios, and up to 10 image/5 video/5 audio references. First/last-frame mode and loose-reference mode are mutually exclusive. It has no document/web context, watermark, negative prompt, source-video edit, or extend mode.',
     'Seedance 2.5 Uncensored uses selector seedance2-5-uncensored (Sogni model id seedance-2-5-uncensored): the same modes, 480p/720p/1080p, 4-30 seconds at 24 fps, reference limits, MOV and last-frame options as seedance2-5. Use it only when the user asks for Seedance 2.5 Uncensored, Seedance Uncensored, or Seedance Spicy, and never swap it for seedance2-5. Each account must accept a one-time likeness and consent agreement in the Sogni app first; error 4103 means it has not, so tell the user to accept it there and do not retry.',
+    'Seedance 2.0 Mini Uncensored uses selector seedance2-mini-uncensored (Sogni model id seedance-2-0-mini-uncensored): the same modes, 480p/720p, 4-15 seconds at 24 fps and reference limits as seedance2-mini. Use it only when the user asks for Seedance 2.0 Mini Uncensored, Seedance Mini Uncensored, or Seedance Mini Spicy, and never swap it for seedance2-mini or seedance2-5-uncensored. It shares the Seedance 2.5 Uncensored likeness and consent agreement, so error 4103 means the account has not accepted it: tell the user to accept it in the Sogni app and do not retry.',
     'MiniMax H3 two-stage: 1080p and 2K H3 delivery is its own selector, not an option. minimax-h3-fasth3-t2v-turbo-2stage on generate_video (animate_photo carries minimax-h3-fasth3-i2v-turbo-2stage and minimax-h3-fasth3-flf2v-turbo-2stage) renders the FastH3 canvas, then the worker enlarges it 2x and refines it, so the clip is delivered at twice the canvas with the same length and audio. targetResolution names the delivered class: 1080 renders a 544px short-edge canvas (960x544 becomes 1920x1088) for 10 Spark per second, 1440 or omitted renders the 768p canvas for 2K (1344x768 becomes 2688x1536) for 16 Spark per second, and 720 renders a 384px canvas (672x384 becomes 1344x768) for the regular FastH3 price of 4 Spark per second. Choose it when the user asks for 1080p, 1440p or 2K H3 output, for two-stage output, or for the sharpest/best H3 quality, and send the same prompt contract, durations and LoRAs as the matching FastH3 selector; keep ordinary 768p FastH3 output on the regular FastH3 selector at targetResolution 768. Reference-to-video has its own two-stage selectors on generate_video: minimax-h3-r2v-2stage (Standard, 20 steps) and minimax-h3-r2v-balanced-2stage (Balanced, 8 steps) take exactly the references, prompt contract, durations and LoRAs of minimax-h3-r2v and minimax-h3-r2v-balanced, deliver twice the canvas, and read targetResolution the same way; each bills its tier\'s rate plus the two-stage surcharge of the delivered class. Keep the one-stage R2V selectors for ordinary 768p output.',
     `${MINIMAX_H3_KEYFRAMES_GUIDANCE} On generate_video only the MiniMax H3 reference-to-video selectors take keyframes, never text-to-video; the keyframe images are not references and do not go in referenceImageIndices.`,
   ],
@@ -1498,13 +1500,14 @@ function compactSceneVideoPrompt(project: StoryboardProject, scene: SceneSpec, r
 
 function publicSeedanceVideoModelFromInput(
   input: PublicStoryboardAdapterCompileInput,
-): 'seedance2-mini' | 'seedance2' | 'seedance2-5' | 'seedance2-5-uncensored' {
+): 'seedance2-mini' | 'seedance2-mini-uncensored' | 'seedance2' | 'seedance2-5' | 'seedance2-5-uncensored' {
   const requestedModelId = String(input.options?.requestedModelId ?? '').trim().toLowerCase();
   if (!requestedModelId || requestedModelId === 'seedance') return 'seedance2-5';
   const resolved = resolveVideoModelAlias(requestedModelId, 't2v');
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25) return 'seedance2-5';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored) return 'seedance2-5-uncensored';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2vMini) return 'seedance2-mini';
+  if (resolved === SEEDANCE_WORKFLOW_MODELS.t2vMiniUncensored) return 'seedance2-mini-uncensored';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v) return 'seedance2';
   throw new Error(`No Seedance storyboard execution contract is registered for model "${requestedModelId}".`);
 }
@@ -1911,6 +1914,9 @@ export function resolveLtx23WorkflowModelForQuality(
 export const SEEDANCE_WORKFLOW_MODELS = Object.freeze({
   t2v: SEEDANCE_VIDEO_MODEL_IDS.standard,
   t2vMini: SEEDANCE_VIDEO_MODEL_IDS.mini,
+  // Seedance 2.0 Mini Uncensored: the same workflows and limits as Seedance 2.0
+  // Mini under its own id, which must never be rewritten to seedance-2-0-mini.
+  t2vMiniUncensored: SEEDANCE_VIDEO_MODEL_IDS.miniUncensored,
   ia2v: SEEDANCE_VIDEO_MODEL_IDS.standard,
   v2v: SEEDANCE_VIDEO_MODEL_IDS.standard,
   // Seedance 2.5 is a single canonical model id across every workflow it
@@ -2317,6 +2323,13 @@ export const VIDEO_MODEL_ALIASES: Readonly<Record<string, string>> = Object.free
   'seedance2-t2v': SEEDANCE_WORKFLOW_MODELS.t2v,
   'seedance2-mini': SEEDANCE_WORKFLOW_MODELS.t2vMini,
   'seedance2-mini-t2v': SEEDANCE_WORKFLOW_MODELS.t2vMini,
+  // Seedance 2.0 Mini Uncensored, including its friendly names. Each resolves to
+  // seedance-2-0-mini-uncensored, never to seedance-2-0-mini or Seedance 2.5
+  // Uncensored.
+  'seedance2-mini-uncensored': SEEDANCE_WORKFLOW_MODELS.t2vMiniUncensored,
+  'seedance2-mini-uncensored-t2v': SEEDANCE_WORKFLOW_MODELS.t2vMiniUncensored,
+  'seedance-mini-uncensored': SEEDANCE_WORKFLOW_MODELS.t2vMiniUncensored,
+  'seedance-mini-spicy': SEEDANCE_WORKFLOW_MODELS.t2vMiniUncensored,
   // legacy alias: Seedance 2.0 Fast was retired 2026-08; Mini replaced it
   'seedance2-fast': SEEDANCE_WORKFLOW_MODELS.t2vMini,
   'seedance2-fast-t2v': SEEDANCE_WORKFLOW_MODELS.t2vMini,
@@ -3983,7 +3996,13 @@ export interface StoryboardVideoHostedWorkflowBuildOptions {
   imageOutputFormat?: 'png' | 'jpg' | 'jpeg' | 'webp';
   imageWidth?: number;
   imageHeight?: number;
-  videoModel?: 'seedance2' | 'seedance2-mini' | 'seedance2-5' | 'seedance2-5-uncensored' | string;
+  videoModel?:
+    | 'seedance2'
+    | 'seedance2-mini'
+    | 'seedance2-mini-uncensored'
+    | 'seedance2-5'
+    | 'seedance2-5-uncensored'
+    | string;
   videoDurationSec?: number;
   videoTargetResolution?: number;
   generateAudio?: boolean;
@@ -9195,7 +9214,7 @@ export function buildStoryboardVideoHostedToolSequenceInput(
   const videoMaximumDuration = isSeedance25VideoModelId(videoModel) ? 30 : 15;
   const requestedVideoDuration = options.videoDurationSec ?? project.durationSec ?? 5;
   const videoDuration = Math.max(4, Math.min(videoMaximumDuration, Math.round(requestedVideoDuration)));
-  const videoTargetResolution = options.videoTargetResolution ?? (videoModel === 'seedance2-mini' ? 720 : 1080);
+  const videoTargetResolution = options.videoTargetResolution ?? (isSeedanceMiniVideoModelId(videoModel) ? 720 : 1080);
   const videoDimensions = dimensionsForShortSideAspectRatio(
     project.targetVideoAspectRatio,
     videoTargetResolution,
