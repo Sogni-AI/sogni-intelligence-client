@@ -28,6 +28,10 @@ import {
 import {
   MODELS_BY_TOOL,
   SEEDANCE_MINI_UNCENSORED_MODEL_DESCRIPTION,
+  SEEDANCE_PROVIDER_CONTENT_POLICY_MESSAGE,
+  SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE,
+  seedanceSocketContentRefusalMessage,
+  seedanceTerminalPolicyPayloadFromError,
   animatePhotoDefinition,
   extendVideoDefinition,
   generateVideoDefinition,
@@ -265,4 +269,53 @@ test('a Mini Uncensored 4104 keeps the socket message and the refused model id',
   assert.equal(payload.message, heldMessage);
   assert.equal(payload.modelId, MINI_UNCENSORED_ID);
   assert.equal(modelConsentRequiredPayloadFromError({ code: 4104, message: heldMessage }), null);
+});
+
+test('Seedance content refusals keep the socket text and the counterpart it suggests', () => {
+  const blocked = "Seedance blocked this video because it did not pass the provider's content policy. No video was returned.";
+  const realPerson = 'Seedance rejected the input image because it may contain a real person.';
+  for (const socketMessage of [
+    // Released: the counterpart first (seedance-2-0-mini → Seedance 2.0 Mini Uncensored).
+    `${blocked} Try Seedance 2.0 Mini Uncensored, Wan 3 Uncensored or MiniMax H3 instead.`,
+    // Held: the socket names only models that run there.
+    `${blocked} Try Wan 3 Uncensored or MiniMax H3 instead.`,
+    // The uncensored models' own failures carry no suggestion.
+    blocked,
+  ]) {
+    for (const error of [
+      { code: 5061, message: socketMessage, vendorFailureCategory: 'content_policy' },
+      new Error(`All 1 video generation jobs failed: ${socketMessage}`),
+    ]) {
+      const payload = seedanceTerminalPolicyPayloadFromError(error);
+      assert.equal(payload?.error, 'seedance_content_policy');
+      assert.equal(payload?.message, socketMessage);
+      assert.equal(payload?.nextAction, 'wait_for_user');
+      assert.equal(payload?.recovery, undefined);
+      assert.equal(seedanceSocketContentRefusalMessage(error), socketMessage);
+    }
+  }
+
+  const realPersonMessage = `${realPerson} Try Seedance 2.5 Uncensored, Wan 3 Uncensored or MiniMax H3 instead.`;
+  const privacy = seedanceTerminalPolicyPayloadFromError({
+    code: 5061,
+    message: realPersonMessage,
+    vendorFailureCategory: 'content_policy',
+    vendorErrorCode: 'InputImageSensitiveContentDetected.PrivacyInformation',
+  });
+  assert.equal(privacy?.error, 'seedance_input_image_privacy_policy');
+  assert.equal(privacy?.message, realPersonMessage);
+  assert.equal(privacy?.recovery?.kind, 'stylize_source_then_resubmit');
+
+  // Raw vendor errors without the socket's sentence keep the package wording.
+  assert.equal(
+    seedanceTerminalPolicyPayloadFromError(new Error('Seedance blocked: content_policy moderation safety violation 5061'))?.message,
+    SEEDANCE_PROVIDER_CONTENT_POLICY_MESSAGE,
+  );
+  assert.equal(
+    seedanceTerminalPolicyPayloadFromError(
+      new Error('Seedance vendor task status=failed code 5061 InputImageSensitiveContentDetected.PrivacyInformation may contain a real person'),
+    )?.message,
+    SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE,
+  );
+  assert.equal(seedanceSocketContentRefusalMessage(new Error('Vendor job failed: timeout')), null);
 });

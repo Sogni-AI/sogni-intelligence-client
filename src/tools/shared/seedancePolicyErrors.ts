@@ -100,7 +100,12 @@ export const SEEDANCE_REFERENCE_AUDIO_TOO_LONG_MESSAGE =
 
 export interface SeedanceTerminalPolicyPayload {
   error: 'seedance_input_image_privacy_policy' | 'seedance_content_policy';
-  message: typeof SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE | typeof SEEDANCE_PROVIDER_CONTENT_POLICY_MESSAGE;
+  /**
+   * The socket's own refusal when the error carries it (see
+   * seedanceSocketContentRefusalMessage), otherwise
+   * SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE or SEEDANCE_PROVIDER_CONTENT_POLICY_MESSAGE.
+   */
+  message: string;
   retryPolicy: 'manual_user_confirmation';
   nextAction: 'wait_for_user';
   vendorCode?: 5061;
@@ -204,6 +209,31 @@ function textHasSeedanceContentPolicySignal(text: string): boolean {
   );
 }
 
+// The socket's own text for a Seedance vendor content-policy failure (5061,
+// vendorFailureCategory content_policy). For a regular Seedance model it ends
+// with a "Try … instead." sentence that names only models the network runs, so
+// held models never appear where they are held; packages cannot see that switch
+// and must pass the text through rather than write their own suggestion.
+const SOCKET_SEEDANCE_CONTENT_REFUSAL_PATTERNS: readonly RegExp[] = [
+  /Seedance blocked this video because it did not pass the provider's content policy\. No video was returned\.(?: Try .+? instead\.)?/,
+  /Seedance rejected the input image because it may contain a real person\.(?: Try .+? instead\.)?/,
+];
+
+/**
+ * The socket's own sentence for a Seedance content-policy or real-person
+ * rejection found anywhere in the error (SDK ErrorData, socket jobError, or a
+ * wrapper's text), including its gated "Try … instead." suggestion; null when
+ * the error does not carry it.
+ */
+export function seedanceSocketContentRefusalMessage(error: unknown): string | null {
+  const text = collectErrorText(error);
+  for (const pattern of SOCKET_SEEDANCE_CONTENT_REFUSAL_PATTERNS) {
+    const match = text.match(pattern);
+    if (match) return match[0];
+  }
+  return null;
+}
+
 function vendorErrorCodeFromText(text: string): string | null {
   const jsonCode = text.match(/"code"\s*:\s*"([^"]+)"/i)?.[1];
   return jsonCode ?? null;
@@ -301,10 +331,13 @@ export function seedanceTerminalPolicyPayloadFromError(
   const hasExpectedVendorCode = hasVendorCode5061(error) || /\b5061\b/.test(text);
   if (!isSeedanceError && !hasExpectedVendorCode) return null;
 
+  // Keep the socket's wording, with the counterpart it suggests, when it
+  // reached us; the package text covers raw vendor errors only.
+  const socketMessage = seedanceSocketContentRefusalMessage(error);
   if (!hasVendorPrivacyCode && !hasRealPersonPrivacySignal) {
     return {
       error: 'seedance_content_policy',
-      message: SEEDANCE_PROVIDER_CONTENT_POLICY_MESSAGE,
+      message: socketMessage ?? SEEDANCE_PROVIDER_CONTENT_POLICY_MESSAGE,
       retryPolicy: 'manual_user_confirmation',
       nextAction: 'wait_for_user',
       ...(hasExpectedVendorCode ? { vendorCode: 5061 } : {}),
@@ -314,7 +347,7 @@ export function seedanceTerminalPolicyPayloadFromError(
 
   return {
     error: 'seedance_input_image_privacy_policy',
-    message: SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE,
+    message: socketMessage ?? SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE,
     retryPolicy: 'manual_user_confirmation',
     nextAction: 'wait_for_user',
     ...(hasExpectedVendorCode ? { vendorCode: 5061 } : {}),
