@@ -16,76 +16,13 @@ import {
 export const SEEDANCE_INPUT_IMAGE_PRIVACY_POLICY_CODE =
   'InputImageSensitiveContentDetected.PrivacyInformation';
 
+// A real-person rejection from a raw vendor error that never passed through
+// the socket. The package cannot see whether the uncensored Seedance models
+// run where the user is, so it names only MiniMax H3, which runs everywhere;
+// the socket's own sentence (seedanceSocketContentRefusalMessage) names the
+// uncensored counterpart where it is released.
 export const SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE =
-  "No problem — Seedance just has a content rule that keeps it from animating photos of real people directly, but we've got a couple of great ways to bring this to life! I can give the people a fun, clearly non-photographic makeover — anime, cartoon, claymation, LEGO, or bobblehead, or simply hide the faces — and then run Seedance on that. Or, if you'd like to keep the original look, I can switch to LTX 2.3, which animates your photo directly (it just won't use Seedance). Which sounds best — a stylized spin, or LTX 2.3?";
-
-/**
- * Structured recovery for the real-person privacy rejection: stylize the source
- * image (so it is no longer a photographic depiction of a real person), then
- * resubmit the same video. Consumers render the options as action chips and as
- * a clear edit-then-resubmit flow. The edit itself routes to GPT Image 2 for
- * storyboard sheets and Qwen Image Edit 2511 otherwise through the existing
- * edit_image model routing — this descriptor intentionally does not pin a model.
- */
-export interface SeedanceStylizeRecoveryOption {
-  id: 'anime' | 'cartoon' | 'lego' | 'bobblehead' | 'claymation' | 'hide_faces';
-  /** Short chip label. */
-  label: string;
-  /** edit_image instruction that stylizes the people while keeping the scene. */
-  editInstruction: string;
-}
-
-export const SEEDANCE_STYLIZE_RECOVERY_OPTIONS: readonly SeedanceStylizeRecoveryOption[] = [
-  {
-    id: 'anime',
-    label: 'Anime version',
-    editInstruction:
-      'Redraw every person in the image as a clearly non-photographic 2D anime character, keeping their pose, outfit, and the overall scene composition; do not preserve a realistic face or skin texture.',
-  },
-  {
-    id: 'cartoon',
-    label: 'Cartoon version',
-    editInstruction:
-      'Redraw every person in the image as a clearly non-photographic cartoon character with simplified facial features, keeping their pose, outfit colors, and the overall scene composition.',
-  },
-  {
-    id: 'lego',
-    label: 'LEGO version',
-    editInstruction:
-      'Rebuild every person in the image as a toy-like LEGO minifigure, keeping their pose, outfit colors, and the overall scene composition; avoid realistic human faces and skin.',
-  },
-  {
-    id: 'bobblehead',
-    label: 'Bobblehead version',
-    editInstruction:
-      'Turn every person in the image into a cute oversized-head bobblehead figurine with toy-like simplified features, keeping the outfit and overall scene composition but avoiding a realistic human likeness.',
-  },
-  {
-    id: 'claymation',
-    label: 'Claymation version',
-    editInstruction:
-      'Re-render every person in the image as a stop-motion claymation figure with visible clay texture and simplified faces, keeping their pose, outfit, and the overall scene composition.',
-  },
-  {
-    id: 'hide_faces',
-    label: 'Just hide the faces',
-    editInstruction:
-      'Obscure every human face in the image (for example with a tasteful mask, helmet, shadow, or soft blur) while keeping the people, their pose, outfit, and the overall scene composition intact.',
-  },
-];
-
-export interface SeedanceStylizeRecovery {
-  kind: 'stylize_source_then_resubmit';
-  options: readonly SeedanceStylizeRecoveryOption[];
-  /** The tool to re-run with the stylized image once it is ready. */
-  resubmitToolName: 'generate_video';
-}
-
-export const SEEDANCE_STYLIZE_RECOVERY: SeedanceStylizeRecovery = {
-  kind: 'stylize_source_then_resubmit',
-  options: SEEDANCE_STYLIZE_RECOVERY_OPTIONS,
-  resubmitToolName: 'generate_video',
-};
+  'Seedance rejected the input image because it may contain a real person. Try MiniMax H3 instead.';
 
 export const SEEDANCE_PROVIDER_CONTENT_POLICY_MESSAGE =
   "Seedance's content check didn't pass this one, so no video came back this time. We can adjust the prompt or try a different look and give it another go.";
@@ -101,22 +38,16 @@ export const SEEDANCE_REFERENCE_AUDIO_TOO_LONG_MESSAGE =
 export interface SeedanceTerminalPolicyPayload {
   error: 'seedance_input_image_privacy_policy' | 'seedance_content_policy';
   /**
-   * Content policy: the socket's own refusal when the error carries it (see
-   * seedanceSocketContentRefusalMessage), otherwise
-   * SEEDANCE_PROVIDER_CONTENT_POLICY_MESSAGE. Real person:
-   * SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE, plus the socket's suggested models
-   * when its sentence names any.
+   * The socket's own refusal when the error carries it (see
+   * seedanceSocketContentRefusalMessage), with its gated "Try … instead."
+   * suggestion; otherwise SEEDANCE_PROVIDER_CONTENT_POLICY_MESSAGE (content
+   * policy) or SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE (real person).
    */
   message: string;
   retryPolicy: 'manual_user_confirmation';
   nextAction: 'wait_for_user';
   vendorCode?: 5061;
   vendorErrorCode: typeof SEEDANCE_INPUT_IMAGE_PRIVACY_POLICY_CODE | string;
-  /**
-   * Present only for the real-person privacy rejection: the typed
-   * stylize-the-source-then-resubmit recovery the UI renders as action chips.
-   */
-  recovery?: SeedanceStylizeRecovery;
 }
 
 export interface SeedanceTerminalGenerationFailurePayload {
@@ -347,20 +278,13 @@ export function seedanceTerminalPolicyPayloadFromError(
     };
   }
 
-  // A real-person rejection keeps the package's recovery offer (stylize, or
-  // LTX 2.3), which the socket's one-line sentence lacks, and adds the models
-  // the socket suggests when its sentence carries a "Try … instead.".
-  const socketSuggestion = socketMessage?.match(/ Try (.+?) instead\.$/)?.[1];
   return {
     error: 'seedance_input_image_privacy_policy',
-    message: socketSuggestion
-      ? `${SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE} You can also try ${socketSuggestion}.`
-      : SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE,
+    message: socketMessage ?? SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE,
     retryPolicy: 'manual_user_confirmation',
     nextAction: 'wait_for_user',
     ...(hasExpectedVendorCode ? { vendorCode: 5061 } : {}),
     vendorErrorCode: SEEDANCE_INPUT_IMAGE_PRIVACY_POLICY_CODE,
-    recovery: SEEDANCE_STYLIZE_RECOVERY,
   };
 }
 

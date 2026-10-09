@@ -89,7 +89,7 @@ import {
   seedanceTerminalGenerationFailurePayloadFromError,
   seedanceTerminalPolicyPayloadFromError,
   SEEDANCE_INPUT_IMAGE_PRIVACY_POLICY_CODE,
-  SEEDANCE_STYLIZE_RECOVERY_OPTIONS,
+  SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE,
   MODELS_BY_TOOL,
   GENERATE_IMAGE_MODELS,
 } from '../src/tools/index.js';
@@ -6007,56 +6007,35 @@ async function runTests() {
     }
   })();
 
-  await test('seedance real-person rejection carries non-photographic recovery options', () => {
+  await test('seedance real-person rejection from a raw vendor error names only MiniMax H3', () => {
     const payload = seedanceTerminalPolicyPayloadFromError(
       new Error(`Seedance vendor task status=failed code 5061 ${SEEDANCE_INPUT_IMAGE_PRIVACY_POLICY_CODE} may contain a real person`),
     );
-    if (!payload || payload.error !== 'seedance_input_image_privacy_policy') {
-      throw new Error(`expected privacy payload, got ${JSON.stringify(payload)}`);
+    const expected = {
+      error: 'seedance_input_image_privacy_policy',
+      message: SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE,
+      retryPolicy: 'manual_user_confirmation',
+      nextAction: 'wait_for_user',
+      vendorCode: 5061,
+      vendorErrorCode: SEEDANCE_INPUT_IMAGE_PRIVACY_POLICY_CODE,
+    };
+    if (JSON.stringify(payload) !== JSON.stringify(expected)) {
+      throw new Error(`expected ${JSON.stringify(expected)}, got ${JSON.stringify(payload)}`);
     }
-    // The message must steer toward a non-photographic stylized recovery and
-    // offer the LTX 2.3 alternative rather than dead-ending. Exact wording is
-    // free to change for tone/voice, so assert the durable steering signals
-    // (non-photographic styling, named looks, hide-faces, LTX option) rather
-    // than a verbatim sentence — the structured `recovery` options below are
-    // the authoritative chip contract.
-    const message = payload.message.toLowerCase();
-    if (
-      !message.includes('non-photographic')
-      || !/\b(?:anime|cartoon|claymation|lego|bobblehead)\b/.test(message)
-      || !message.includes('hide the faces')
-      || !message.includes('ltx 2.3')
-    ) {
-      throw new Error('privacy message no longer steers toward non-photographic recovery + LTX alternative');
-    }
-    const recovery = payload.recovery;
-    if (!recovery || recovery.kind !== 'stylize_source_then_resubmit' || recovery.resubmitToolName !== 'generate_video') {
-      throw new Error(`expected stylize recovery, got ${JSON.stringify(recovery)}`);
-    }
-    const ids = recovery.options.map((o) => o.id).sort();
-    for (const required of ['anime', 'bobblehead', 'cartoon', 'claymation', 'hide_faces', 'lego']) {
-      if (!ids.includes(required as never)) throw new Error(`recovery missing option "${required}"`);
-    }
-    if (recovery.options.length !== SEEDANCE_STYLIZE_RECOVERY_OPTIONS.length) {
-      throw new Error('recovery options drifted from the shared constant');
-    }
-    for (const opt of recovery.options) {
-      if (!opt.label.trim() || !opt.editInstruction.trim()) {
-        throw new Error(`recovery option "${opt.id}" missing label/editInstruction`);
-      }
+    // No stylize-the-people or LTX 2.3 workaround: the package cannot see
+    // whether the uncensored Seedance models run there, so only MiniMax H3.
+    if (!payload.message.includes('MiniMax H3') || /ltx|stylize|anime|cartoon|uncensored/i.test(payload.message)) {
+      throw new Error(`real-person fallback should name only MiniMax H3, got "${payload.message}"`);
     }
   })();
 
-  await test('seedance content-policy (non-privacy) rejection has no stylize recovery', () => {
+  await test('seedance content-policy (non-privacy) rejection is not classified as privacy', () => {
     const payload = seedanceTerminalPolicyPayloadFromError(
       new Error('Seedance blocked: content_policy moderation safety violation 5061'),
     );
     if (!payload) throw new Error('expected a content-policy payload');
     if (payload.error === 'seedance_input_image_privacy_policy') {
       throw new Error('content-policy rejection misclassified as privacy');
-    }
-    if ((payload as { recovery?: unknown }).recovery) {
-      throw new Error('non-privacy rejection should not carry the stylize recovery');
     }
   })();
 

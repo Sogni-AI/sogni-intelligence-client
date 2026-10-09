@@ -290,32 +290,42 @@ test('Seedance content refusals keep the socket text and the counterpart it sugg
       assert.equal(payload?.error, 'seedance_content_policy');
       assert.equal(payload?.message, socketMessage);
       assert.equal(payload?.nextAction, 'wait_for_user');
-      assert.equal(payload?.recovery, undefined);
       assert.equal(seedanceSocketContentRefusalMessage(error), socketMessage);
     }
   }
 
-  const realPersonMessage = `${realPerson} Try Seedance 2.5 Uncensored, Wan 3 Uncensored or MiniMax H3 instead.`;
-  const privacy = seedanceTerminalPolicyPayloadFromError({
-    code: 5061,
-    message: realPersonMessage,
-    vendorFailureCategory: 'content_policy',
-    vendorErrorCode: 'InputImageSensitiveContentDetected.PrivacyInformation',
-  });
-  // A real-person rejection keeps the package's recovery offer and adds the
-  // models the socket suggests; without a suggestion it is the offer alone.
-  assert.equal(privacy?.error, 'seedance_input_image_privacy_policy');
-  assert.equal(
-    privacy?.message,
-    `${SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE} You can also try Seedance 2.5 Uncensored, Wan 3 Uncensored or MiniMax H3.`,
-  );
-  assert.equal(privacy?.recovery?.kind, 'stylize_source_then_resubmit');
-  assert.equal(
-    seedanceTerminalPolicyPayloadFromError({ code: 5061, message: realPerson, vendorFailureCategory: 'content_policy' })?.message,
-    SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE,
-  );
+  // A real-person rejection is the socket's sentence verbatim, with the
+  // counterpart where the uncensored models run and MiniMax H3 alone where
+  // they are held; never a stylize or LTX 2.3 offer.
+  for (const socketMessage of [
+    `${realPerson} Try Seedance 2.0 Mini Uncensored or MiniMax H3 instead.`,
+    `${realPerson} Try MiniMax H3 instead.`,
+    realPerson,
+  ]) {
+    for (const error of [
+      {
+        code: 5061,
+        message: socketMessage,
+        vendorFailureCategory: 'content_policy',
+        vendorErrorCode: 'InputImageSensitiveContentDetected.PrivacyInformation',
+      },
+      new Error(`All 1 video generation jobs failed: ${socketMessage}`),
+    ]) {
+      const privacy = seedanceTerminalPolicyPayloadFromError(error);
+      assert.deepEqual(privacy, {
+        error: 'seedance_input_image_privacy_policy',
+        message: socketMessage,
+        retryPolicy: 'manual_user_confirmation',
+        nextAction: 'wait_for_user',
+        ...(error instanceof Error ? {} : { vendorCode: 5061 }),
+        vendorErrorCode: 'InputImageSensitiveContentDetected.PrivacyInformation',
+      });
+    }
+  }
 
-  // Raw vendor errors without the socket's sentence keep the package wording.
+  // Raw vendor errors without the socket's sentence keep the package wording;
+  // for a real person that names only MiniMax H3, which runs everywhere.
+  assert.equal(SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE, `${realPerson} Try MiniMax H3 instead.`);
   assert.equal(
     seedanceTerminalPolicyPayloadFromError(new Error('Seedance blocked: content_policy moderation safety violation 5061'))?.message,
     SEEDANCE_PROVIDER_CONTENT_POLICY_MESSAGE,
