@@ -1,3 +1,10 @@
+## [4.12.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.12.0...v4.12.1) (2026-10-09)
+
+
+### Bug Fixes
+
+* **errors:** keep the real-person recovery offer and add the socket's suggestion ([814d65e](https://github.com/Sogni-AI/sogni-intelligence-client/commit/814d65e3ce8e25edaf9d029f12c14848176c01a0))
+
 # [4.12.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.11.0...v4.12.0) (2026-10-09)
 
 
