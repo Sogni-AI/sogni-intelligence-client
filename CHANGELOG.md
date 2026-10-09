@@ -1,3 +1,10 @@
+## [4.12.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.12.1...v4.12.2) (2026-10-09)
+
+
+### Bug Fixes
+
+* **errors:** drop the stylize and LTX 2.3 offer from Seedance real-person refusals ([b36ce5a](https://github.com/Sogni-AI/sogni-intelligence-client/commit/b36ce5a68b71ce25d68679a945e227aa2e33f3b5))
+
 ## [4.12.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.12.0...v4.12.1) (2026-10-09)
 
 
