@@ -1,3 +1,17 @@
+# [4.12.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.11.0...v4.12.0) (2026-10-09)
+
+
+### Bug Fixes
+
+* **deps:** take sogni-client 5.63.0 and protocol alpha.50 for Seedance 2.0 Mini Uncensored ([f3804b8](https://github.com/Sogni-AI/sogni-intelligence-client/commit/f3804b852f03a9fc41325ad92b0807db463319c5))
+* **errors:** keep the socket's Seedance content refusal and its suggestion ([c16f8f7](https://github.com/Sogni-AI/sogni-intelligence-client/commit/c16f8f70ad38c23658b432fae1e5480533bf164e))
+* **video:** list the Seedance Uncensored models before Wan 3.0 Enhanced ([f852e08](https://github.com/Sogni-AI/sogni-intelligence-client/commit/f852e085cd7ecbdb62ee3c59805a00e4778d1c3f))
+
+
+### Features
+
+* **video:** add Seedance 2.0 Mini Uncensored as its own model id ([3e8cf30](https://github.com/Sogni-AI/sogni-intelligence-client/commit/3e8cf302fb22bb878a4a78035250a85137f8016b))
+
 # [4.11.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.10.2...v4.11.0) (2026-10-06)
 
 
