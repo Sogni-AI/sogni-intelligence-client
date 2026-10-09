@@ -302,9 +302,18 @@ test('Seedance content refusals keep the socket text and the counterpart it sugg
     vendorFailureCategory: 'content_policy',
     vendorErrorCode: 'InputImageSensitiveContentDetected.PrivacyInformation',
   });
+  // A real-person rejection keeps the package's recovery offer and adds the
+  // models the socket suggests; without a suggestion it is the offer alone.
   assert.equal(privacy?.error, 'seedance_input_image_privacy_policy');
-  assert.equal(privacy?.message, realPersonMessage);
+  assert.equal(
+    privacy?.message,
+    `${SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE} You can also try Seedance 2.5 Uncensored, Wan 3 Uncensored or MiniMax H3.`,
+  );
   assert.equal(privacy?.recovery?.kind, 'stylize_source_then_resubmit');
+  assert.equal(
+    seedanceTerminalPolicyPayloadFromError({ code: 5061, message: realPerson, vendorFailureCategory: 'content_policy' })?.message,
+    SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE,
+  );
 
   // Raw vendor errors without the socket's sentence keep the package wording.
   assert.equal(

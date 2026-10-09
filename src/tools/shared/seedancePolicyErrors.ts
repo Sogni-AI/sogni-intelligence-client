@@ -101,9 +101,11 @@ export const SEEDANCE_REFERENCE_AUDIO_TOO_LONG_MESSAGE =
 export interface SeedanceTerminalPolicyPayload {
   error: 'seedance_input_image_privacy_policy' | 'seedance_content_policy';
   /**
-   * The socket's own refusal when the error carries it (see
+   * Content policy: the socket's own refusal when the error carries it (see
    * seedanceSocketContentRefusalMessage), otherwise
-   * SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE or SEEDANCE_PROVIDER_CONTENT_POLICY_MESSAGE.
+   * SEEDANCE_PROVIDER_CONTENT_POLICY_MESSAGE. Real person:
+   * SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE, plus the socket's suggested models
+   * when its sentence names any.
    */
   message: string;
   retryPolicy: 'manual_user_confirmation';
@@ -345,9 +347,15 @@ export function seedanceTerminalPolicyPayloadFromError(
     };
   }
 
+  // A real-person rejection keeps the package's recovery offer (stylize, or
+  // LTX 2.3), which the socket's one-line sentence lacks, and adds the models
+  // the socket suggests when its sentence carries a "Try … instead.".
+  const socketSuggestion = socketMessage?.match(/ Try (.+?) instead\.$/)?.[1];
   return {
     error: 'seedance_input_image_privacy_policy',
-    message: socketMessage ?? SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE,
+    message: socketSuggestion
+      ? `${SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE} You can also try ${socketSuggestion}.`
+      : SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE,
     retryPolicy: 'manual_user_confirmation',
     nextAction: 'wait_for_user',
     ...(hasExpectedVendorCode ? { vendorCode: 5061 } : {}),
