@@ -1,3 +1,10 @@
+## [4.12.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.12.2...v4.12.3) (2026-10-10)
+
+
+### Bug Fixes
+
+* **deps:** use Sogni client 5.63.1 for prompt expansion tracking ([22c2f40](https://github.com/Sogni-AI/sogni-intelligence-client/commit/22c2f4088a11ecf08b47448ff897be569ef0d055))
+
 ## [4.12.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.12.1...v4.12.2) (2026-10-09)
 
 
