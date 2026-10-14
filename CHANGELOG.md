@@ -1,3 +1,10 @@
+## [4.12.4](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.12.3...v4.12.4) (2026-10-14)
+
+
+### Bug Fixes
+
+* **deps:** take sogni-client 5.63.3 so reference audio is typed by its bytes ([a812bca](https://github.com/Sogni-AI/sogni-intelligence-client/commit/a812bcaa531cbb9f262bb27a7ce8eda88d3f8c6e))
+
 ## [4.12.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.12.2...v4.12.3) (2026-10-10)
 
 
