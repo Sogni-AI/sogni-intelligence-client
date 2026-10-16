@@ -171,6 +171,24 @@ const MINIMAX_H3_FORMAT: ModelRefFormat = {
   scanRegex: /<(?:Picture|Video|Audio)\s+\d+>/g,
 };
 
+/**
+ * FLUX 3 Image Klein refers to references by order in plain English — "the
+ * first image", "the second image" — as Black Forest Labs' prompt upsampler
+ * and example edit captions do. Klein takes images only on Sogni (1-6).
+ */
+const ORDINALS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+const FLUX3_KLEIN_FORMAT: ModelRefFormat = {
+  format(index, type) {
+    return `the ${ORDINALS[index - 1]!} ${type}`;
+  },
+  parse(token) {
+    const m = /^(?:the\s+)?(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s+(image|video|audio)$/i.exec(token.trim());
+    if (!m) return null;
+    return { index: ORDINALS.indexOf(m[1]!.toLowerCase()) + 1, type: m[2]!.toLowerCase() as AssetType };
+  },
+  scanRegex: /\bthe\s+(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s+(?:image|video|audio)\b/gi,
+};
+
 const MODEL_REF_FORMATS: Record<KnownAssetModelId, ModelRefFormat> = {
   seedance: SEEDANCE_FORMAT,
   happyhorse: HAPPYHORSE_FORMAT,
@@ -181,6 +199,7 @@ const MODEL_REF_FORMATS: Record<KnownAssetModelId, ModelRefFormat> = {
   wan: CONTEXT_FORMAT,
   'qwen-image-edit': CONTEXT_FORMAT,
   'krea-identity-edit': CONTEXT_FORMAT,
+  'flux3-klein': FLUX3_KLEIN_FORMAT,
   flux: GPT_IMAGE_2_FORMAT,
   'minimax-h3': MINIMAX_H3_FORMAT,
 };
@@ -235,6 +254,9 @@ export function getModelRefFormatResolution(modelId: string): ModelRefFormatReso
     return { format: MINIMAX_H3_FORMAT, model_id: 'minimax-h3', fell_back: false };
   }
   const imageReferenceModelId = resolveRegisteredImageReferenceModelId(trimmed);
+  if (imageReferenceModelId === 'flux3-klein') {
+    return { format: FLUX3_KLEIN_FORMAT, model_id: 'flux3-klein', fell_back: false };
+  }
   if (imageReferenceModelId === 'gpt-image-2' || imageReferenceModelId === 'flux') {
     return {
       format: GPT_IMAGE_2_FORMAT,

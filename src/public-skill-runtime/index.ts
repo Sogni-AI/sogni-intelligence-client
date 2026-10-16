@@ -1051,6 +1051,20 @@ const WAN3_MODEL_REF_FORMAT: ModelRefFormat = {
   scanRegex: /\b(?:Image|Video|Audio)\s+\d+\b/g,
 };
 
+/** FLUX 3 Image Klein names references by order: "the first image", "the second image". */
+const FLUX3_KLEIN_ORDINALS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+const FLUX3_KLEIN_MODEL_REF_FORMAT: ModelRefFormat = {
+  format(index, type) {
+    return `the ${FLUX3_KLEIN_ORDINALS[index - 1]!} ${type}`;
+  },
+  parse(token) {
+    const m = /^(?:the\s+)?(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s+(image|video|audio)$/i.exec(token.trim());
+    if (!m) return null;
+    return { index: FLUX3_KLEIN_ORDINALS.indexOf(m[1]!.toLowerCase()) + 1, type: m[2]!.toLowerCase() as AssetType };
+  },
+  scanRegex: /\bthe\s+(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s+(?:image|video|audio)\b/gi,
+};
+
 export function getModelRefFormat(modelId: string): ModelRefFormat {
   const trimmed = modelId.trim().toLowerCase().replace(/[_.\s]+/g, '-').replace(/-+/g, '-');
   if (trimmed === 'seedance' || isSeedanceVideoModelId(trimmed)) return SEEDANCE_MODEL_REF_FORMAT;
@@ -1062,6 +1076,7 @@ export function getModelRefFormat(modelId: string): ModelRefFormat {
     return CONTEXT_MODEL_REF_FORMAT;
   }
   const imageReferenceModelId = resolveRegisteredImageReferenceModelId(trimmed);
+  if (imageReferenceModelId === 'flux3-klein') return FLUX3_KLEIN_MODEL_REF_FORMAT;
   if (imageReferenceModelId?.startsWith('gpt-image-') || imageReferenceModelId === 'flux') {
     return GPT_IMAGE_MODEL_REF_FORMAT;
   }

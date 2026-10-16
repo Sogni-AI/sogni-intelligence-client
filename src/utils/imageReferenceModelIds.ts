@@ -2,6 +2,7 @@ export type RegisteredImageReferenceModelId =
   | 'gpt-image-2'
   | 'qwen-image-edit'
   | 'krea-identity-edit'
+  | 'flux3-klein'
   | 'flux';
 
 function normalizeImageReferenceModelId(modelId: string): string {
@@ -34,6 +35,16 @@ const KREA_IDENTITY_EDIT_REFERENCE_MODEL_IDS = new Set([
   'krea2-identity-edit-sogni-v0-3-alpha',
 ]);
 
+// FLUX 3 Image Klein names references by order ("the first image"), the way
+// Black Forest Labs' prompt upsampler and example captions do.
+const FLUX3_KLEIN_REFERENCE_MODEL_IDS = new Set([
+  'flux-3-klein',
+  'flux3-klein',
+  'flux-3-image-klein',
+  'flux3-image-klein',
+  'flux3-image-klein-sd-int8-convrot',
+]);
+
 /**
  * Exact image-reference grammar registry.
  *
@@ -48,6 +59,7 @@ export function resolveRegisteredImageReferenceModelId(
   if (GPT_IMAGE_2_REFERENCE_MODEL_IDS.has(normalized)) return 'gpt-image-2';
   if (QWEN_EDIT_REFERENCE_MODEL_IDS.has(normalized)) return 'qwen-image-edit';
   if (KREA_IDENTITY_EDIT_REFERENCE_MODEL_IDS.has(normalized)) return 'krea-identity-edit';
+  if (FLUX3_KLEIN_REFERENCE_MODEL_IDS.has(normalized)) return 'flux3-klein';
   if (normalized === 'flux') return 'flux';
   return null;
 }

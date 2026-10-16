@@ -245,6 +245,23 @@ export function runHappyHorseReferencesTests(): { passed: number; failed: number
   expect('Dark Beast Krea worker id did not fall back', darkBeastWorkerResolution.fell_back, false);
   expect('Dark Beast Krea worker id resolved model_id', darkBeastWorkerResolution.model_id, 'krea-identity-edit');
 
+  // FLUX 3 Image Klein names references by order, as BFL's upsampler does, not GPT-style "Image N".
+  for (const id of ['flux-3-klein', 'flux3_image_klein_sd_int8_convrot', 'FLUX 3 Image Klein']) {
+    const resolution = getModelRefFormatResolution(id);
+    expect(`Klein ${id} did not fall back`, resolution.fell_back, false);
+    expect(`Klein ${id} resolved model_id`, resolution.model_id, 'flux3-klein');
+  }
+  expect("formatModelRef('flux-3-klein',1,'image')", formatModelRef('flux-3-klein', 1, 'image'), 'the first image');
+  expect("formatModelRef('flux-3-klein',6,'image')", formatModelRef('flux-3-klein', 6, 'image'), 'the sixth image');
+  const kleinFormat = getModelRefFormatResolution('flux-3-klein').format;
+  expect('Klein parse round-trips', JSON.stringify(kleinFormat.parse('the second image')), JSON.stringify({ index: 2, type: 'image' }));
+  expect('Klein parse rejects Image 2', kleinFormat.parse('Image 2'), null);
+  expect(
+    'Klein scan finds ordinal refs',
+    JSON.stringify('Put the dog from the second image on the mug in the first image.'.match(kleinFormat.scanRegex)),
+    JSON.stringify(['the second image', 'the first image']),
+  );
+
   console.log(`\nhappyhorse references: ${testsPassed} passed, ${testsFailed} failed`);
   return { passed: testsPassed, failed: testsFailed };
 }

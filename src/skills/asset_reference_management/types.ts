@@ -60,6 +60,7 @@ export type KnownAssetModelId =
   | 'wan'
   | 'qwen-image-edit'
   | 'krea-identity-edit'
+  | 'flux3-klein'
   | 'flux'
   | 'minimax-h3';
 
