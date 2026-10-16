@@ -15,11 +15,13 @@ export type ImagePromptingType =
   | "sd3"
   | "editing"
   | "krea2"
+  | "flux3-klein"
   | "qwen"
   | "z-image"
   | "gpt-image"
   | "qwen-edit"
   | "krea2-edit"
+  | "flux3-klein-edit"
   | "gpt-image-edit"
   | "video";
 
@@ -123,6 +125,12 @@ const KREA2_GUIDE = `Krea 2 and Krea 2 Turbo are caption-conditioned image model
 - If visible text is requested, reproduce the exact wording in double quotes and state its placement and treatment.
 - Use a cohesive caption with strong nouns and visual relationships rather than repeated emphasis tokens or prompt weights.`;
 
+const FLUX3_KLEIN_GUIDE = `FLUX 3 Image Klein is a distilled caption-conditioned model that responds best to full scene captions.
+- Write one fluent caption of the whole image, not a keyword list: subject and appearance, action or pose, framing and camera angle, environment and background, lighting, then medium, style, and material detail.
+- Short prompts give generic results. When the user names only a subject, still commit to framing, background, and lighting that fit the request, without inventing subjects, props, labels, or story events.
+- If visible text is requested, quote the exact words and state where and how they appear.
+- Guidance is fixed and a negative prompt has no effect: express exclusions as the desired visible state, and avoid prompt weights, repeated emphasis, and generic quality tokens.`;
+
 const QWEN_GUIDE = `Qwen Image 2512 uses detailed natural-language image descriptions and is especially strong at instruction following, spatial composition, human realism, fine natural detail, and visible text.
 - Write a cohesive descriptive prompt with the subject and action first, followed by spatial layout, environment, composition, lighting, materials, and style.
 - State poses, relative positions, viewing angle, and important geometric relationships explicitly.
@@ -156,6 +164,12 @@ const KREA2_EDIT_GUIDE = `Krea 2 Identity Edit performs best with a concise delt
 - End with a short preservation clause only when useful. Keep likeness, source composition, or untouched regions stable exactly when requested.
 - Longer structured prompts are appropriate only for character sheets, grids, editorial layouts, or exact visible text.`;
 
+const FLUX3_KLEIN_EDIT_GUIDE = `FLUX 3 Image Klein edits and composes from one to six ordered reference images.
+- Describe the whole result as a full scene caption that folds the requested change into a description of the reference, rather than a bare change instruction.
+- Refer to references in attachment order as the first image, the second image, and so on, and give each reference one clear role (scene, person, outfit, object, or style).
+- State what must stay the same (identity, composition, lighting, untouched regions) when the user asks to preserve it.
+- Quote exact visible text and its placement. Do not write a negative prompt; it has no effect.`;
+
 const GPT_IMAGE_EDIT_GUIDE = `GPT Image 2 editing follows precise natural-language transformation instructions and ordered image references.
 - Say exactly what to add, remove, replace, restyle, reposition, or preserve. Treat unmentioned source content as unchanged when that matches the request.
 - Refer to ordered inputs as Image 1, Image 2, and so on, assigning each a clear role when multiple references are involved.
@@ -181,11 +195,13 @@ const PROMPTING_GUIDES: Record<ImagePromptingType, string> = {
   sd3: SD3_GUIDE,
   editing: EDITING_GUIDE,
   krea2: KREA2_GUIDE,
+  "flux3-klein": FLUX3_KLEIN_GUIDE,
   qwen: QWEN_GUIDE,
   "z-image": Z_IMAGE_GUIDE,
   "gpt-image": GPT_IMAGE_GUIDE,
   "qwen-edit": QWEN_EDIT_GUIDE,
   "krea2-edit": KREA2_EDIT_GUIDE,
+  "flux3-klein-edit": FLUX3_KLEIN_EDIT_GUIDE,
   "gpt-image-edit": GPT_IMAGE_EDIT_GUIDE,
   video: "",
 };
@@ -375,6 +391,15 @@ const KREA2_MODEL_NAMES = new Set([
   "dark-beast-krea2-fp8",
 ]);
 
+// One FLUX 3 Image Klein model serves generation and 1-6 reference edits.
+const FLUX3_KLEIN_MODEL_NAMES = new Set([
+  "flux-3-klein",
+  "flux3-klein",
+  "flux-3-image-klein",
+  "flux3-image-klein",
+  "flux3-image-klein-sd-int8-convrot",
+]);
+
 const QWEN_GENERATE_MODEL_NAMES = new Set([
   "qwen-image",
   "qwen-image-2512",
@@ -503,6 +528,15 @@ export function resolveImagePromptAuthoringProfile(
       promptingType: operation === "edit" ? "gpt-image-edit" : "gpt-image",
       operation,
       ...(operation === "edit" ? { maxReferenceImages: 16 } : {}),
+    });
+  }
+  if (FLUX3_KLEIN_MODEL_NAMES.has(model)) {
+    return imageProfile({
+      id: `flux-3-image-klein-${operation}`,
+      modelTitle: "FLUX 3 Image Klein",
+      promptingType: operation === "edit" ? "flux3-klein-edit" : "flux3-klein",
+      operation,
+      ...(operation === "edit" ? { maxReferenceImages: 6 } : {}),
     });
   }
   if (QWEN_EDIT_MODEL_NAMES.has(model)) {

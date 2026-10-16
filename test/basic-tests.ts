@@ -322,6 +322,25 @@ async function runTests() {
     if (kreaEdit?.maxReferenceImages !== 2 || gptEdit?.maxReferenceImages !== 16) {
       throw new Error('Image-edit prompt contracts lost their model-specific reference ceilings');
     }
+    // FLUX 3 Image Klein is one model for generation and 1-6 reference edits.
+    const kleinGenerate = resolveImagePromptAuthoringProfile('flux-3-klein');
+    const kleinEdit = resolveImagePromptAuthoringProfile('FLUX 3 Image Klein', 'edit');
+    const kleinCanonical = resolveImagePromptAuthoringProfile('flux3_image_klein_sd_int8_convrot', 'edit');
+    if (
+      kleinGenerate?.promptingType !== 'flux3-klein'
+      || kleinGenerate.operation !== 'generate'
+      || kleinGenerate.outputFormat !== 'prompt'
+      || kleinGenerate.maxReferenceImages !== undefined
+    ) {
+      throw new Error('FLUX 3 Image Klein did not resolve to its full-caption generation contract');
+    }
+    if (
+      kleinEdit?.promptingType !== 'flux3-klein-edit'
+      || kleinEdit.maxReferenceImages !== 6
+      || kleinCanonical?.id !== kleinEdit.id
+    ) {
+      throw new Error('FLUX 3 Image Klein lost its six-reference edit contract');
+    }
 
     const sdxlSystem = buildImagePromptAuthoringMessages({
       prompt: 'a car commercial still',
@@ -2598,6 +2617,15 @@ async function runTests() {
     });
     if (explicit !== 'gpt-image-2') {
       throw new Error(`Expected explicit model to win, got ${String(explicit)}`);
+    }
+
+    const explicitKlein = resolveImageEditModelForProfile({
+      imageEditProfile: 'identity_sensitive_portrait',
+      explicitModelPreference: 'flux-3-klein',
+      fallbackModel: 'qwen',
+    });
+    if (explicitKlein !== 'flux-3-klein') {
+      throw new Error(`Expected an explicit FLUX 3 Image Klein edit to win, got ${String(explicitKlein)}`);
     }
 
     const ordinary = resolveImageEditModelForProfile({

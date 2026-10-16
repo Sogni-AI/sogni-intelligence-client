@@ -22,6 +22,7 @@ export const IMAGE_EDIT_MODEL_PREFERENCES = [
   'qwen',
   'krea-identity-edit',
   'dark-beast-krea2-identity-edit',
+  'flux-3-klein',
 ] as const;
 
 export type ImageEditModelPreference =

@@ -38,6 +38,7 @@ export const GENERATE_IMAGE_MODELS = [
   { key: 'z-turbo', displayName: 'Z-Image Turbo' },
   { key: 'z-image', displayName: 'Z-Image' },
   { key: 'krea-2-turbo', displayName: 'Krea 2 Turbo' },
+  { key: 'flux-3-klein', displayName: 'FLUX 3 Image Klein' },
   { key: 'dark-beast-krea2', displayName: 'Dark Beast Krea 2' },
   { key: 'dark-beast-z-turbo', displayName: 'Dark Beast Z-Image Turbo' },
   { key: 'chroma-v46-flash', displayName: 'Chroma v.46 Flash' },
@@ -76,6 +77,7 @@ export const MODELS_BY_TOOL: Record<string, ModelOption[]> = {
     { key: 'qwen', displayName: 'Qwen Image Edit 2511' },
     { key: 'krea-identity-edit', displayName: 'Krea 2 Identity Edit LoRA v1.2' },
     { key: 'dark-beast-krea2-identity-edit', displayName: 'Dark Beast Krea 2 Identity Edit' },
+    { key: 'flux-3-klein', displayName: 'FLUX 3 Image Klein' },
   ],
   restore_photo: QUALITY_TIER_MODELS,
   upscale_image: [
