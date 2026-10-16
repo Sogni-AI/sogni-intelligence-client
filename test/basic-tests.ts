@@ -322,7 +322,7 @@ async function runTests() {
     if (kreaEdit?.maxReferenceImages !== 2 || gptEdit?.maxReferenceImages !== 16) {
       throw new Error('Image-edit prompt contracts lost their model-specific reference ceilings');
     }
-    // FLUX 3 Image Klein is one model for generation and 1-6 reference edits.
+    // FLUX 3 Image Klein is one model for generation and 1-10 reference edits.
     const kleinGenerate = resolveImagePromptAuthoringProfile('flux-3-klein');
     const kleinEdit = resolveImagePromptAuthoringProfile('FLUX 3 Image Klein', 'edit');
     const kleinCanonical = resolveImagePromptAuthoringProfile('flux3_image_klein_sd_int8_convrot', 'edit');
@@ -336,10 +336,10 @@ async function runTests() {
     }
     if (
       kleinEdit?.promptingType !== 'flux3-klein-edit'
-      || kleinEdit.maxReferenceImages !== 6
+      || kleinEdit.maxReferenceImages !== 10
       || kleinCanonical?.id !== kleinEdit.id
     ) {
-      throw new Error('FLUX 3 Image Klein lost its six-reference edit contract');
+      throw new Error('FLUX 3 Image Klein lost its ten-reference edit contract');
     }
     // Klein's edit caption describes the references, so its writer sees them;
     // generation and the delta-instruction edit grammars never ask for them.
@@ -2564,6 +2564,9 @@ async function runTests() {
     if (getMaxContextImages('flux-1-schnell') !== 6) {
       throw new Error('Flux should support 6 context images');
     }
+    if (getMaxContextImages('flux3_image_klein_sd_int8_convrot') !== 10) {
+      throw new Error('FLUX 3 Image Klein should support 10 context images');
+    }
     if (getMaxContextImages('krea2_identity_edit_v1_2') !== 2) {
       throw new Error('Krea 2 Identity Edit should support 2 context images');
     }
@@ -2813,6 +2816,23 @@ async function runTests() {
 
     if (typeof client.createImageEditProject !== 'function') {
       throw new Error('createImageEditProject method not found');
+    }
+  })();
+
+  await test('createImageEditProject refuses an eleventh FLUX 3 Image Klein reference', async () => {
+    const client = new SogniClientWrapper({
+      username: 'test-user',
+      password: 'test-pass',
+      autoConnect: false,
+    });
+    const error = await client.createImageEditProject({
+      modelId: 'flux3_image_klein_sd_int8_convrot',
+      positivePrompt: 'Too many references.',
+      numberOfMedia: 1,
+      contextImages: Array(11).fill(true),
+    }).then(() => null, (err: unknown) => err);
+    if (!(error instanceof Error) || !/maximum of 10 context images, got 11/.test(error.message)) {
+      throw new Error(`Expected the 10-reference limit to refuse 11, got ${String(error)}`);
     }
   })();
 

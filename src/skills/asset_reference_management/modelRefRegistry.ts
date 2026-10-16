@@ -174,7 +174,7 @@ const MINIMAX_H3_FORMAT: ModelRefFormat = {
 /**
  * FLUX 3 Image Klein refers to references by order in plain English — "the
  * first image", "the second image" — as Black Forest Labs' prompt upsampler
- * and example edit captions do. Klein takes images only on Sogni (1-6).
+ * and example edit captions do. Klein takes images only on Sogni (1-10).
  */
 const ORDINALS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
 const FLUX3_KLEIN_FORMAT: ModelRefFormat = {

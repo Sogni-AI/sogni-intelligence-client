@@ -402,7 +402,7 @@ const EDIT_IMAGE_CONTRACT: PromptContract = {
     'when model_ref tokens are needed.',
     '',
     'FLUX 3 IMAGE KLEIN: Use model="flux-3-klein" when the user asks for FLUX 3 or FLUX 3 Image',
-    'Klein. It accepts 1-6 reference images and works at 256-4096 px, including 4K. Guidance is',
+    'Klein. It accepts 1-10 reference images and works at 256-4096 px, including 4K. Guidance is',
     'fixed and a negative prompt has no effect, so do not send one. Unlike the Krea delta',
     'instruction, describe the whole result as a full scene caption (subject, framing, background,',
     'lighting) that folds the requested change into a description of the reference, and refer to',

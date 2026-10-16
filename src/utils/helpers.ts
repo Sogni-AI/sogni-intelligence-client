@@ -200,6 +200,10 @@ export function getMaxContextImages(modelId: string): number {
   if (modelId.includes('kontext')) {
     return 2;
   }
+  // FLUX 3 Image Klein takes up to 10 references; checked before the legacy flux family.
+  if (modelId === 'flux3_image_klein_sd_int8_convrot') {
+    return 10;
+  }
   if (modelId.includes('flux')) {
     return 6;
   }

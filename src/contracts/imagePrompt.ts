@@ -200,7 +200,7 @@ const KREA2_EDIT_GUIDE = `Krea 2 Identity Edit performs best with a concise delt
 // edit captions it wrote for BFL's published examples (examples/distilled/
 // 2_coffee, 3_bandana, 2_3_mugprint): a complete caption of the reference with
 // the change folded in, references named by order.
-const FLUX3_KLEIN_EDIT_GUIDE = `FLUX 3 Image Klein edits and composes from one to six ordered reference images. It was trained on captions its own prompt upsampler wrote while looking at those images, so write the prompt as that caption.
+const FLUX3_KLEIN_EDIT_GUIDE = `FLUX 3 Image Klein edits and composes from one to ten ordered reference images. It was trained on captions its own prompt upsampler wrote while looking at those images, so write the prompt as that caption.
 - Refer to the references only by order: the first image, the second image, and so on. Use every attached image, say what is taken from each, and never mention content that is not in them.
 - Write one continuous English prose block, typically 80 to 220 words, with no lists, headings, coordinates, or ids.
 - When one reference stays and gets bounded changes, write a complete caption of that reference with the change folded in. Open with "Create a photograph preserving the first image exactly as the canvas:" (name the real medium instead for an illustration, painting, or render), name what stays (camera position and framing, the subject's pose, the setting, the lighting, the colors) by its visible appearance, then state the change. A whole-image transformation opens with its scope ("Convert the entire image into ...", "Shift the camera viewpoint to ...") and says where the major elements now sit.
@@ -439,7 +439,7 @@ const KREA2_MODEL_NAMES = new Set([
   "dark-beast-krea2-fp8",
 ]);
 
-// One FLUX 3 Image Klein model serves generation and 1-6 reference edits.
+// One FLUX 3 Image Klein model serves generation and 1-10 reference edits.
 const FLUX3_KLEIN_MODEL_NAMES = new Set([
   "flux-3-klein",
   "flux3-klein",
@@ -586,7 +586,7 @@ export function resolveImagePromptAuthoringProfile(
       modelTitle: "FLUX 3 Image Klein",
       promptingType: operation === "edit" ? "flux3-klein-edit" : "flux3-klein",
       operation,
-      ...(operation === "edit" ? { maxReferenceImages: 6, writerSeesReferences: true } : {}),
+      ...(operation === "edit" ? { maxReferenceImages: 10, writerSeesReferences: true } : {}),
     });
   }
   if (QWEN_EDIT_MODEL_NAMES.has(model)) {
