@@ -1,3 +1,10 @@
+## [4.12.5](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.12.4...v4.12.5) (2026-10-16)
+
+
+### Bug Fixes
+
+* **deps:** adopt SDK 5.63.4 admission recovery timing ([e8b8b59](https://github.com/Sogni-AI/sogni-intelligence-client/commit/e8b8b599e6a8016c6e1c66dd64addc3ac404e54d))
+
 ## [4.12.4](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.12.3...v4.12.4) (2026-10-14)
 
 
