@@ -1,4 +1,4 @@
-import type { SogniChatMessage } from "../runtime/chatTypes.js";
+import type { SogniChatContentPart, SogniChatMessage } from "../runtime/chatTypes.js";
 import type { ToolDefinition } from "../tools/definitions/types.js";
 import { getRandomTheme } from "./randomThemes.js";
 import { withAdultRequesterDirective } from "./adultRequesterDirective.js";
@@ -36,11 +36,24 @@ export interface ImagePromptAuthoringProfile {
   outputFormat: ImagePromptAuthoringOutputFormat;
   /** Maximum ordered image references accepted by this prompt operation. */
   maxReferenceImages?: number;
+  /**
+   * The prompt describes what the references show (FLUX 3 Image Klein's edit
+   * caption is a complete caption of the first image with the change folded
+   * in), so its writer should see them: pass them as `referenceImageUrls`.
+   */
+  writerSeesReferences?: boolean;
 }
 
 export interface BuildImagePromptAuthoringMessagesInput {
   prompt: string;
   profile: ImagePromptAuthoringProfile;
+  /**
+   * Images the writer sees, in attachment order (data or https URLs): an edit's
+   * references for a `writerSeesReferences` profile, or an image the prompt
+   * recreates. Each follows its ordinal label ("The first image:"), the name
+   * the caption uses. At most ten.
+   */
+  referenceImageUrls?: readonly string[];
 }
 
 export interface BuildImagePromptMessagesInput {
@@ -50,6 +63,19 @@ export interface BuildImagePromptMessagesInput {
   modelTitle?: string;
   randomTheme?: string;
 }
+
+const REFERENCE_IMAGE_ORDINALS = [
+  "first",
+  "second",
+  "third",
+  "fourth",
+  "fifth",
+  "sixth",
+  "seventh",
+  "eighth",
+  "ninth",
+  "tenth",
+] as const;
 
 export const IMAGE_PROMPT_MAX_TOKENS = 1024;
 
@@ -125,11 +151,17 @@ const KREA2_GUIDE = `Krea 2 and Krea 2 Turbo are caption-conditioned image model
 - If visible text is requested, reproduce the exact wording in double quotes and state its placement and treatment.
 - Use a cohesive caption with strong nouns and visual relationships rather than repeated emphasis tokens or prompt weights.`;
 
-const FLUX3_KLEIN_GUIDE = `FLUX 3 Image Klein is a distilled caption-conditioned model that responds best to full scene captions.
-- Write one fluent caption of the whole image, not a keyword list: subject and appearance, action or pose, framing and camera angle, environment and background, lighting, then medium, style, and material detail.
-- Short prompts give generic results. When the user names only a subject, still commit to framing, background, and lighting that fit the request, without inventing subjects, props, labels, or story events.
-- If visible text is requested, quote the exact words and state where and how they appear.
-- Guidance is fixed and a negative prompt has no effect: express exclusions as the desired visible state, and avoid prompt weights, repeated emphasis, and generic quality tokens.`;
+// Adapted from the `t2i` system prompt of Black Forest Labs' own upsampler
+// (black-forest-labs/flux-3-image-klein-pup, system_prompts.json): the model was
+// trained on the captions that upsampler writes.
+const FLUX3_KLEIN_GUIDE = `FLUX 3 Image Klein was trained on the scene captions its own prompt upsampler writes, so write the prompt as that caption: one continuous prose paragraph of about 100 to 180 words in the generative voice, with no lists, headings, keyword strings, or phrases such as "this image shows", "we can see", or "is visible". A request that is already such a caption needs only light polishing.
+Write it in this order:
+1. Medium and style. Without a stated style, plan an actual photograph and open with the medium ("Full-color outdoor photograph, ...", "Full-color indoor photograph, ...", "Studio photograph, ...", "Close-up photograph, ..."); keep "photorealistic" for renders, and turn a request for a realistic or photorealistic photo into that opening.
+2. The scene, the lighting, and the camera position.
+3. Each subject with concrete colors, materials, and state, placed in the frame (frame-left, frame-right, foreground, midground) and related to the others (holds, faces, behind). Every person in focus gets an observable profile: ethnicity, gender, age range, skin tone, hair, and clothing, keeping whatever the user specified. Give a photograph a few ordinary, non-ideal specifics drawn from the scene's own objects. Beyond about ten instances, give the exact count and arrangement.
+4. Requested visible text: the wording verbatim inside double quotes in its original language and script, with its line breaks, typography, color, and placement. When the request asks for text without supplying the wording, write concrete wording that fits.
+5. The background in one or two sentences, as shapes, colors, and silhouettes. This is the last sentence: add no summary, mood, or atmosphere sentence, and state no detail twice.
+Decide everything the request leaves open as one concrete plan. Add camera optics (depth of field, bokeh, blur) only when the request asks for or implies them. Do not invent names, brands, logos, or celebrities; keep the ones the user names. Use no hedging adverbs, appraisal or sales vocabulary, or quality and emotion judgments: turn moods into observable physical facts, and state exclusions as what is present instead. Time of day is lighting, not rendered text. When a target aspect ratio is given, compose for it (a wide frame spreads content sideways, a tall one stacks it) and never mention the ratio. Guidance is fixed and a negative prompt has no effect.`;
 
 const QWEN_GUIDE = `Qwen Image 2512 uses detailed natural-language image descriptions and is especially strong at instruction following, spatial composition, human realism, fine natural detail, and visible text.
 - Write a cohesive descriptive prompt with the subject and action first, followed by spatial layout, environment, composition, lighting, materials, and style.
@@ -164,11 +196,19 @@ const KREA2_EDIT_GUIDE = `Krea 2 Identity Edit performs best with a concise delt
 - End with a short preservation clause only when useful. Keep likeness, source composition, or untouched regions stable exactly when requested.
 - Longer structured prompts are appropriate only for character sheets, grids, editorial layouts, or exact visible text.`;
 
-const FLUX3_KLEIN_EDIT_GUIDE = `FLUX 3 Image Klein edits and composes from one to six ordered reference images.
-- Describe the whole result as a full scene caption that folds the requested change into a description of the reference, rather than a bare change instruction.
-- Refer to references in attachment order as the first image, the second image, and so on, and give each reference one clear role (scene, person, outfit, object, or style).
-- State what must stay the same (identity, composition, lighting, untouched regions) when the user asks to preserve it.
-- Quote exact visible text and its placement. Do not write a negative prompt; it has no effect.`;
+// Adapted from the `i2i` system prompt of Black Forest Labs' upsampler and the
+// edit captions it wrote for BFL's published examples (examples/distilled/
+// 2_coffee, 3_bandana, 2_3_mugprint): a complete caption of the reference with
+// the change folded in, references named by order.
+const FLUX3_KLEIN_EDIT_GUIDE = `FLUX 3 Image Klein edits and composes from one to six ordered reference images. It was trained on captions its own prompt upsampler wrote while looking at those images, so write the prompt as that caption.
+- Refer to the references only by order: the first image, the second image, and so on. Use every attached image, say what is taken from each, and never mention content that is not in them.
+- Write one continuous English prose block, typically 80 to 220 words, with no lists, headings, coordinates, or ids.
+- When one reference stays and gets bounded changes, write a complete caption of that reference with the change folded in. Open with "Create a photograph preserving the first image exactly as the canvas:" (name the real medium instead for an illustration, painting, or render), name what stays (camera position and framing, the subject's pose, the setting, the lighting, the colors) by its visible appearance, then state the change. A whole-image transformation opens with its scope ("Convert the entire image into ...", "Shift the camera viewpoint to ...") and says where the major elements now sit.
+- When references are drawn into a newly composed frame (combining subjects, a new scene, a garment, object, or style donor), write a generation request ("Create a photograph of ...") that says what to take from each image by its order and what is newly generated.
+- State every end state concretely (which color, how large, which pose, which material) and give new content enough appearance to be generated. Cover the knock-on effects of the change (shadows, reflections, occlusion, perspective, scale, lighting) and say what fills a removed region.
+- Close with one compact clause naming what stays unchanged. Transferred people keep their identity, face, and accessories unless the request changes them.
+- Transcribe on-image text verbatim inside double quotes, and match the original font, size, and color when replacing it. Directions are frame-relative; use no evaluative or quality words. Guidance is fixed and a negative prompt has no effect.
+- When the reference images are not attached for you to see, do not guess what they contain: state the requested change and its end state concretely, refer to the references by order, and describe only what the request establishes about them.`;
 
 const GPT_IMAGE_EDIT_GUIDE = `GPT Image 2 editing follows precise natural-language transformation instructions and ordered image references.
 - Say exactly what to add, remove, replace, restyle, reposition, or preserve. Treat unmentioned source content as unchanged when that matches the request.
@@ -325,6 +365,14 @@ export function buildImagePromptMessages(
   }
   messages.push({ role: "user", content: userMessage });
   return messages;
+}
+
+/** Each reference image after its ordinal label ("The first image:"), the name the edit caption uses. */
+function referenceImageParts(urls: readonly string[]): SogniChatContentPart[] {
+  return urls.flatMap((url, index): SogniChatContentPart[] => [
+    { type: "text", text: `The ${REFERENCE_IMAGE_ORDINALS[index]} image:` },
+    { type: "image_url", image_url: { url, detail: "auto" } },
+  ]);
 }
 
 export function parseToolCallPrompt(args: Record<string, unknown>): string {
@@ -488,6 +536,7 @@ function imageProfile(args: {
   operation: ImagePromptAuthoringOperation;
   outputFormat?: ImagePromptAuthoringOutputFormat;
   maxReferenceImages?: number;
+  writerSeesReferences?: boolean;
 }): ImagePromptAuthoringProfile {
   return {
     id: args.id,
@@ -498,6 +547,7 @@ function imageProfile(args: {
     ...(args.maxReferenceImages !== undefined
       ? { maxReferenceImages: args.maxReferenceImages }
       : {}),
+    ...(args.writerSeesReferences ? { writerSeesReferences: true } : {}),
   };
 }
 
@@ -536,7 +586,7 @@ export function resolveImagePromptAuthoringProfile(
       modelTitle: "FLUX 3 Image Klein",
       promptingType: operation === "edit" ? "flux3-klein-edit" : "flux3-klein",
       operation,
-      ...(operation === "edit" ? { maxReferenceImages: 6 } : {}),
+      ...(operation === "edit" ? { maxReferenceImages: 6, writerSeesReferences: true } : {}),
     });
   }
   if (QWEN_EDIT_MODEL_NAMES.has(model)) {
@@ -718,17 +768,21 @@ AUTHORING RULES:
 - Never claim to have inspected a reference image that is not attached to this authoring request.
 
 ${imageAuthoringOutputInstruction(input.profile)}`;
+  const request = [
+    `Target model: ${input.profile.modelTitle}`,
+    `Operation: ${input.profile.operation}`,
+    "<request>",
+    input.prompt,
+    "</request>",
+  ].join("\n");
+  const referenceImageUrls = input.referenceImageUrls ?? [];
   return [
     { role: "system", content: withAdultRequesterDirective(system) },
     {
       role: "user",
-      content: [
-        `Target model: ${input.profile.modelTitle}`,
-        `Operation: ${input.profile.operation}`,
-        "<request>",
-        input.prompt,
-        "</request>",
-      ].join("\n"),
+      content: referenceImageUrls.length === 0
+        ? request
+        : [...referenceImageParts(referenceImageUrls), { type: "text", text: request }],
     },
   ];
 }

@@ -341,6 +341,41 @@ async function runTests() {
     ) {
       throw new Error('FLUX 3 Image Klein lost its six-reference edit contract');
     }
+    // Klein's edit caption describes the references, so its writer sees them;
+    // generation and the delta-instruction edit grammars never ask for them.
+    if (
+      kleinEdit.writerSeesReferences !== true
+      || kleinGenerate.writerSeesReferences !== undefined
+      || kreaEdit?.writerSeesReferences !== undefined
+    ) {
+      throw new Error('Only the FLUX 3 Image Klein edit contract should ask to see its references');
+    }
+    const kleinGenerateSystem = String(buildImagePromptAuthoringMessages({
+      prompt: 'a man walking his dog',
+      profile: kleinGenerate,
+    })[0]?.content ?? '');
+    if (!kleinGenerateSystem.includes('Full-color outdoor photograph')) {
+      throw new Error('FLUX 3 Image Klein generation lost its upsampler-style caption guide');
+    }
+    const kleinEditMessages = buildImagePromptAuthoringMessages({
+      prompt: 'print the dog from the second image onto the mug',
+      profile: kleinEdit,
+      referenceImageUrls: ['data:image/jpeg;base64,AAA', 'data:image/jpeg;base64,BBB'],
+    });
+    const kleinEditUser = kleinEditMessages[1]?.content;
+    if (
+      !String(kleinEditMessages[0]?.content).includes('preserving the first image exactly as the canvas')
+      || !Array.isArray(kleinEditUser)
+      || kleinEditUser.map((part) => (part.type === 'text' ? part.text : part.image_url.url)).join('|')
+        !== 'The first image:|data:image/jpeg;base64,AAA|The second image:|data:image/jpeg;base64,BBB|'
+          + 'Target model: FLUX 3 Image Klein\nOperation: edit\n<request>\n'
+          + 'print the dog from the second image onto the mug\n</request>'
+    ) {
+      throw new Error('FLUX 3 Image Klein edit authoring did not show the writer its ordered references');
+    }
+    if (typeof buildImagePromptAuthoringMessages({ prompt: 'a car', profile: kleinEdit })[1]?.content !== 'string') {
+      throw new Error('Edit authoring without references must keep its plain-text request');
+    }
 
     const sdxlSystem = buildImagePromptAuthoringMessages({
       prompt: 'a car commercial still',
