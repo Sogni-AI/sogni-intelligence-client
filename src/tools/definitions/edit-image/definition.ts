@@ -118,7 +118,7 @@ COMPOSITE GPT IMAGE 2 STORYBOARD SHEETS: When numberOfVariations=1 and the user 
           minItems: 1,
           maxItems: 8,
           items: { type: 'string', minLength: 1 },
-          description: `Ordered LoRA IDs for the edit. Public Krea sliders work with model="krea-identity-edit" or model="dark-beast-krea2-identity-edit". Ready personal imports also work on their listed compatible edit models, including Qwen; discover them through authenticated GET /v1/loras/personal/catalog and preserve their exact personal- IDs. GPT Image models and FLUX 3 Image Klein do not support LoRAs. Use when the user asks to shift a trait such as age, build, skin, lighting or grain. ${LORA_STACKING_GUIDANCE}
+          description: `Ordered LoRA IDs for the edit. Public Krea sliders work with model="krea-identity-edit" or model="dark-beast-krea2-identity-edit". Ready personal imports also work on their listed compatible edit models, including Qwen; discover them through authenticated GET /v1/loras/personal/catalog and preserve their exact personal- IDs. GPT Image models do not support LoRAs. Use when the user asks to shift a trait such as age, build, skin, lighting or grain. ${LORA_STACKING_GUIDANCE}
 
 ${KREA2_LORA_CATALOG_REFERENCE}`,
         },
