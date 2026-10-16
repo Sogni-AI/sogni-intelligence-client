@@ -1239,6 +1239,22 @@ async function runTests() {
     if (!client.isConnected) throw new Error('isConnected method not available');
   })();
 
+  await test('Should recommend FLUX 3 Image Klein its own steps and guidance', () => {
+    const client = new SogniClientWrapper({
+      username: 'test-user',
+      password: 'test-pass',
+      autoConnect: false,
+    }) as unknown as { getRecommendedSettings(modelId: string): { steps?: number; guidance?: number } };
+    const klein = client.getRecommendedSettings('flux3_image_klein_sd_int8_convrot');
+    if (klein.steps !== 16 || klein.guidance !== 1) {
+      throw new Error(`FLUX 3 Image Klein got the FLUX.1 defaults: ${JSON.stringify(klein)}`);
+    }
+    const schnell = client.getRecommendedSettings('flux1-schnell-fp8');
+    if (schnell.steps !== 4 || schnell.guidance !== 3.5) {
+      throw new Error(`FLUX.1 Schnell lost its defaults: ${JSON.stringify(schnell)}`);
+    }
+  })();
+
   await test('Should expose model-aware video dimension rules', () => {
     const ltx = getVideoDimensionRules('ltx25-22b-int8_t2v_distilled');
     if (ltx.maxDimension !== 3840 || ltx.minDimension !== 640 || ltx.dimensionMultiple !== 16) {

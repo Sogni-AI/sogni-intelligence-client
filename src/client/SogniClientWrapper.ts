@@ -1570,6 +1570,11 @@ export class SogniClientWrapper extends EventEmitter {
       return { steps: 20, guidance: 4.0 };
     }
 
+    // FLUX 3 Image Klein: the worker tier's 16 steps at fixed guidance 1.
+    if (modelId.startsWith('flux3_image_klein')) {
+      return { steps: 16, guidance: 1.0 };
+    }
+
     // Provide sensible defaults based on model type
     if (modelId.includes('flux')) {
       return { steps: 4, guidance: 3.5 };
