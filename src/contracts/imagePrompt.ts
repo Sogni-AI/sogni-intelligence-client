@@ -45,6 +45,12 @@ export interface ImagePromptAuthoringProfile {
   writerSeesReferences?: boolean;
 }
 
+/** The shape of the image the prompt renders: pixel dimensions or ratio terms (16 by 9). */
+export interface ImagePromptTargetCanvas {
+  width: number;
+  height: number;
+}
+
 export interface BuildImagePromptAuthoringMessagesInput {
   prompt: string;
   profile: ImagePromptAuthoringProfile;
@@ -55,6 +61,12 @@ export interface BuildImagePromptAuthoringMessagesInput {
    * the caption uses. At most ten.
    */
   referenceImageUrls?: readonly string[];
+  /**
+   * The output image's shape. The request then begins with the "TARGET CANVAS:
+   * W:H" line FLUX 3 Image Klein's upsampler takes, the ratio in lowest terms,
+   * and the writer composes for it without naming it.
+   */
+  targetCanvas?: ImagePromptTargetCanvas;
 }
 
 export interface BuildImagePromptMessagesInput {
@@ -155,14 +167,15 @@ const KREA2_GUIDE = `Krea 2 and Krea 2 Turbo are caption-conditioned image model
 // Adapted from the `t2i` system prompt of Black Forest Labs' own upsampler
 // (black-forest-labs/flux-3-image-klein-pup, system_prompts.json): the model was
 // trained on the captions that upsampler writes.
-const FLUX3_KLEIN_GUIDE = `FLUX 3 Image Klein was trained on the scene captions its own prompt upsampler writes, so write the prompt as that caption: one continuous prose paragraph of about 100 to 180 words in the generative voice, with no lists, headings, keyword strings, or phrases such as "this image shows", "we can see", or "is visible". A request that is already such a caption needs only light polishing.
+const FLUX3_KLEIN_GUIDE = `FLUX 3 Image Klein was trained on the scene captions its own prompt upsampler writes, so write the prompt as that caption: one continuous prose paragraph in the generative voice, typically 100 to 350 words and longer for a complex scene, with no lists, headings, keyword strings, or phrases such as "this image shows", "we can see", or "is visible". All prose is English; only quoted on-image text keeps its own language. A request that is already such a caption needs only light polishing, and a request that is not clearly for an image gets a caption of a visualization of its concept.
+Keep every explicit subject, attribute, count, spatial constraint, style cue, and piece of wording. Never contradict, substitute, drop, or narrow the request, keep an abstract concept abstract, and never re-express a stated constraint through another mechanism.
 Write it in this order:
 1. Medium and style. Without a stated style, plan an actual photograph and open with the medium ("Full-color outdoor photograph, ...", "Full-color indoor photograph, ...", "Studio photograph, ...", "Close-up photograph, ..."); keep "photorealistic" for renders, and turn a request for a realistic or photorealistic photo into that opening.
 2. The scene, the lighting, and the camera position.
-3. Each subject with concrete colors, materials, and state, placed in the frame (frame-left, frame-right, foreground, midground) and related to the others (holds, faces, behind). Every person in focus gets an observable profile: ethnicity, gender, age range, skin tone, hair, and clothing, keeping whatever the user specified. Give a photograph a few ordinary, non-ideal specifics drawn from the scene's own objects. Beyond about ten instances, give the exact count and arrangement.
-4. Requested visible text: the wording verbatim inside double quotes in its original language and script, with its line breaks, typography, color, and placement. When the request asks for text without supplying the wording, write concrete wording that fits.
-5. The background in one or two sentences, as shapes, colors, and silhouettes. This is the last sentence: add no summary, mood, or atmosphere sentence, and state no detail twice.
-Decide everything the request leaves open as one concrete plan. Add camera optics (depth of field, bokeh, blur) only when the request asks for or implies them. Do not invent names, brands, logos, or celebrities; keep the ones the user names. Use no hedging adverbs, appraisal or sales vocabulary, or quality and emotion judgments: turn moods into observable physical facts, and state exclusions as what is present instead. Time of day is lighting, not rendered text. When a target aspect ratio is given, compose for it (a wide frame spreads content sideways, a tall one stacks it) and never mention the ratio. Guidance is fixed and a negative prompt has no effect.`;
+3. Each subject with concrete colors, materials, and state. Make the layout reconstructable from the words: frame-relative positions (frame-left, frame-right, upper, lower, foreground, midground, background), sentence-initial anchors ("On the left, ...", "In the background, ..."), relations (holds, faces, behind), and one consistent order. Every person in focus gets an observable profile: ethnicity, gender, age range, skin tone, hair, and clothing, keeping whatever the user specified. Give a photograph a few ordinary, non-ideal specifics drawn from the scene's own objects. Describe up to about ten instances one by one; beyond that, give the exact count and arrangement.
+4. Requested visible text: the wording verbatim inside double quotes in its original language and script, with its line breaks, typography, color, and placement. When the request asks for text without supplying the wording, write concrete, domain-correct wording. Name a canonical structure (a calendar, a keyboard, a periodic table) exactly and lay it out in full.
+5. The background, about a sixth of the caption: out-of-focus or distant planes are shapes, colors, and silhouettes, never identities or readable text. It comes last: add no summary, mood, or atmosphere sentence, and state no detail twice.
+Decide everything the request leaves open as one concrete plan. Add camera optics (depth of field, bokeh, blur) only when the request asks for or implies them. Do not invent names, brands, logos, or celebrities; keep the ones the user names. Use no hedging adverbs, appraisal or sales vocabulary, or quality and emotion judgments: turn moods into observable physical facts, and state exclusions as what is present instead. Time of day is lighting, not rendered text. The request may begin with a "TARGET CANVAS: W:H" line, the output aspect ratio: compose for that frame (a wide one spreads content sideways, a tall one stacks it) and never state the ratio or mention that line. Guidance is fixed and a negative prompt has no effect.`;
 
 const MOSS_IMAGE_GUIDE = `MOSS-Image SFT is an uncensored model that generates new images from natural-language captions, tag sequences or experimental JSON layouts.
 - Describe the complete requested image: subjects, positions, actions, camera, setting, lighting, materials and style. Preserve requested names and exact visible text, including its original language and line breaks.
@@ -210,13 +223,14 @@ const KREA2_EDIT_GUIDE = `Krea 2 Identity Edit performs best with a concise delt
 // 2_coffee, 3_bandana, 2_3_mugprint): a complete caption of the reference with
 // the change folded in, references named by order.
 const FLUX3_KLEIN_EDIT_GUIDE = `FLUX 3 Image Klein edits and composes from one to ten ordered reference images. It was trained on captions its own prompt upsampler wrote while looking at those images, so write the prompt as that caption.
-- Refer to the references only by order: the first image, the second image, and so on. Use every attached image, say what is taken from each, and never mention content that is not in them.
-- Write one continuous English prose block, typically 80 to 220 words, with no lists, headings, coordinates, or ids.
+- Refer to the references only by order: the first image, the second image, and so on. Use every attached image, say what is taken from each, and never mention content that is not in them. Read a vague or conversational request as the most plausible edit of these images.
+- Write one continuous prose block, typically 80 to 220 words, with no lists, headings, coordinates, or ids. All prose is English; only quoted on-image text keeps its own language.
 - When one reference stays and gets bounded changes, write a complete caption of that reference with the change folded in. Open with "Create a photograph preserving the first image exactly as the canvas:" (name the real medium instead for an illustration, painting, or render), name what stays (camera position and framing, the subject's pose, the setting, the lighting, the colors) by its visible appearance, then state the change. A whole-image transformation opens with its scope ("Convert the entire image into ...", "Shift the camera viewpoint to ...") and says where the major elements now sit.
 - When references are drawn into a newly composed frame (combining subjects, a new scene, a garment, object, or style donor), write a generation request ("Create a photograph of ...") that says what to take from each image by its order and what is newly generated.
-- State every end state concretely (which color, how large, which pose, which material) and give new content enough appearance to be generated. Cover the knock-on effects of the change (shadows, reflections, occlusion, perspective, scale, lighting) and say what fills a removed region.
+- State every end state concretely (which color, how large, which pose, which material) and give new content enough appearance to be generated. Cover the knock-on effects of the change (shadows, reflections, occlusion, perspective, scale, lighting) and say what fills a removed region. A zoom-in names what stays in frame and which neighbors are cropped out; an outpainting continues the scene in the same medium.
 - Close with one compact clause naming what stays unchanged. Transferred people keep their identity, face, and accessories unless the request changes them.
-- Transcribe on-image text verbatim inside double quotes, and match the original font, size, and color when replacing it. Directions are frame-relative; use no evaluative or quality words. Guidance is fixed and a negative prompt has no effect.
+- Transcribe on-image text verbatim inside double quotes in its original language, writing each line break of multi-line text as \\n, and match the original font, size, and color when replacing it. Directions are frame-relative; use no evaluative or quality words. Guidance is fixed and a negative prompt has no effect.
+- The request may begin with a "TARGET CANVAS: W:H" line, the output aspect ratio: compose the result for that frame, with the least destructive crop or extension where it differs from the first image's shape, and never state the ratio or mention that line.
 - When the reference images are not attached for you to see, do not guess what they contain: state the requested change and its end state concretely, refer to the references by order, and describe only what the request establishes about them.`;
 
 const GPT_IMAGE_EDIT_GUIDE = `GPT Image 2 editing follows precise natural-language transformation instructions and ordered image references.
@@ -765,6 +779,38 @@ Use the negative field for explicit exclusions and relevant rendering failure mo
   return "OUTPUT CONTRACT: Return only the directly runnable prompt text. Do not add field labels, a preamble, explanation, Markdown fence, tips, or a render offer.";
 }
 
+function greatestCommonDivisor(a: number, b: number): number {
+  return b === 0 ? a : greatestCommonDivisor(b, a % b);
+}
+
+/**
+ * A target canvas as the "W:H" of FLUX 3 Image Klein's upsampler: whole
+ * numbers in lowest terms (1216 by 832 is "19:13"), a fractional ratio as given
+ * ("2.39:1").
+ */
+export function imagePromptTargetCanvasRatio(canvas: ImagePromptTargetCanvas): string {
+  const { width, height } = canvas;
+  if (!(Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0)) {
+    throw new Error(`An image-prompt target canvas needs a positive width and height; got ${width} by ${height}.`);
+  }
+  if (!Number.isInteger(width) || !Number.isInteger(height)) return `${width}:${height}`;
+  const divisor = greatestCommonDivisor(width, height);
+  return `${width / divisor}:${height / divisor}`;
+}
+
+/** The target canvas of an aspect ratio written "16:9", "16x9" or "16/9". */
+export function parseImagePromptTargetCanvas(aspectRatio: string): ImagePromptTargetCanvas {
+  const match = /^\s*(\d+(?:\.\d+)?)\s*[:x/]\s*(\d+(?:\.\d+)?)\s*$/i.exec(aspectRatio);
+  const width = Number(match?.[1]);
+  const height = Number(match?.[2]);
+  if (!match || !(width > 0 && height > 0)) {
+    throw new Error(
+      `The aspect ratio "${aspectRatio}" is not width:height in positive numbers, such as 16:9 or 2:3.`,
+    );
+  }
+  return { width, height };
+}
+
 export function buildImagePromptAuthoringMessages(
   input: BuildImagePromptAuthoringMessagesInput,
 ): SogniChatMessage[] {
@@ -786,9 +832,13 @@ AUTHORING RULES:
 - Treat a request to author, generate, or develop a model prompt as a request for a finished model-ready direction unless the user explicitly asks to keep it short, sparse, ambiguous, or exploratory.
 - If the request is already production-ready, polish it lightly instead of replacing its direction.
 - Never claim to have inspected a reference image that is not attached to this authoring request.
+- A "TARGET CANVAS: W:H" line before the request gives the output aspect ratio: compose for it, and never state the ratio or mention that line.
 
 ${imageAuthoringOutputInstruction(input.profile)}`;
   const request = [
+    ...(input.targetCanvas
+      ? [`TARGET CANVAS: ${imagePromptTargetCanvasRatio(input.targetCanvas)}`]
+      : []),
     `Target model: ${input.profile.modelTitle}`,
     `Operation: ${input.profile.operation}`,
     "<request>",

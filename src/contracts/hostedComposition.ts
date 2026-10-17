@@ -1,7 +1,8 @@
 import type { SogniChatMessage } from '../runtime/chatTypes.js';
 import type { WorkflowTemplate } from '../workflows/types.js';
 import type { ComposeWorkflowDestinationModels } from './composeWorkflowTypes.js';
-import type { ImagePromptingType } from './imagePrompt.js';
+import { imagePromptTargetCanvasRatio } from './imagePrompt.js';
+import type { ImagePromptingType, ImagePromptTargetCanvas } from './imagePrompt.js';
 import { getRandomLyricsTheme, getRandomTheme } from './randomThemes.js';
 import type { GenerateWanPromptParams, VideoFramePromptOptions } from './videoComposition.js';
 
@@ -27,6 +28,8 @@ export interface BuildEnhancePromptToolArgsInput {
   destinationTool?: string;
   targetOutput?: string;
   stylePrompt?: string;
+  /** The output image's shape, sent as `aspect_ratio` in lowest terms. */
+  targetCanvas?: ImagePromptTargetCanvas;
   /** @deprecated Compatibility metadata only; destinationModel selects the contract. */
   promptingType?: ImagePromptingType;
   /** @deprecated Compatibility label only; destinationModel selects the contract. */
@@ -124,6 +127,7 @@ export function buildEnhancePromptToolArgs(
     ...(input.promptingType ? { prompting_type: input.promptingType } : {}),
     ...(input.modelTitle ? { model_title: input.modelTitle } : {}),
     ...(input.stylePrompt?.trim() ? { style_prompt: input.stylePrompt.trim() } : {}),
+    ...(input.targetCanvas ? { aspect_ratio: imagePromptTargetCanvasRatio(input.targetCanvas) } : {}),
   };
 }
 

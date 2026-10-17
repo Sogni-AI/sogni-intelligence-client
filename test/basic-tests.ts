@@ -98,10 +98,13 @@ import {
   PROMPT_CONTRACTS,
   IMAGE_PROMPT_TOOL,
   assertImagePromptAuthoringOutput,
+  buildEnhancePromptToolArgs,
   buildImagePromptAuthoringMessages,
   buildImagePromptMessages,
   buildLtxScriptMessages,
   buildWanScriptMessages,
+  imagePromptTargetCanvasRatio,
+  parseImagePromptTargetCanvas,
   resolveImagePromptAuthoringProfile,
 } from '../src/contracts/index.js';
 import {
@@ -375,6 +378,118 @@ async function runTests() {
     }
     if (typeof buildImagePromptAuthoringMessages({ prompt: 'a car', profile: kleinEdit })[1]?.content !== 'string') {
       throw new Error('Edit authoring without references must keep its plain-text request');
+    }
+    // BFL's upsampler prompts: 100-350 words, English prose, and the rules
+    // its t2i and i2i prompts carry beyond our first adaptation.
+    for (const rule of [
+      'typically 100 to 350 words',
+      'All prose is English; only quoted on-image text keeps its own language.',
+      'keep an abstract concept abstract',
+      'never re-express a stated constraint through another mechanism',
+      'a periodic table) exactly and lay it out in full',
+      'sentence-initial anchors ("On the left, ...", "In the background, ...")',
+      'about a sixth of the caption',
+      'a caption of a visualization of its concept',
+      'The request may begin with a "TARGET CANVAS: W:H" line',
+    ]) {
+      if (!kleinGenerateSystem.includes(rule)) {
+        throw new Error(`FLUX 3 Image Klein generation is missing BFL's rule: ${rule}`);
+      }
+    }
+    if (kleinGenerateSystem.includes('100 to 180 words')) {
+      throw new Error('FLUX 3 Image Klein generation kept the old 100-180 word cap');
+    }
+    const kleinEditSystem = String(kleinEditMessages[0]?.content);
+    for (const rule of [
+      'All prose is English; only quoted on-image text keeps its own language.',
+      'most plausible edit of these images',
+      'A zoom-in names what stays in frame and which neighbors are cropped out',
+      'an outpainting continues the scene in the same medium',
+      'writing each line break of multi-line text as \\n',
+      'The request may begin with a "TARGET CANVAS: W:H" line',
+    ]) {
+      if (!kleinEditSystem.includes(rule)) {
+        throw new Error(`FLUX 3 Image Klein edits are missing BFL's rule: ${rule}`);
+      }
+    }
+    // The target canvas opens the request as BFL's "TARGET CANVAS: W:H" line,
+    // the ratio in lowest terms, before the images' request text for an edit.
+    const kleinCanvasRequest = buildImagePromptAuthoringMessages({
+      prompt: 'a man walking his dog',
+      profile: kleinGenerate,
+      targetCanvas: { width: 1216, height: 832 },
+    })[1]?.content;
+    if (
+      kleinCanvasRequest
+        !== 'TARGET CANVAS: 19:13\nTarget model: FLUX 3 Image Klein\nOperation: generate\n<request>\n'
+          + 'a man walking his dog\n</request>'
+    ) {
+      throw new Error(`The target canvas did not open the request: ${JSON.stringify(kleinCanvasRequest)}`);
+    }
+    const kleinCanvasEditUser = buildImagePromptAuthoringMessages({
+      prompt: 'zoom in on the mug',
+      profile: kleinEdit,
+      referenceImageUrls: ['data:image/jpeg;base64,AAA'],
+      targetCanvas: { width: 1080, height: 1920 },
+    })[1]?.content;
+    const kleinCanvasEditText = Array.isArray(kleinCanvasEditUser) ? kleinCanvasEditUser.at(-1) : undefined;
+    if (
+      kleinCanvasEditText?.type !== 'text'
+      || !kleinCanvasEditText.text.startsWith('TARGET CANVAS: 9:16\nTarget model: FLUX 3 Image Klein\n')
+    ) {
+      throw new Error('The target canvas did not open an edit request after its references');
+    }
+    const sdxlCanvasSystem = buildImagePromptAuthoringMessages({
+      prompt: 'a car',
+      profile: sdxl!,
+      targetCanvas: { width: 16, height: 9 },
+    })[0]?.content;
+    if (!String(sdxlCanvasSystem).includes('A "TARGET CANVAS: W:H" line before the request')) {
+      throw new Error('Every image-prompt writer must know the TARGET CANVAS line it may receive');
+    }
+    for (const [canvas, ratio] of [
+      [{ width: 1024, height: 1024 }, '1:1'],
+      [{ width: 1920, height: 1080 }, '16:9'],
+      [{ width: 832, height: 1216 }, '13:19'],
+      [{ width: 2.39, height: 1 }, '2.39:1'],
+    ] as const) {
+      if (imagePromptTargetCanvasRatio(canvas) !== ratio) {
+        throw new Error(`${canvas.width} by ${canvas.height} should be the canvas ${ratio}`);
+      }
+    }
+    for (const bad of [{ width: 0, height: 9 }, { width: 16, height: Number.NaN }]) {
+      let refused = false;
+      try {
+        imagePromptTargetCanvasRatio(bad);
+      } catch {
+        refused = true;
+      }
+      if (!refused) throw new Error(`A ${bad.width} by ${bad.height} canvas must be refused`);
+    }
+    const parsed = parseImagePromptTargetCanvas(' 21:9 ');
+    const parsedPixels = parseImagePromptTargetCanvas('1920x1080');
+    if (parsed.width !== 21 || parsed.height !== 9 || imagePromptTargetCanvasRatio(parsedPixels) !== '16:9') {
+      throw new Error('Aspect ratios written W:H or WxH should parse to their canvas');
+    }
+    for (const bad of ['portrait', '16:0', 'adaptive', '']) {
+      let refused = false;
+      try {
+        parseImagePromptTargetCanvas(bad);
+      } catch (error) {
+        refused = error instanceof Error && error.message.includes('is not width:height');
+      }
+      if (!refused) throw new Error(`The aspect ratio "${bad}" must be refused with a clear error`);
+    }
+    const enhanceArgs = buildEnhancePromptToolArgs({
+      prompt: 'a man walking his dog',
+      destinationModel: 'flux3_image_klein_sd_int8_convrot',
+      targetCanvas: { width: 1216, height: 832 },
+    });
+    if (enhanceArgs.aspect_ratio !== '19:13') {
+      throw new Error('enhance_prompt args should carry the target canvas as aspect_ratio');
+    }
+    if ('aspect_ratio' in buildEnhancePromptToolArgs({ prompt: 'x', destinationModel: 'flux-3-klein' })) {
+      throw new Error('enhance_prompt args without a canvas must not invent an aspect ratio');
     }
 
     const sdxlSystem = buildImagePromptAuthoringMessages({

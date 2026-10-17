@@ -201,6 +201,8 @@ export {
   resolveImagePromptAuthoringProfile,
   assertImagePromptAuthoringOutput,
   parseToolCallPrompt,
+  imagePromptTargetCanvasRatio,
+  parseImagePromptTargetCanvas,
 } from './imagePrompt.js';
 export type {
   ImagePromptingType,
@@ -209,6 +211,7 @@ export type {
   ImagePromptAuthoringOutputFormat,
   ImagePromptAuthoringProfile,
   BuildImagePromptAuthoringMessagesInput,
+  ImagePromptTargetCanvas,
 } from './imagePrompt.js';
 // Per-model prompt size limits (mirrors the Supernet's 4102 refusal) so
 // prompt expanders can instruct, check, regenerate or refuse; never truncate.
