@@ -1,3 +1,10 @@
+# [4.14.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.13.0...v4.14.0) (2026-10-17)
+
+
+### Features
+
+* **contracts:** give the FLUX 3 Image Klein writer its canvas and BFL's full rules ([4014a79](https://github.com/Sogni-AI/sogni-intelligence-client/commit/4014a79a57b1b0516aa6375c514288852cdfd63c))
+
 # [4.13.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.12.5...v4.13.0) (2026-10-17)
 
 
