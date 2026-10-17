@@ -15,6 +15,7 @@ export type ImagePromptingType =
   | "sd3"
   | "editing"
   | "krea2"
+  | "moss-image"
   | "flux3-klein"
   | "qwen"
   | "z-image"
@@ -163,6 +164,14 @@ Write it in this order:
 5. The background in one or two sentences, as shapes, colors, and silhouettes. This is the last sentence: add no summary, mood, or atmosphere sentence, and state no detail twice.
 Decide everything the request leaves open as one concrete plan. Add camera optics (depth of field, bokeh, blur) only when the request asks for or implies them. Do not invent names, brands, logos, or celebrities; keep the ones the user names. Use no hedging adverbs, appraisal or sales vocabulary, or quality and emotion judgments: turn moods into observable physical facts, and state exclusions as what is present instead. Time of day is lighting, not rendered text. When a target aspect ratio is given, compose for it (a wide frame spreads content sideways, a tall one stacks it) and never mention the ratio. Guidance is fixed and a negative prompt has no effect.`;
 
+const MOSS_IMAGE_GUIDE = `MOSS-Image SFT is an uncensored model that generates new images from natural-language captions, tag sequences or experimental JSON layouts.
+- Describe the complete requested image: subjects, positions, actions, camera, setting, lighting, materials and style. Preserve requested names and exact visible text, including its original language and line breaks.
+- English and Chinese are supported for scene descriptions. Quote visible text and specify its placement and carrier.
+- If the user supplies a JSON layout verbatim, preserve it instead of rewriting it as prose. Layouts use summary.caption and items with label, caption, optional text, and bbox in centered absolute pixel coordinates ordered y_min,x_min,y_max,x_max; bbox_format is yxyx and bbox_coord_space is abs_centralized. Match the layout canvas to the generation dimensions.
+- Keep one JSON layout literal per call, including vertical bars in visible text. Variations change seeds; use separate calls for different layouts.
+- This is text-to-image. It does not accept image references or instruction-edit an uploaded photo. Do not describe unseen reference content as if it were attached.
+- Leave the negative prompt empty unless the user requests exclusions.`;
+
 const QWEN_GUIDE = `Qwen Image 2512 uses detailed natural-language image descriptions and is especially strong at instruction following, spatial composition, human realism, fine natural detail, and visible text.
 - Write a cohesive descriptive prompt with the subject and action first, followed by spatial layout, environment, composition, lighting, materials, and style.
 - State poses, relative positions, viewing angle, and important geometric relationships explicitly.
@@ -235,6 +244,7 @@ const PROMPTING_GUIDES: Record<ImagePromptingType, string> = {
   sd3: SD3_GUIDE,
   editing: EDITING_GUIDE,
   krea2: KREA2_GUIDE,
+  "moss-image": MOSS_IMAGE_GUIDE,
   "flux3-klein": FLUX3_KLEIN_GUIDE,
   qwen: QWEN_GUIDE,
   "z-image": Z_IMAGE_GUIDE,
@@ -566,6 +576,16 @@ export function resolveImagePromptAuthoringProfile(
   const normalizedRequestedOperation = normalizeImagePromptOperation(requestedOperation);
   if (requestedOperation && !normalizedRequestedOperation) return null;
   const operation = normalizedRequestedOperation ?? (intrinsicEdit ? "edit" : "generate");
+
+  if (["moss-image", "moss-image-sft", "moss-image-sft-int8-convrot", "moss-image-8step", "moss-image-sft-dmd8-int8-convrot"].includes(model)) {
+    if (operation !== "generate") return null;
+    return imageProfile({
+      id: "moss-image-sft-generate",
+      modelTitle: model.includes("8step") || model.includes("dmd8") ? "MOSS-Image 8-Step" : "MOSS-Image SFT",
+      promptingType: "moss-image",
+      operation: "generate",
+    });
+  }
 
   if (intrinsicEdit && operation !== "edit") return null;
 

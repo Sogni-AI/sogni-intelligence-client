@@ -1550,6 +1550,12 @@ export class SogniClientWrapper extends EventEmitter {
    * Get recommended settings for a model
    */
   private getRecommendedSettings(modelId: string): ModelInfo['recommendedSettings'] {
+    if (modelId === 'moss_image_sft_dmd8_int8_convrot') {
+      return { steps: 8, guidance: 1.0 };
+    }
+    if (modelId === 'moss_image_sft_int8_convrot') {
+      return { steps: 50, guidance: 3.0 };
+    }
     if (isSeedanceVideoModel(modelId) || this.isHappyHorseModel(modelId)) {
       return { fps: 24 };
     }

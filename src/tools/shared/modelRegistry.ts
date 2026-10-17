@@ -38,6 +38,8 @@ export const GENERATE_IMAGE_MODELS = [
   { key: 'z-turbo', displayName: 'Z-Image Turbo' },
   { key: 'z-image', displayName: 'Z-Image' },
   { key: 'krea-2-turbo', displayName: 'Krea 2 Turbo' },
+  { key: 'moss-image', displayName: 'MOSS-Image SFT' },
+  { key: 'moss-image-8step', displayName: 'MOSS-Image 8-Step' },
   { key: 'flux-3-klein', displayName: 'FLUX 3 Image Klein' },
   { key: 'dark-beast-krea2', displayName: 'Dark Beast Krea 2' },
   { key: 'dark-beast-z-turbo', displayName: 'Dark Beast Z-Image Turbo' },

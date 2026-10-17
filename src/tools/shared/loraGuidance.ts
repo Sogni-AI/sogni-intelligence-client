@@ -38,7 +38,7 @@ export const KREA2_LORA_CATALOG_REFERENCE =
   'body horror), krea2-filter-bypass-2 and krea2-filter-bypass-3 (restore expressions, anatomy ' +
   'and poses the base model flattens; try the 2-vector first). ' +
   'Exact per-LoRA ranges, maturity flags and the full contract: ' +
-  'GET /v1/loras/comfy?modelId=<model>. Personal imports use authenticated GET /v1/loras/personal/catalog: use an owned ready personal- id, its modelIds, strength range and requirements. Never invent ids or silently omit a requested personal LoRA.';
+  'GET /v1/loras/comfy?modelId=<model>. Personal imports use authenticated GET /v1/loras/personal/catalog: use an owned ready personal- id, its modelIds, strength range and requirements. Compatible Personal LoRAs also work with FLUX 3 Image Klein and both MOSS presets; a MOSS 8-step personal adapter stacks after its built-in DMD adapter. Never invent ids or silently omit a requested personal LoRA.';
 
 /** Shared `loraStrengths` guidance: bipolarity, defaults, and usable bands. */
 export const LORA_STRENGTHS_GUIDANCE =
@@ -61,7 +61,7 @@ export const LORA_STACKING_GUIDANCE =
 
 /** Every model id that accepts these LoRAs, named so the LLM can pick a compatible one. */
 export const KREA2_LORA_MODEL_IDS_SENTENCE =
-  'Accepted only by the five Krea 2 based models: krea2_turbo_fp8_scaled (text-to-image), ' +
+  'The public Krea 2 catalog below is accepted by: krea2_turbo_fp8_scaled (text-to-image), ' +
   'krea2_identity_edit_v1_2 and krea2_identity_edit_sogni_v0_3_alpha (identity edit), and the ' +
   'dark_beast_krea2_fp8 / dark_beast_krea2_identity_edit_v1_2 community variants.';
 

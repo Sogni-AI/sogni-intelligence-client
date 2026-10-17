@@ -58,7 +58,7 @@ export interface SkillVideoModelConfig {
 
 export interface SkillModelDefaults {
   workflow?: SkillVideoWorkflow;
-  family?: 'ltx25' | 'ltx23' | 'ltx2' | 'wan22' | 'wan3' | 'seedance2' | 'krea2-identity-edit';
+  family?: 'ltx25' | 'ltx23' | 'ltx2' | 'wan22' | 'wan3' | 'seedance2' | 'krea2-identity-edit' | 'moss-image';
   defaultWidth?: number;
   defaultHeight?: number;
   minDimension?: number;
@@ -2396,6 +2396,30 @@ export const QUALITY_TIERS = Object.freeze({
 } satisfies Record<'fast' | 'hq' | 'pro', SkillQualityTier>);
 
 export const IMAGE_MODEL_DEFAULTS: Readonly<Record<string, SkillModelDefaults>> = Object.freeze({
+  moss_image_sft_int8_convrot: {
+    family: 'moss-image',
+    defaultWidth: 1024,
+    defaultHeight: 1024,
+    minDimension: 512,
+    maxDimension: 2048,
+    dimensionMultiple: 16,
+    steps: 50,
+    guidance: 3.0,
+    sampler: 'euler',
+    scheduler: 'sgm_uniform'
+  },
+  moss_image_sft_dmd8_int8_convrot: {
+    family: 'moss-image',
+    defaultWidth: 1024,
+    defaultHeight: 1024,
+    minDimension: 512,
+    maxDimension: 2048,
+    dimensionMultiple: 16,
+    steps: 8,
+    guidance: 1.0,
+    sampler: 'euler',
+    scheduler: 'sgm_uniform'
+  },
   krea2_identity_edit_v1_2: {
     family: 'krea2-identity-edit',
     defaultWidth: 1024,
@@ -2423,6 +2447,9 @@ export const IMAGE_MODEL_DEFAULTS: Readonly<Record<string, SkillModelDefaults>> 
 });
 
 export const IMAGE_MODEL_ALIASES: Readonly<Record<string, string>> = Object.freeze({
+  'moss-image': 'moss_image_sft_int8_convrot',
+  'moss-image-sft': 'moss_image_sft_int8_convrot',
+  'moss-image-8step': 'moss_image_sft_dmd8_int8_convrot',
   'krea-identity-edit': 'krea2_identity_edit_v1_2',
   'krea-2-identity-edit': 'krea2_identity_edit_v1_2',
   'krea2-identity-edit': 'krea2_identity_edit_v1_2',
