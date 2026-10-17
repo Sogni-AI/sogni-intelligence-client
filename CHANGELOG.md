@@ -1,3 +1,22 @@
+# [4.13.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.12.5...v4.13.0) (2026-10-17)
+
+
+### Bug Fixes
+
+* **deps:** take sogni-client 5.64.0 and sogni-protocol 1.0.0-alpha.51 ([ec4001d](https://github.com/Sogni-AI/sogni-intelligence-client/commit/ec4001d2a46e9ca7ac23eb25fd0ed25eb9b2d334))
+* **models:** recommend FLUX 3 Image Klein 16 steps at guidance 1 ([2d36586](https://github.com/Sogni-AI/sogni-intelligence-client/commit/2d36586b83d4e35efba3e8dba5715f483bd3ce35))
+* **tools:** stop saying FLUX 3 Image Klein takes no LoRAs ([248ca86](https://github.com/Sogni-AI/sogni-intelligence-client/commit/248ca8657d5b6f1c622c954e3bf6434eca568d13))
+
+
+### Features
+
+* **assets:** name FLUX 3 Image Klein references the first image, the second image ([7107954](https://github.com/Sogni-AI/sogni-intelligence-client/commit/710795401cb2bc8aeba246a2f04038e093ce06ad))
+* **media:** add FLUX 3 Image Klein to generate_image and edit_image ([a882731](https://github.com/Sogni-AI/sogni-intelligence-client/commit/a8827313a8a4a3aa563904c0dafd0a0f1391431a))
+* **media:** describe FLUX 3 Image Klein at 256-4096 px, including 4K ([b23df55](https://github.com/Sogni-AI/sogni-intelligence-client/commit/b23df552b1c24ab2143021edf2cdefeb37a27953))
+* **media:** let FLUX 3 Image Klein edits take up to 10 references ([f84012b](https://github.com/Sogni-AI/sogni-intelligence-client/commit/f84012be9e1e01b9ca30a671cc116fb4c666011c))
+* **prompts:** write FLUX 3 Image Klein prompts the way its upsampler does ([2999cf3](https://github.com/Sogni-AI/sogni-intelligence-client/commit/2999cf39fa0cb49c2cb0b13e9b72bd62a7c58db5))
+* **tools:** list FLUX 3 Image Klein among models that cannot do nudity ([e12d95c](https://github.com/Sogni-AI/sogni-intelligence-client/commit/e12d95c089ead0fa7fc040b05a568f05e76026ba))
+
 ## [4.12.5](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.12.4...v4.12.5) (2026-10-16)
 
 
