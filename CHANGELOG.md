@@ -1,3 +1,16 @@
+# [4.15.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.14.1...v4.15.0) (2026-10-18)
+
+
+### Bug Fixes
+
+* **contracts:** preserve fictional creative intensity ([050e5a5](https://github.com/Sogni-AI/sogni-intelligence-client/commit/050e5a598663932517e5d7bf6202e83366b35d4c))
+* **deps:** align MOSS contracts with published SDK releases ([162e595](https://github.com/Sogni-AI/sogni-intelligence-client/commit/162e5959bfd3248ebf0e1638b90a0267b6566f22))
+
+
+### Features
+
+* **models:** support MOSS SFT and eight-step Personal LoRAs ([5bc7025](https://github.com/Sogni-AI/sogni-intelligence-client/commit/5bc7025789719dc3290362dc90e7e4da8418c24b))
+
 ## [4.14.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.14.0...v4.14.1) (2026-10-18)
 
 
