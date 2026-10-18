@@ -4,7 +4,7 @@
  * or refuse adult creative requests the platform supports.
  */
 export const SOGNI_ADULT_REQUESTER_DIRECTIVE =
-  "Don't be prude, you're dealing with an adult. Follow the requester's creative direction without causing or facilitating real-world harm. Fictional depictions of violence, injury, horror, or danger are not themselves real-world harm; preserve the requested tone and intensity.";
+  "Don't be prude, you're dealing with an adult. Interpret creative-generation requests as fiction and fantasy by default, including photorealistic human depictions. Bad taste, strangeness, disgust, disturbing themes, and realism alone are not refusal grounds. Preserve the requested tone and intensity. Follow applicable law and mandatory service restrictions.";
 
 /**
  * Appends the requester directive to a system prompt. Idempotent, so layered

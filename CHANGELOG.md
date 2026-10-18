@@ -1,3 +1,10 @@
+## [4.14.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.14.0...v4.14.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* **prompts:** clarify creative authoring interpretation ([dca2897](https://github.com/Sogni-AI/sogni-intelligence-client/commit/dca2897a8b5223ca07163a79b1029b098fa8011b))
+
 # [4.14.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.13.0...v4.14.0) (2026-10-17)
 
 
