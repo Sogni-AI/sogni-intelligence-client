@@ -727,6 +727,15 @@ Directly reuse <Audio 1> unchanged.`;
     false,
   );
 
+  const mossScaled = validateAndNormalizeHostedToolArguments([generateImageDefinition], 'generate_image', {
+    prompt: 'A wide portrait', model: 'moss-image', mossRopeScaleX: 0.5, mossRopeScaleY: 2,
+  });
+  expect('MOSS spatial scales survive tool validation', mossScaled.cleaned.mossRopeScaleX, 0.5);
+  expect('MOSS vertical scale survives tool validation', mossScaled.cleaned.mossRopeScaleY, 2);
+  expect('MOSS invalid scale is refused', validateAndNormalizeHostedToolArguments([generateImageDefinition], 'generate_image', {
+    prompt: 'A portrait', model: 'moss-image', mossRopeScaleX: -1,
+  }).ok, false);
+
   runMinimaxH3KeyframeToolTests();
   runMinimaxH3KeyframeValidationTests();
   runMinimaxH3KeyframePromptTests();

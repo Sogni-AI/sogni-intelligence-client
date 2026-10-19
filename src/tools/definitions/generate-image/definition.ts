@@ -103,6 +103,14 @@ VIDEO KEYFRAMES: When generating images intended as first+last frames for video 
           description:
             'Guidance scale override. Higher values = more prompt adherence. Model-specific defaults are used if omitted. Only set when the user explicitly requests a guidance value.',
         },
+        mossRopeScaleX: {
+          type: 'number', minimum: 0, maximum: 100,
+          description: 'MOSS-Image only: horizontal spatial composition scale. 1 is neutral. Set only when the user requests spatial scaling or a composition-scale adjustment; preserves output dimensions.',
+        },
+        mossRopeScaleY: {
+          type: 'number', minimum: 0, maximum: 100,
+          description: 'MOSS-Image only: vertical spatial composition scale. 1 is neutral. Set only when the user requests spatial scaling or a composition-scale adjustment; preserves output dimensions.',
+        },
         loras: {
           type: 'array',
           minItems: 1,
