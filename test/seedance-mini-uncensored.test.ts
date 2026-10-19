@@ -168,6 +168,8 @@ test('a Mini Uncensored 4103 names Seedance 2.0 Mini Uncensored and keeps the sh
   const payload = modelConsentRequiredPayloadFromError(sdkError);
   assert.ok(payload);
   assert.equal(payload.error, MODEL_CONSENT_REQUIRED_ERROR);
+  assert.equal(payload.consentUrl, 'https://app.sogni.ai/account/model-consents/seedance-2-0-mini-uncensored');
+  assert.ok(payload.consentInstructions?.includes(payload.consentUrl!));
   assert.equal(payload.message, SEEDANCE_MINI_UNCENSORED_CONSENT_REQUIRED_MESSAGE);
   assert.equal(payload.message, MINI_SOCKET_MESSAGE);
   assert.equal(payload.nextAction, 'wait_for_user');

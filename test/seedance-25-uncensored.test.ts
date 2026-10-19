@@ -133,6 +133,10 @@ test('4103 refusals map to the typed, non-retryable consent payload', () => {
   assert.match(payload.message, /accept it in the Sogni app/);
   assert.equal(payload.retryPolicy, 'manual_user_confirmation');
   assert.equal(payload.nextAction, 'wait_for_user');
+  assert.equal(payload.consentUrl, 'https://app.sogni.ai/account/model-consents/seedance-2-5-uncensored');
+  assert.ok(payload.consentInstructions?.includes(payload.consentUrl!));
+  assert.match(payload.consentInstructions!, /same Sogni account as your agent or API key/);
+  assert.match(payload.consentInstructions!, /retry your original request/);
   assert.deepEqual(payload.consentRequired, CONSENT);
 
   const socketJobError = {
@@ -173,6 +177,16 @@ test('the public skill classifier reports 4103 as a non-retryable permission', (
       retryable: false,
     });
   }
+});
+
+test('consent recovery identifies the authenticated account without changing the refusal message', () => {
+  const payload = modelConsentRequiredPayloadFromError({ code: 4103, consentRequired: CONSENT }, 'request-owner');
+  assert.ok(payload);
+  assert.equal(payload.message, MODEL_CONSENT_REQUIRED_MESSAGE);
+  assert.equal(payload.accountUsername, 'request-owner');
+  assert.equal(payload.consentUrl, 'https://app.sogni.ai/account/model-consents/seedance-2-5-uncensored?account=request-owner');
+  assert.match(payload.consentInstructions!, /@request-owner/);
+  assert.equal(payload.retryPolicy, 'manual_user_confirmation');
 });
 
 test('Seedance failure mapping reports 4103 as consent, not a retryable vendor failure', () => {

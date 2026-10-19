@@ -43,31 +43,46 @@ export interface ModelConsentRequiredPayload {
   nextAction: 'wait_for_user';
   consentRequired?: ModelConsentRequirement;
   technicalError?: string;
+  /** Direct browser destination; never contains API keys or accepts on the user's behalf. */
+  consentUrl?: string;
+  /** Human/agent recovery guidance, separate from the existing error message. */
+  consentInstructions?: string;
+  accountUsername?: string;
 }
 
 // The socket names the refused model in consentRequired.modelId; the shared
 // agreement key is the same for both uncensored Seedance models. A refusal that
 // arrives as text only names the model in the socket's own sentence.
-function consentRequiredMessageFor(
+function consentRequiredModelIdFor(
   consentRequired: ModelConsentRequirement | null | undefined,
   text: string | undefined,
-): ModelConsentRequiredPayload['message'] {
+): 'seedance-2-5-uncensored' | 'seedance-2-0-mini-uncensored' {
   const namesMiniUncensored = consentRequired?.modelId
     ? isSeedanceMiniUncensoredVideoModelId(consentRequired.modelId)
     : /\bSeedance 2\.0 Mini Uncensored requires\b/i.test(text ?? '');
-  return namesMiniUncensored ? SEEDANCE_MINI_UNCENSORED_CONSENT_REQUIRED_MESSAGE : MODEL_CONSENT_REQUIRED_MESSAGE;
+  return namesMiniUncensored ? 'seedance-2-0-mini-uncensored' : 'seedance-2-5-uncensored';
 }
 
 export function modelConsentRequiredPayload(
   consentRequired?: ModelConsentRequirement | null,
   technicalError?: string,
+  accountUsername?: string,
 ): ModelConsentRequiredPayload {
+  const modelId = consentRequiredModelIdFor(consentRequired, technicalError);
+  const username = accountUsername?.trim();
+  const destination = new URL(`https://app.sogni.ai/account/model-consents/${modelId}`);
+  if (username) destination.searchParams.set('account', username);
+  const consentUrl = destination.href;
   return {
     error: MODEL_CONSENT_REQUIRED_ERROR,
     errorCode: MODEL_CONSENT_REQUIRED_ERROR_CODE,
-    message: consentRequiredMessageFor(consentRequired, technicalError),
+    message: modelId === 'seedance-2-0-mini-uncensored'
+      ? SEEDANCE_MINI_UNCENSORED_CONSENT_REQUIRED_MESSAGE : MODEL_CONSENT_REQUIRED_MESSAGE,
     retryPolicy: 'manual_user_confirmation',
     nextAction: 'wait_for_user',
+    consentUrl,
+    consentInstructions: `Open ${consentUrl}, sign in with the same Sogni account as your agent or API key${username ? ` (@${username})` : ''}, review the agreement, check "I agree", and select "Continue". Then return to your agent or terminal and retry your original request. One agreement covers both Uncensored Seedance models. Nothing was charged for the refused request.`,
+    ...(username ? { accountUsername: username } : {}),
     ...(consentRequired ? { consentRequired: { ...consentRequired } } : {}),
     ...(technicalError ? { technicalError: technicalError.slice(0, 500) } : {}),
   };
@@ -162,12 +177,13 @@ export function textIndicatesModelConsentRequired(text: string): boolean {
  */
 export function modelConsentRequiredPayloadFromError(
   error: unknown,
+  accountUsername?: string,
 ): ModelConsentRequiredPayload | null {
   if (error === null || error === undefined) return null;
-  if (isConsentCode(error)) return modelConsentRequiredPayload();
+  if (isConsentCode(error)) return modelConsentRequiredPayload(undefined, undefined, accountUsername);
 
   const signal = findConsentSignal(error, new WeakSet<object>(), 0);
   const text = errorText(error);
   if (!signal.found && !textIndicatesModelConsentRequired(text)) return null;
-  return modelConsentRequiredPayload(signal.consentRequired, text || undefined);
+  return modelConsentRequiredPayload(signal.consentRequired, text || undefined, accountUsername);
 }
