@@ -1,3 +1,10 @@
+## [4.16.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.16.0...v4.16.1) (2026-10-19)
+
+
+### Bug Fixes
+
+* **media:** add direct model agreement recovery links ([239fe0e](https://github.com/Sogni-AI/sogni-intelligence-client/commit/239fe0e2ba45b2bcc8b9a828db61de576c951258))
+
 # [4.16.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.15.0...v4.16.0) (2026-10-19)
 
 
