@@ -20,6 +20,7 @@ import {
   SogniTimeoutError,
   SogniValidationError,
 } from './errors.js';
+import { isGptImageModel } from '../media/gptImage.js';
 import { VIDEO_UPSCALE_MAX_OUTPUT, VIDEO_UPSCALE_MODEL_ID } from '../media/videoUpscale.js';
 import {
   WAN22_MAX_VIDEO_PIXELS,
@@ -187,6 +188,9 @@ export function getVideoDimensionRules(modelId?: string): VideoDimensionRules {
  * Get the maximum number of context images supported by a model
  */
 export function getMaxContextImages(modelId: string): number {
+  if (isGptImageModel(modelId)) {
+    return 16;
+  }
   if (
     modelId === 'krea2_identity_edit_v1_2' ||
     modelId === 'krea2_identity_edit_sogni_v0_3_alpha' ||
@@ -401,7 +405,9 @@ export function validateProjectConfig(config: ProjectConfig): void {
         throw new SogniValidationError('contextImages must be an array');
       }
 
-      const maxImages = 6; // Maximum across all models
+      // Per-model limit (FLUX 3 Image Klein 10, GPT Image 16). Models the table
+      // does not list keep the earlier cap of 6; sogni-client applies its own.
+      const maxImages = getMaxContextImages(config.modelId) || 6;
       if (config.contextImages.length > maxImages) {
         throw new SogniValidationError(
           `contextImages can have at most ${maxImages} images`

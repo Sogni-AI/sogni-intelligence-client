@@ -2617,24 +2617,41 @@ async function runTests() {
     validateProjectConfig(config);
   })();
 
-  // Test 36: Context images validation - exceeds maximum
-  await test('Should reject contextImages exceeding maximum of 6', () => {
-    const config = {
-      type: 'image' as const,
-      modelId: 'qwen_image_edit_2511_fp8',
-      positivePrompt: 'Transform the image',
-      numberOfMedia: 1,
-      contextImages: [true, true, true, true, true, true, true], // 7 images
-    };
-
+  // Test 36: Context images validation - the model's own maximum
+  const contextImagesConfig = (modelId: string, count: number): ImageProjectConfig => ({
+    type: 'image',
+    modelId,
+    positivePrompt: 'Transform the image',
+    numberOfMedia: 1,
+    contextImages: Array.from({ length: count }, () => true as const),
+  });
+  const expectContextImagesRejected = (modelId: string, count: number) => {
     try {
-      validateProjectConfig(config as ImageProjectConfig);
-      throw new Error('Should have thrown');
+      validateProjectConfig(contextImagesConfig(modelId, count));
     } catch (error) {
       if (!(error instanceof SogniValidationError)) {
         throw new Error('Expected SogniValidationError');
       }
+      return;
     }
+    throw new Error(`${modelId} should reject ${count} contextImages`);
+  };
+
+  await test('Should reject contextImages exceeding the model maximum', () => {
+    expectContextImagesRejected('qwen_image_edit_2511_fp8', 4);
+    expectContextImagesRejected('flux3_image_klein_sd_int8_convrot', 11);
+    expectContextImagesRejected('gpt-image-2', 17);
+  })();
+
+  await test('Should accept up to 10 contextImages for FLUX 3 Image Klein and 16 for GPT Image', () => {
+    validateProjectConfig(contextImagesConfig('flux3_image_klein_sd_int8_convrot', 10));
+    validateProjectConfig(contextImagesConfig('gpt-image-2', 16));
+    validateProjectConfig(contextImagesConfig('gpt-image-2.5-flare', 16));
+  })();
+
+  await test('Should keep the cap of 6 contextImages for models without a listed maximum', () => {
+    validateProjectConfig(contextImagesConfig('qwen_image_2512_fp8', 6));
+    expectContextImagesRejected('qwen_image_2512_fp8', 7);
   })();
 
   // Test 37: Context images validation - not an array
@@ -2681,6 +2698,9 @@ async function runTests() {
     }
     if (getMaxContextImages('flux3_image_klein_sd_int8_convrot') !== 10) {
       throw new Error('FLUX 3 Image Klein should support 10 context images');
+    }
+    if (getMaxContextImages('gpt-image-2') !== 16 || getMaxContextImages('gpt-image-2.5-sunburst') !== 16) {
+      throw new Error('GPT Image should support 16 context images');
     }
     if (getMaxContextImages('krea2_identity_edit_v1_2') !== 2) {
       throw new Error('Krea 2 Identity Edit should support 2 context images');
