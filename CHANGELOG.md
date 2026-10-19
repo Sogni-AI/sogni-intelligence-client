@@ -1,3 +1,10 @@
+## [4.16.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.16.1...v4.16.2) (2026-10-19)
+
+
+### Bug Fixes
+
+* **images:** check context images against each model's own limit ([88feabc](https://github.com/Sogni-AI/sogni-intelligence-client/commit/88feabcf8a33d6ebf59d81b6dc554103f7d700f3))
+
 ## [4.16.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.16.0...v4.16.1) (2026-10-19)
 
 
