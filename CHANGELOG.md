@@ -1,3 +1,10 @@
+# [4.16.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.15.0...v4.16.0) (2026-10-19)
+
+
+### Features
+
+* **images:** expose optional MOSS composition controls ([928a2bb](https://github.com/Sogni-AI/sogni-intelligence-client/commit/928a2bbabbc7f5f40c8e95a7ffd7ece3c568bee6))
+
 # [4.15.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.14.1...v4.15.0) (2026-10-18)
 
 
