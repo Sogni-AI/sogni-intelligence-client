@@ -68,17 +68,16 @@ export const KREA2_LORA_MODEL_IDS_SENTENCE =
 /**
  * The MiniMax H3 video LoRA catalog.
  *
- * Video LoRAs are a different shape from the Krea 2 sliders: positive-only, one
- * file per family rather than one per effect, and gated on a trigger word that
- * has to reach the prompt. State the trigger here because a request that omits
- * it renders a normal H3 video and looks like the LoRA silently failed.
+ * H3 fine-tunes and the Action Speed Slider have different strength contracts.
+ * State required trigger words here because omitting one can render an ordinary
+ * H3 video and look like the LoRA silently failed.
  *
  * Split across generate_video (t2v, r2v) and animate_photo (i2v, flf2v) because
  * that is how the H3 modes are split across the two tools; each names only its
  * own selectors so neither sends the other's.
  */
 export const H3_VIDEO_LORA_CATALOG_REFERENCE =
-  'Five LoRAs are published for MiniMax H3 today and the set differs by mode, so '
+  'Public MiniMax H3 LoRAs differ by mode, so '
   + 'GET /v1/loras/comfy?modelId=<model> is authoritative for the mode in hand and carries exact '
   + 'ranges, maturity flags, and anything published since. h3-realism-people (fal) is a realism '
   + 'pass trained on live-action footage of people: it restores skin texture and pores, stray '
@@ -92,21 +91,27 @@ export const H3_VIDEO_LORA_CATALOG_REFERENCE =
   + 'presenters. h3-better-motion (AdaptiveVision) gives people more natural, consistent body '
   + 'movement — weight shifts, strides, turns and gestures that follow through — for dance, '
   + 'sport, walking and other full-body shots. Both AdaptiveVision LoRAs work best with short, '
-  + 'simple prompt sentences and are not validated on reference-to-video. h3-mystic-xxx-v4 is an '
-  + 'uncensored adult fine-tune. Personal imports are discovered through authenticated GET /v1/loras/personal/catalog; use only owned ready ids with the selected model in modelIds, and respect their strength range and requirements. Do not invent ids.';
+  + 'simple prompt sentences and are not validated on reference-to-video. h3-mystic-xxx-v5 is an '
+  + 'uncensored adult fine-tune, stronger than v4 at the same strength; h3-mystic-xxx-v4 remains '
+  + 'available. h3-action-speed-slider changes motion speed: negative slows the action, positive '
+  + 'speeds it up, and 0 is off. Neither Mystic version nor Action Speed is offered on '
+  + 'reference-to-video. Personal imports are discovered through authenticated GET /v1/loras/personal/catalog; use only owned ready ids with the selected model in modelIds, and respect their strength range and requirements. Do not invent ids.';
 
-/** Shared video `loraStrengths` guidance: positive-only, and what pushing it costs. */
+/** Shared video `loraStrengths` guidance: fine-tunes, signed sliders, and usable bands. */
 export const H3_VIDEO_LORA_STRENGTHS_GUIDANCE =
   'Strength for each LoRA in loras, in the same order. Omitting the array applies 1.0 to every '
   + 'LoRA, which is not every LoRA\'s catalog default and for h3-realism-people is already at the '
-  + 'top of its band, so send explicit values. Video LoRAs are positive-only — unlike the bipolar Krea 2 image '
-  + 'sliders, a negative value is not an inverse effect and 0 is off. h3-realism-people takes 0-2 '
+  + 'top of its band, so send explicit values. H3 fine-tunes use positive strengths; '
+  + 'h3-action-speed-slider is bipolar: negative is slow motion, positive is faster action, '
+  + 'and 0 is off. Read its range and default from the live catalog; preserve requested signed '
+  + 'values instead of clamping them to 0-1. Personal imports use their own catalog range. h3-realism-people takes 0-2 '
   + 'and its catalog default is 0.8; 0.6-1 is the '
   + 'usable band. It also pulls the camera in as it climbs: at 1.5 and above the shot reliably '
   + 'recomposes and the grade darkens, which on an image-conditioned mode can crop the subject out '
   + 'of the frame the user supplied. Raise it above 1 only when the user asks for more, and prefer '
-  + 'the default when they supplied a first or last frame. h3-vbvr-video-reasoning and '
-  + 'h3-mystic-xxx-v4 both take 0-1 and do default to 1.0, with usable bands of 0.7-1 and 0.2-1. '
+  + 'the default when they supplied a first or last frame. h3-vbvr-video-reasoning takes 0-1 '
+  + 'and defaults to 1.0, with a usable band of 0.7-1. Mystic X v4 and v5 take 0-1; their catalog '
+  + 'default is 0.5 and recommended band is 0.2-0.6. V5 is stronger at the same strength. '
   + 'h3-natural-face-speech and h3-better-motion take 0-1.5 and default to 0.6; their usable band '
   + 'is 0.4-0.8.';
 
