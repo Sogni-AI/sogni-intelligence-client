@@ -1,3 +1,10 @@
+## [4.16.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.16.2...v4.16.3) (2026-10-20)
+
+
+### Bug Fixes
+
+* **tools:** document signed H3 LoRA strengths ([9ceb23e](https://github.com/Sogni-AI/sogni-intelligence-client/commit/9ceb23ef17de644f33d7b58ef5b4882889bbc94b))
+
 ## [4.16.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.16.1...v4.16.2) (2026-10-19)
 
 
