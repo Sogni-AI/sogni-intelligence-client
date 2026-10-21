@@ -454,6 +454,8 @@ test('agents learn that Seedance 2.5 takes real people after the shared likeness
     assert.match(text, /never requires it/);
     assert.match(text, /retry the same request on "?seedance2-5"? at its regular price/);
     assert.match(text, /seedance2-mini"?\)? still refuse real people/);
+    // Unlimited members see the model their plan includes first (Mark, 2026-10-21).
+    assert.match(text, /active Sogni Unlimited plan, offer MiniMax H3 first instead \(it is included with Unlimited\), then the agreement/);
     // Mark retired the stylize and LTX workarounds on 2026-10-09.
     assert.doesNotMatch(text, /styliz|cartoon|ltx/i);
   }
