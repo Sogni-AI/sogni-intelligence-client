@@ -5,6 +5,12 @@
  * agreeing, so a negative upload index means the same file in every host.
  */
 import {
+  defaultPersonaSheetModel,
+  personaSheetModel,
+  personaSheetModelUnavailableReason,
+  personaSheetPhotos,
+  personaSheetPrompt,
+  PERSONA_SHEET_MODELS,
   defaultReferenceImageOrdinals,
   describePersonaReferences,
   findPersonaVoiceReference,
@@ -71,11 +77,11 @@ export function runPersonaReferencesTests(): { passed: number; failed: number } 
     'music.wav',
     'persona-mark.jpg',
     'persona-alex.jpg',
+    'persona-mark.sheet.png',
     'persona-mark.portrait.png',
     'persona-mark.profile.png',
     'persona-mark.back.png',
     'persona-mark.expression.png',
-    'persona-mark.sheet.png',
     'persona-alex.front.png',
     'persona-alex.profile.png',
     'persona-voiceclip-mark',
@@ -95,17 +101,17 @@ export function runPersonaReferencesTests(): { passed: number; failed: number } 
   expect('extra view slug and role', parsePersonaFilename('persona-mark.sheet.jpg', 'image'), { kind: 'image', slug: 'mark', role: 'sheet' });
 
   // Seedance 2.0 takes 9 images: the user's upload, both identities, then one
-  // view per persona in turn; Mark's sheet is the one that doesn't fit.
+  // view per persona in turn, sheets first; Mark's expression is the one that doesn't fit.
   const images = uploads.filter((file) => file.type === 'image');
   const chosen = defaultReferenceImageOrdinals(images, 9).map((ordinal) => images[ordinal].filename);
   expect('default selection budgets views fairly, in upload order', chosen, [
     'beach.png',
     'persona-mark.jpg',
     'persona-alex.jpg',
+    'persona-mark.sheet.png',
     'persona-mark.portrait.png',
     'persona-mark.profile.png',
     'persona-mark.back.png',
-    'persona-mark.expression.png',
     'persona-alex.front.png',
     'persona-alex.profile.png',
   ]);
@@ -127,6 +133,40 @@ export function runPersonaReferencesTests(): { passed: number; failed: number } 
     'Alex: main identity image -3; full body, front image -9; side profile image -10');
   expect('description marks the saved transcript', describePersonaReferences(uploads)[0].endsWith(
     'voice recording audio -2, 15s, transcript saved; video voice excerpt audio -3, 5s'), true);
+
+  // One-pass character sheets.
+  expect('a photo starts on Krea 2 Identity Edit', defaultPersonaSheetModel(1).id, 'krea2_identity_edit_v1_2');
+  expect('a description starts on GPT Image 2.5 Sunburst', defaultPersonaSheetModel(0).id, 'gpt-image-2.5-sunburst');
+  expect('every listed sheet model', PERSONA_SHEET_MODELS.map((model) => model.id), [
+    'krea2_identity_edit_v1_2',
+    'dark_beast_krea2_identity_edit_v1_2',
+    'qwen_image_edit_2511_fp8_lightning',
+    'flux3_image_klein_sd_int8_convrot',
+    'gpt-image-2.5-sunburst',
+    'moss_image_sft_int8_convrot',
+  ]);
+  const krea = personaSheetModel('krea2_identity_edit_v1_2')!;
+  const moss = personaSheetModel('moss_image_sft_int8_convrot')!;
+  expect('Krea renders sheets square', [krea.width, krea.height], [1024, 1024]);
+  expect('photo models need a photo', personaSheetModelUnavailableReason(krea, 0), 'Add a photo first');
+  expect('description models never do', personaSheetModelUnavailableReason(moss, 0), null);
+  const saved = [
+    { id: 'face', role: 'portrait' },
+    { id: 'old-body', role: 'front' },
+    { id: 'side', role: 'profile' },
+    { id: 'body', role: 'front' },
+    { id: 'old-sheet', role: 'sheet' },
+  ];
+  expect('body first, face second for two-photo models', personaSheetPhotos(saved, 'face', krea).map((photo) => photo.id), ['body', 'face']);
+  expect('description-only models take no photos', personaSheetPhotos(saved, 'face', moss), []);
+  expect('an earlier sheet never feeds a new one',
+    personaSheetPhotos([{ id: 'old-sheet', role: 'sheet' }], 'old-sheet', krea), []);
+  expect('the chosen identity is the face', personaSheetPhotos(saved, 'side', krea).map((photo) => photo.id), ['body', 'side']);
+  expect('two photos are named in order', personaSheetPrompt({}, 2).includes('Image 1 shows their body and outfit, Image 2 shows their face'), true);
+  expect('a description sheet uses the brief and no likeness line',
+    [personaSheetPrompt({ appearance: 'Silver hair' }, 0).includes('Appearance: Silver hair.'), personaSheetPrompt({}, 0).includes('likeness')],
+    [true, false]);
+  expect('long briefs stay bounded', personaSheetPrompt({ description: 'x'.repeat(5000) }, 1).length < 2000, true);
 
   console.log(`\npersonaReferences: ${testsPassed} passed, ${testsFailed} failed`);
   return { passed: testsPassed, failed: testsFailed };

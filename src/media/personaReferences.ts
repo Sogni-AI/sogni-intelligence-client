@@ -33,7 +33,8 @@ export type PersonaVoiceRole = Extract<PersonaReferenceRole, 'voice' | 'voice-vi
  * Extra image views in the order reference-to-video models should receive
  * them. `portrait` appears here only when another image is the main identity.
  */
-export const PERSONA_VIEW_ROLES = ['portrait', 'front', 'profile', 'back', 'expression', 'sheet'] as const satisfies readonly PersonaReferenceRole[];
+// A one-pass character sheet holds every angle, so it is each persona's first extra view.
+export const PERSONA_VIEW_ROLES = ['sheet', 'portrait', 'front', 'profile', 'back', 'expression'] as const satisfies readonly PersonaReferenceRole[];
 
 const ROLE_LABELS: Record<PersonaReferenceRole, string> = {
   portrait: 'identity portrait',
