@@ -146,7 +146,10 @@ function textHasSeedanceContentPolicySignal(text: string): boolean {
 // vendorFailureCategory content_policy). For a regular Seedance model it ends
 // with a "Try … instead." sentence that names only models the network runs, so
 // held models never appear where they are held; packages cannot see that switch
-// and must pass the text through rather than write their own suggestion.
+// and must pass the text through rather than write their own suggestion. A
+// regular Seedance 2.5 real-person refusal for an account without the likeness
+// agreement starts that sentence with "Try again after accepting the one-time
+// likeness agreement at <link>, or try …", which the lazy match keeps whole.
 const SOCKET_SEEDANCE_CONTENT_REFUSAL_PATTERNS: readonly RegExp[] = [
   /Seedance blocked this video because it did not pass the provider's content policy\. No video was returned\.(?: Try .+? instead\.)?/,
   /Seedance rejected the input image because it may contain a real person\.(?: Try .+? instead\.)?/,

@@ -9,6 +9,13 @@
  * `consentRequired` object naming the agreement and the refused model. Retrying
  * cannot succeed, and no SDK, agent, or API-key session may accept the agreement
  * on the user's behalf: the user has to accept it in the Sogni app.
+ *
+ * The same agreement (same key and version) also lets regular Seedance 2.5
+ * (`seedance-2-5`) take photos and clips of real people. That model never
+ * refuses with 4103: without the agreement it keeps the vendor's real-person
+ * refusal, whose socket sentence links the agreement at
+ * https://app.sogni.ai/account/model-consents/seedance-2-5 (see
+ * seedanceSocketContentRefusalMessage).
  */
 import { isSeedanceMiniUncensoredVideoModelId } from '../utils/seedanceModelIds.js';
 
