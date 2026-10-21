@@ -1,3 +1,10 @@
+## [4.16.4](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.16.3...v4.16.4) (2026-10-21)
+
+
+### Bug Fixes
+
+* **contracts:** add the CSAM line to the adult requester directive ([f55f31c](https://github.com/Sogni-AI/sogni-intelligence-client/commit/f55f31ce350a5d80d426d8d1d07fb8d744c36296))
+
 ## [4.16.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.16.2...v4.16.3) (2026-10-20)
 
 
