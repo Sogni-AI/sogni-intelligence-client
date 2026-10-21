@@ -145,6 +145,7 @@ import { runCostApprovalTests } from './cost-approval-tests';
 import { runSpeechSettingsTests } from './speech-settings-tests';
 import { runVideoUpscaleTests } from './video-upscale-tests';
 import { runPersonaReferenceVideoTests } from './persona-reference-video-tests';
+import { runPersonaReferencesTests } from './persona-references-tests';
 import {
   isTurnAnalysis,
   isTurnTextArtifact,
@@ -6318,6 +6319,11 @@ async function runTests() {
   const personaReferenceVideoResults = runPersonaReferenceVideoTests();
   testsPassed += personaReferenceVideoResults.passed;
   testsFailed += personaReferenceVideoResults.failed;
+
+  // My Personas naming, ordering, reference selection and voice choice shared by every host
+  const personaReferencesResults = runPersonaReferencesTests();
+  testsPassed += personaReferencesResults.passed;
+  testsFailed += personaReferencesResults.failed;
 
   // Summary
   console.log('\n' + '='.repeat(50));
