@@ -21,7 +21,8 @@
  *   - UPLOADED_BASE_VIDEO_TRANSFORM force video_to_video for uploaded-video transforms
  *   - UPLOADED_BASE_VIDEO_STITCH    force stitch_video for uploaded-video stitching
  *   - UPLOADED_BASE_VIDEO_UPSCALE   force upscale_video for uploaded-video resolution upscales
- *   - HAS_PERSONA_AND_REQUESTS_VIDEO  require resolve_personas + edit_image first only when persona is explicit
+ *   - HAS_PERSONA_AND_REQUESTS_VIDEO  require resolve_personas first only when persona is explicit; references go
+ *                                     straight into H3 r2v/Seedance/Wan 3, an edit_image still comes first elsewhere
  *   - HAS_PERSONA_AND_REQUESTS_PERSONA_IMAGE  require edit_image (not generate_image)
  */
 
@@ -246,7 +247,7 @@ export const GATING_POLICIES: ReadonlyArray<ToolGatingPolicy> = [
   },
   {
     policyId: 'HAS_PERSONA_AND_REQUESTS_VIDEO',
-    version: '1.0.0',
+    version: '1.1.0',
     trigger: {
       allOf: [
         'has_active_persona',
@@ -259,10 +260,13 @@ export const GATING_POLICIES: ReadonlyArray<ToolGatingPolicy> = [
         no_persona_image_in_session: 'session_state',
       },
     },
-    effect: { forbid: [], require: ['resolve_personas', 'edit_image'] },
+    effect: { forbid: [], require: ['resolve_personas'] },
     rationale:
-      'Persona videos require an image stage first: resolve_personas, then ' +
-      'edit_image to render the persona, then animate. Do not go text-to-video.',
+      'Persona videos start with resolve_personas. On MiniMax H3 reference-to-video, Seedance or ' +
+      'Wan 3, pass the resolved persona reference images straight to generate_video as ' +
+      'referenceImageIndices, with no edit_image step. On LTX and every other video model, render ' +
+      'the persona with edit_image first, then animate it. Do not go text-to-video without the ' +
+      'persona references.',
   },
   {
     policyId: 'HAS_PERSONA_AND_REQUESTS_PERSONA_IMAGE',

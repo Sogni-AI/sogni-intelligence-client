@@ -1127,7 +1127,7 @@ function runMinimaxH3KeyframePromptTests(): void {
   expect(
     'prompt contracts that gained keyframes bump their versions',
     ['animate_photo', 'generate_video', 'sound_to_video'].map(name => PROMPT_CONTRACTS.find(contract => contract.toolName === name)?.version),
-    ['1.3.0', '1.5.0', '1.2.0'],
+    ['1.3.0', '1.6.0', '1.3.0'],
   );
   // MiniMax's keyframe format names every keyframe <Picture N> after the mode's own pictures.
   const generateVideoContract = PROMPT_CONTRACTS.find(contract => contract.toolName === 'generate_video');

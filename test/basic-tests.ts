@@ -144,6 +144,7 @@ import { runWorkflowExecutorTests } from './workflow-executor-tests';
 import { runCostApprovalTests } from './cost-approval-tests';
 import { runSpeechSettingsTests } from './speech-settings-tests';
 import { runVideoUpscaleTests } from './video-upscale-tests';
+import { runPersonaReferenceVideoTests } from './persona-reference-video-tests';
 import {
   isTurnAnalysis,
   isTurnTextArtifact,
@@ -6312,6 +6313,11 @@ async function runTests() {
   const videoUpscaleResults = runVideoUpscaleTests();
   testsPassed += videoUpscaleResults.passed;
   testsFailed += videoUpscaleResults.failed;
+
+  // My Personas on reference-to-video models, persona voice and persona clone
+  const personaReferenceVideoResults = runPersonaReferenceVideoTests();
+  testsPassed += personaReferenceVideoResults.passed;
+  testsFailed += personaReferenceVideoResults.failed;
 
   // Summary
   console.log('\n' + '='.repeat(50));
