@@ -444,16 +444,27 @@ test('a Seedance 2.5 real-person refusal passes the socket sentence through with
   );
 });
 
-test('agents learn that Seedance 2.5 takes real people after the shared likeness agreement', () => {
+test('a Seedance 2.0 Mini real-person refusal passes through whole with its own agreement link', () => {
+  const refusal = SEEDANCE_25_AGREEMENT_REFUSAL
+    .replace('model-consents/seedance-2-5', 'model-consents/seedance-2-0-mini')
+    .replace('Seedance 2.5 Uncensored', 'Seedance 2.0 Mini Uncensored');
+  const error = { code: 5061, message: refusal, vendorFailureCategory: 'content_policy' };
+  assert.equal(seedanceSocketContentRefusalMessage(error), refusal);
+  assert.equal(seedanceTerminalPolicyPayloadFromError(error)?.message, refusal);
+  assert.equal(modelConsentRequiredPayloadFromError(error), null);
+});
+
+test('agents learn that every regular Seedance model takes real people after the shared likeness agreement', () => {
   const agreementUrl = 'https://app.sogni.ai/account/model-consents/seedance-2-5';
   for (const text of [
     SEEDANCE_25_UNCENSORED_MODEL_DESCRIPTION,
-    VIDEO_GENERATION_SKILL.constraints?.find(line => line.startsWith('Seedance 2.5 (seedance2-5) takes photos')) ?? '',
+    VIDEO_GENERATION_SKILL.constraints?.find(line => line.startsWith('Every regular Seedance model (seedance2-5, seedance2, seedance2-mini) takes photos')) ?? '',
   ]) {
     assert.ok(text.includes(agreementUrl), text);
-    assert.match(text, /never requires it/);
-    assert.match(text, /retry the same request on "?seedance2-5"? at its regular price/);
-    assert.match(text, /seedance2-mini"?\)? still refuse real people/);
+    assert.match(text, /never requires? it/);
+    assert.match(text, /retry the same request on the same model at its regular price/);
+    for (const model of ['seedance2-5', 'seedance2', 'seedance2-mini']) assert.ok(text.includes(model), model);
+    assert.doesNotMatch(text, /still refuse real people/);
     // Unlimited members see the model their plan includes first (Mark, 2026-10-21).
     assert.match(text, /active Sogni Unlimited plan, offer MiniMax H3 first instead \(it is included with Unlimited\), then the agreement/);
     // Mark retired the stylize and LTX workarounds on 2026-10-09.

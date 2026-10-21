@@ -25,12 +25,13 @@ export const SEEDANCE_TOOL_V2V_REFERENCE_GUIDANCE = `Seedance V2V reads @Video1 
 
 // Seedance 2.5 Uncensored (seedance-2-5-uncensored): Seedance 2.5 on a separate
 // uncensored account, gated by a one-time likeness and consent agreement. The
-// same agreement lets regular Seedance 2.5 (seedance-2-5) take real people's
-// photos and clips; seedance-2-5 never requires it. Unlimited members are
-// offered MiniMax H3 first after a real-person refusal (Mark, 2026-10-21).
+// same agreement lets every regular Seedance model (2.5, 2.0, 2.0 Mini, 2.0
+// Fast) take real people's photos and clips; they never require it. Unlimited
+// members are offered MiniMax H3 first after a real-person refusal (Mark,
+// 2026-10-21).
 export const SEEDANCE_25_UNCENSORED_MODEL_DESCRIPTION =
   '"seedance2-5-uncensored": Seedance 2.5 Uncensored — the uncensored variant of Seedance 2.5, with every mode, resolution, duration, reference limit, and output option described for "seedance2-5". Choose it only when the user asks for Seedance 2.5 Uncensored (including "Seedance Uncensored" or "Seedance Spicy") or for uncensored Seedance output; never swap it in for "seedance2-5" otherwise. Each account must accept a one-time likeness and consent agreement in the Sogni app before its first render; until then the job fails with error 4103, so tell the user to accept it in the Sogni app instead of retrying. ' +
-  'The same agreement lets "seedance2-5" take photos and clips of real people; "seedance2-5" never requires it. When "seedance2-5" refuses an input because it may contain a real person, first offer that agreement (the user accepts it once in the Sogni app at https://app.sogni.ai/account/model-consents/seedance-2-5) and, after the user says they accepted it, retry the same request on "seedance2-5" at its regular price; then offer "seedance2-5-uncensored", then MiniMax H3. When the context says the user has an active Sogni Unlimited plan, offer MiniMax H3 first instead (it is included with Unlimited), then the agreement and the "seedance2-5" retry, then "seedance2-5-uncensored". "seedance2" and "seedance2-mini" still refuse real people.';
+  'The same agreement lets every regular Seedance model ("seedance2-5", "seedance2" and "seedance2-mini") take photos and clips of real people; they never require it. When one of them refuses an input because it may contain a real person, first offer that agreement (the user accepts it once in the Sogni app at the link the refusal names, e.g. https://app.sogni.ai/account/model-consents/seedance-2-5) and, after the user says they accepted it, retry the same request on the same model at its regular price; then offer the Uncensored model the refusal suggests, then MiniMax H3. When the context says the user has an active Sogni Unlimited plan, offer MiniMax H3 first instead (it is included with Unlimited), then the agreement and the same-model retry, then the Uncensored model.';
 
 // Seedance 2.0 Mini Uncensored (seedance-2-0-mini-uncensored): Seedance 2.0 Mini on
 // the same uncensored account, gated by the same likeness and consent agreement.
