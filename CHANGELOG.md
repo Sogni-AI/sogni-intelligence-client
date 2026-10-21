@@ -1,3 +1,12 @@
+# [4.17.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.16.4...v4.17.0) (2026-10-21)
+
+
+### Features
+
+* **tools:** offer Unlimited members MiniMax H3 first after a Seedance 2.5 real-person refusal ([e164482](https://github.com/Sogni-AI/sogni-intelligence-client/commit/e164482d77e6d5ac06ea1d8a59da4570d03cd2b8))
+* **tools:** teach agents every regular Seedance model takes real people after the agreement ([6bef727](https://github.com/Sogni-AI/sogni-intelligence-client/commit/6bef72782af8b9bacd5248351a1bfd0809bc5231))
+* **tools:** teach agents Seedance 2.5 takes real people after the likeness agreement ([5caaaff](https://github.com/Sogni-AI/sogni-intelligence-client/commit/5caaaffe2f415c367299cb27ef30c457cd273dae))
+
 ## [4.16.4](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.16.3...v4.16.4) (2026-10-21)
 
 
