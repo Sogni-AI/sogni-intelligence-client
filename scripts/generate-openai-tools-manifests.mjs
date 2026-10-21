@@ -39,6 +39,32 @@ for (const file of manifestFiles) {
         'wan3.0-spicy-video',
       ])];
     }
+    // FastH3 Reference (minimax-h3-fastvideo-omni-int8_r2v_turbo) gives the
+    // FastH3 tier a reference-to-video selector. Until the pinned protocol
+    // carries it, add its selectors after the Ref2VA two-stage ones (the order
+    // src/tools/definitions/generate-video/definition.ts uses) and drop the
+    // protocol's "FastH3 has no R2V mode" lines. A no-op once the protocol has them.
+    const fastH3ReferenceSelectors = ['minimax-h3-fasth3-r2v-turbo', 'minimax-h3-fasth3-r2v-turbo-2stage'];
+    const generateVideo = manifest.tools?.find((candidate) => candidate?.function?.name === 'generate_video');
+    const generateVideoModel = generateVideo?.function?.parameters?.properties?.videoModel;
+    if (Array.isArray(generateVideoModel?.enum) && !generateVideoModel.enum.includes(fastH3ReferenceSelectors[0])) {
+      const after = generateVideoModel.enum.indexOf('minimax-h3-r2v-balanced-2stage');
+      generateVideoModel.enum.splice(after === -1 ? generateVideoModel.enum.length : after + 1, 0, ...fastH3ReferenceSelectors);
+    }
+    if (typeof generateVideoModel?.description === 'string') {
+      generateVideoModel.description = generateVideoModel.description.replace(
+        'FastH3 has no R2V mode. ',
+        '"minimax-h3-fasth3-r2v-turbo" is FastH3 Reference, the FastH3 tier\'s reference-to-video engine, with the same references, durations and catalog LoRAs as the other R2V selectors (Personal LoRAs are not available on it); "minimax-h3-fasth3-r2v-turbo-2stage" is its two-stage form and reads targetResolution like the other two-stage selectors. ',
+      );
+    }
+    const animatePhoto = manifest.tools?.find((candidate) => candidate?.function?.name === 'animate_photo');
+    const animatePhotoModel = animatePhoto?.function?.parameters?.properties?.videoModel;
+    if (typeof animatePhotoModel?.description === 'string') {
+      animatePhotoModel.description = animatePhotoModel.description.replace(
+        'FastH3 has no R2V mode; use frameRole',
+        'FastH3 Reference-to-Video is on generate_video; use frameRole',
+      );
+    }
   }
   sections.push(`export const ${constNameFor(file)}: unknown = ${JSON.stringify(manifest, null, 2)};`);
 }

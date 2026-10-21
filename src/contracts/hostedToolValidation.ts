@@ -575,7 +575,9 @@ export function validateAndNormalizeHostedToolArguments(
     // written for the selectors that existed (Standard and Turbo), and a
     // two-stage selector mirrors its one-stage base: minimax-h3-r2v is gated, so
     // minimax-h3-r2v-2stage is; minimax-h3-r2v-balanced is not, so
-    // minimax-h3-r2v-balanced-2stage is not either.
+    // minimax-h3-r2v-balanced-2stage is not either. FastH3 Reference is new, so
+    // it takes the rule the tool description states for every H3 R2V call:
+    // both of its selectors are gated.
     //
     // Accepting one is not optional in the same way. Balanced is an H3 R2V model:
     // the host applies the policy to every model whose workflow is reference to
@@ -585,7 +587,9 @@ export function validateAndNormalizeHostedToolArguments(
     // turned away callers who had followed that description.
     const isH3R2v = model === 'minimax-h3-r2v'
       || model === 'minimax-h3-r2v-turbo'
-      || model === 'minimax-h3-r2v-2stage';
+      || model === 'minimax-h3-r2v-2stage'
+      || model === 'minimax-h3-fasth3-r2v-turbo'
+      || model === 'minimax-h3-fasth3-r2v-turbo-2stage';
     const acceptsSourceAudioPolicy = isH3R2v
       || model === 'minimax-h3-r2v-balanced'
       || model === 'minimax-h3-r2v-balanced-2stage';

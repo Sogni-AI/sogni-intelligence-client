@@ -108,6 +108,8 @@ export const MODELS_BY_TOOL: Record<string, ModelOption[]> = {
     { key: 'minimax-h3-r2v-turbo', displayName: 'MiniMax H3 LightX2V Turbo (Reference to Video)' },
     { key: 'minimax-h3-r2v-2stage', displayName: 'MiniMax H3 Two-Stage (Reference to Video)' },
     { key: 'minimax-h3-r2v-balanced-2stage', displayName: 'MiniMax H3 Balanced Two-Stage (Reference to Video)' },
+    { key: 'minimax-h3-fasth3-r2v-turbo', displayName: 'MiniMax H3 FastH3 (Reference to Video)' },
+    { key: 'minimax-h3-fasth3-r2v-turbo-2stage', displayName: 'MiniMax H3 FastH3 Two-Stage (Reference to Video)' },
     { key: 'happyhorse-1.1-t2v', displayName: 'HappyHorse 1.1 (Text to Video)' },
     { key: 'happyhorse-1.1-i2v', displayName: 'HappyHorse 1.1 (Image to Video)' },
     { key: 'happyhorse-1.1-r2v', displayName: 'HappyHorse 1.1 (Reference to Video)' },
@@ -234,7 +236,7 @@ export function supportsMinimaxH3Keyframes(toolName: string, videoModel: unknown
 
 /**
  * The videoModel selectors that take `keyframes` on each tool, in registry
- * order: 8 on animate_photo, 6 on sound_to_video and 4 on generate_video.
+ * order: 8 on animate_photo, 6 on sound_to_video and 6 on generate_video.
  */
 export const MINIMAX_H3_KEYFRAME_SELECTORS_BY_TOOL: Readonly<Record<string, readonly string[]>> = Object.freeze(
   Object.fromEntries(

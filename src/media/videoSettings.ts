@@ -35,6 +35,8 @@ export type VideoModelId =
   | "minimax-h3-fasth3-a2v-turbo-2stage"
   | "minimax-h3-r2v-2stage"
   | "minimax-h3-r2v-balanced-2stage"
+  | "minimax-h3-fasth3-r2v-turbo"
+  | "minimax-h3-fasth3-r2v-turbo-2stage"
   | "seedance2"
   | "seedance2-mini"
   | "seedance2-mini-uncensored"
@@ -652,6 +654,51 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
   },
+  // FastH3 Reference (Comfy worker 1.0.239+): FastVideo's FastH3 Omni, the
+  // FastH3 tier's own distilled Ref2VA checkpoint. It runs 8 steps Euler/simple
+  // although its socket id ends in `_turbo`, with the same references, catalog
+  // LoRAs (no Personal LoRAs) and canvas as the other R2V selectors. Its two-stage selector renders the
+  // canvas and delivers twice it, like the Ref2VA two-stage selectors.
+  "minimax-h3-fasth3-r2v-turbo": {
+    model: "minimax-h3-fastvideo-omni-int8_r2v_turbo",
+    fps: 24,
+    steps: 8,
+    guidance: 1,
+    dimensionDivisor: 32,
+    minDimension: 32,
+    maxDimension: 1344,
+    sampler: "euler",
+    scheduler: "simple",
+    resolutionTiers: [768],
+    frameBase: 124,
+    frameStep: 17,
+    minFrames: 124,
+    maxFrames: 362,
+    maxPixels: 1_032_192,
+    nativeAudio: true,
+    supportsAudioToggle: true,
+    supportsNegativePrompt: false,
+  },
+  "minimax-h3-fasth3-r2v-turbo-2stage": {
+    model: "minimax-h3-fastvideo-omni-int8_r2v_turbo_2stage",
+    fps: 24,
+    steps: 8,
+    guidance: 1,
+    dimensionDivisor: 32,
+    minDimension: 32,
+    maxDimension: 1344,
+    sampler: "euler",
+    scheduler: "simple",
+    resolutionTiers: [768, 544, 384],
+    frameBase: 124,
+    frameStep: 17,
+    minFrames: 124,
+    maxFrames: 362,
+    maxPixels: 1_032_192,
+    nativeAudio: true,
+    supportsAudioToggle: true,
+    supportsNegativePrompt: false,
+  },
   // FastH3 is the FastVideo VSA four-step recipe. It is separate from the
   // existing LightX2V Turbo selectors and is qualified only with Euler/simple.
   "minimax-h3-fasth3-t2v-turbo": {
@@ -1024,8 +1071,9 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
  * MiniMax H3 two-stage: every spelling that names it. The FastH3 family alias
  * picks t2v/i2v/flf2v the same way `minimax-h3-fasth3-turbo` does; the six
  * FastH3 selectors (three video modes, three audio-guide modes) map to the six
- * FastH3 socket ids, and the two reference-to-video selectors (Standard and
- * Balanced) map to the two Ref2VA `_2stage` socket ids.
+ * FastH3 socket ids, the two reference-to-video selectors (Standard and
+ * Balanced) map to the two Ref2VA `_2stage` socket ids, and the FastH3
+ * Reference selector maps to its own `_2stage` socket id.
  */
 export const MINIMAX_H3_TWO_STAGE_MODEL_IDS: readonly string[] = Object.freeze([
   "minimax-h3-fasth3-turbo-2stage",
@@ -1037,6 +1085,7 @@ export const MINIMAX_H3_TWO_STAGE_MODEL_IDS: readonly string[] = Object.freeze([
   "minimax-h3-fasth3-a2v-turbo-2stage",
   "minimax-h3-r2v-2stage",
   "minimax-h3-r2v-balanced-2stage",
+  "minimax-h3-fasth3-r2v-turbo-2stage",
   "minimax-h3-fastvideo-int8_t2v_turbo_2stage",
   "minimax-h3-fastvideo-int8_i2v_turbo_2stage",
   "minimax-h3-fastvideo-int8_flf2v_turbo_2stage",
@@ -1045,6 +1094,7 @@ export const MINIMAX_H3_TWO_STAGE_MODEL_IDS: readonly string[] = Object.freeze([
   "minimax-h3-fastvideo-int8_a2v_turbo_2stage",
   "minimax-h3-ref2va-fp8_r2v_2stage",
   "minimax-h3-ref2va-fp8_r2v_balanced_2stage",
+  "minimax-h3-fastvideo-omni-int8_r2v_turbo_2stage",
 ]);
 
 /** The inputs a MiniMax H3 FastH3 audio-guide mode takes besides its audio. */

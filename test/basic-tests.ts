@@ -62,6 +62,7 @@ import {
   getVideoPromptGuardrailPlan,
   getModelDefaults,
   getBuiltinVideoModelConfig,
+  inferDefaultVideoSteps,
   inferStoryboardLayoutSpec,
   inferExplicitStoryboardFrameCountFromText,
   LTX25_DEV_WORKFLOW_MODELS as RUNTIME_LTX25_DEV_WORKFLOW_MODELS,
@@ -1007,11 +1008,12 @@ async function runTests() {
     // Two-stage reference-to-video: the Standard and Balanced R2V requests on
     // their own selectors and socket ids, rendered on the half canvas and
     // delivered at 2x. Every request field matches the one-stage R2V selector
-    // except the canvas tiers and, for Balanced, its fixed eight-step
-    // Euler/simple recipe.
+    // except the canvas tiers and, for Balanced and FastH3 Reference, their
+    // fixed eight-step Euler/simple recipe.
     const r2vTwoStageExpected = {
       'minimax-h3-r2v-2stage': ['minimax-h3-ref2va-fp8_r2v_2stage', 20, 'res_multistep'],
       'minimax-h3-r2v-balanced-2stage': ['minimax-h3-ref2va-fp8_r2v_balanced_2stage', 8, 'euler'],
+      'minimax-h3-fasth3-r2v-turbo-2stage': ['minimax-h3-fastvideo-omni-int8_r2v_turbo_2stage', 8, 'euler'],
     } as const;
     const {
       model: _r2vModel, resolutionTiers: _r2vTiers, steps: _r2vSteps, sampler: _r2vSampler, ...r2vBaseFields
@@ -1036,9 +1038,37 @@ async function runTests() {
         if (!isMiniMaxH3VideoModel(spelling)) throw new Error(`${spelling} is not recognized as MiniMax H3`);
       }
     }
+    // FastH3 Reference (FastH3 Omni): the one-stage selector is the R2V request
+    // on its own checkpoint, eight steps Euler/simple despite the _turbo suffix.
+    {
+      const {
+        model: fastH3ReferenceModel, steps: fastH3ReferenceSteps, sampler: fastH3ReferenceSampler, ...fastH3ReferenceFields
+      } = getVideoModelConfig('minimax-h3-fasth3-r2v-turbo');
+      const { model: _baseModel, steps: _baseSteps, sampler: _baseSampler, ...r2vFields } = getVideoModelConfig('minimax-h3-r2v');
+      if (fastH3ReferenceModel !== 'minimax-h3-fastvideo-omni-int8_r2v_turbo') {
+        throw new Error(`minimax-h3-fasth3-r2v-turbo mapped to ${fastH3ReferenceModel}`);
+      }
+      if (fastH3ReferenceSteps !== 8 || fastH3ReferenceSampler !== 'euler') {
+        throw new Error('minimax-h3-fasth3-r2v-turbo must run 8 steps Euler/simple');
+      }
+      if (JSON.stringify(fastH3ReferenceFields) !== JSON.stringify(r2vFields)) {
+        throw new Error('minimax-h3-fasth3-r2v-turbo request fields drifted from minimax-h3-r2v');
+      }
+      for (const spelling of ['minimax-h3-fasth3-r2v-turbo', fastH3ReferenceModel]) {
+        if (!isMiniMaxH3VideoModel(spelling)) throw new Error(`${spelling} is not recognized as MiniMax H3`);
+      }
+      // The skill runtime's catalog-less step fallback must not read _turbo as 4 steps.
+      for (const socketId of [fastH3ReferenceModel, `${fastH3ReferenceModel}_2stage`]) {
+        if (inferDefaultVideoSteps(socketId) !== 8) throw new Error(`${socketId} must fall back to 8 steps`);
+      }
+      if (inferDefaultVideoSteps('minimax-h3-ref2va-fp8_r2v_turbo') !== 4) {
+        throw new Error('Ref2VA Turbo must keep its 4-step fallback');
+      }
+    }
     for (const oneStage of [
       'minimax-h3-r2v', 'minimax-h3-r2v-turbo', 'minimax-h3-ref2va-fp8_r2v',
       'minimax-h3-ref2va-fp8_r2v_balanced', 'minimax-h3-ref2va-fp8_r2v_turbo',
+      'minimax-h3-fasth3-r2v-turbo', 'minimax-h3-fastvideo-omni-int8_r2v_turbo',
     ]) {
       if (isMinimaxH3TwoStageModelId(oneStage)) throw new Error(`${oneStage} must not be recognized as two-stage`);
     }
