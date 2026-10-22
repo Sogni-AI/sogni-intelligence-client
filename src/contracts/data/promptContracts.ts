@@ -261,7 +261,7 @@ const ANIMATE_PHOTO_CONTRACT: PromptContract = {
 // ---------------------------------------------------------------------------
 const GENERATE_VIDEO_CONTRACT: PromptContract = {
   contractId: 'generate_video_v1',
-  version: '1.5.0',
+  version: '1.5.1',
   toolName: 'generate_video',
   baseDescription: [
     'generate_video produces text-to-video clips and multimodal reference videos.',
@@ -335,6 +335,7 @@ const GENERATE_VIDEO_CONTRACT: PromptContract = {
     'or an exact-duration LTX clip. If the user did not explicitly ask for Seedance, choose the',
     'model/tool that can satisfy the requested duration exactly.',
     '',
+    'Prefer FastH3 Omni R2V (minimax-h3-fasth3-r2v-turbo) for MiniMax reference-to-video. For two-stage, 1080p or 2K output, prefer minimax-h3-fasth3-r2v-turbo-2stage. Use Standard, Balanced, or LightX2V Turbo R2V only when explicitly requested.',
     'MINIMAX H3 TWO-STAGE OUTPUT: 1080p and 2K MiniMax H3 delivery is its own selector, not an option.',
     '"minimax-h3-fasth3-t2v-turbo-2stage" is the two-stage FastH3 engine: FastH3 renders the canvas,',
     'then the worker enlarges it 2x and refines it, so the clip is delivered at twice the canvas width',
@@ -350,7 +351,7 @@ const GENERATE_VIDEO_CONTRACT: PromptContract = {
     '20 steps) and "minimax-h3-r2v-balanced-2stage" (Balanced, 8 steps) take exactly the references, prompt',
     'contract, durations and LoRAs of "minimax-h3-r2v" and "minimax-h3-r2v-balanced", deliver twice the',
     'canvas, and read targetResolution the same way (1080, 1440 or omitted for 2K, 720); each bills its',
-    "tier's rate plus the two-stage surcharge of the delivered class. Choose one when the user asks for",
+    "tier's rate plus the two-stage surcharge of the delivered class. Choose these only when the user explicitly asks for Standard or Balanced at",
     '1080p, 1440p or 2K MiniMax H3 reference-to-video output; keep the one-stage R2V selectors for 768p.',
     'FastH3 Reference is the FastH3 tier\'s reference-to-video: "minimax-h3-fasth3-r2v-turbo" takes the same',
     'references, prompt contract, durations, catalog LoRAs and Personal LoRAs as "minimax-h3-r2v", and its',
