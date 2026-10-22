@@ -1,3 +1,15 @@
+# [4.19.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.18.1...v4.19.0) (2026-10-22)
+
+
+### Bug Fixes
+
+* **deps:** align the published SDK and protocol artifacts ([78bbb14](https://github.com/Sogni-AI/sogni-intelligence-client/commit/78bbb14f831175be34261b3c0f9e896d263546c0))
+
+
+### Features
+
+* **media:** add Seedream 5.0 Pro Uncensored image generation and edits ([ccbaaeb](https://github.com/Sogni-AI/sogni-intelligence-client/commit/ccbaaebcba15523d8f995afeaf18ccdc7e495194))
+
 ## [4.18.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.18.0...v4.18.1) (2026-10-22)
 
 
