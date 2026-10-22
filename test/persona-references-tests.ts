@@ -7,10 +7,14 @@
 import {
   defaultPersonaSheetModel,
   personaSheetModel,
+  personaSheetContentRequest,
   personaSheetModelUnavailableReason,
+  personaSheetModels,
   personaSheetPhotos,
   personaSheetPrompt,
+  PERSONA_SHEET_CONTENT_PHOTOS,
   PERSONA_SHEET_MODELS,
+  readPersonaSheetContent,
   defaultReferenceImageOrdinals,
   describePersonaReferences,
   findPersonaVoiceReference,
@@ -135,16 +139,37 @@ export function runPersonaReferencesTests(): { passed: number; failed: number } 
     'voice recording audio -2, 15s, transcript saved; video voice excerpt audio -3, 5s'), true);
 
   // One-pass character sheets.
-  expect('a photo starts on Krea 2 Identity Edit', defaultPersonaSheetModel(1).id, 'krea2_identity_edit_v1_2');
-  expect('a description starts on GPT Image 2.5 Sunburst', defaultPersonaSheetModel(0).id, 'gpt-image-2.5-sunburst');
-  expect('every listed sheet model', PERSONA_SHEET_MODELS.map((model) => model.id), [
-    'krea2_identity_edit_v1_2',
-    'dark_beast_krea2_identity_edit_v1_2',
-    'qwen_image_edit_2511_fp8_lightning',
+  // Mark, 2026-10-22: FLUX 3 Image Klein by default; it dresses nude characters.
+  expect('a photo starts on FLUX 3 Image Klein', defaultPersonaSheetModel(1).id, 'flux3_image_klein_sd_int8_convrot');
+  expect('a description starts on FLUX 3 Image Klein', defaultPersonaSheetModel(0).id, 'flux3_image_klein_sd_int8_convrot');
+  expect('a nude persona with photos starts on Dark Beast with the filter off',
+    defaultPersonaSheetModel(1, { nude: true, safeContentFilter: false }).id, 'dark_beast_krea2_identity_edit_v1_2');
+  expect('a nude persona from a description starts on MOSS-Image with the filter off',
+    defaultPersonaSheetModel(0, { nude: true, safeContentFilter: false }).id, 'moss_image_sft_int8_convrot');
+  expect('the filter keeps a nude persona on FLUX 3 Image Klein',
+    defaultPersonaSheetModel(1, { nude: true, safeContentFilter: true }).id, 'flux3_image_klein_sd_int8_convrot');
+  expect('every listed sheet model, default first', PERSONA_SHEET_MODELS.map((model) => model.id), [
     'flux3_image_klein_sd_int8_convrot',
     'gpt-image-2.5-sunburst',
+    'qwen_image_edit_2511_fp8_lightning',
+    'krea2_identity_edit_v1_2',
+    'dark_beast_krea2_identity_edit_v1_2',
     'moss_image_sft_int8_convrot',
   ]);
+  expect('the filter leaves out Dark Beast only', personaSheetModels(true).map((model) => model.id).includes('dark_beast_krea2_identity_edit_v1_2'), false);
+  expect('the filter keeps the other five', personaSheetModels(true).length, 5);
+  expect('filter off offers all six', personaSheetModels(false).length, 6);
+  expect('nude-keeping models are Dark Beast and MOSS-Image',
+    PERSONA_SHEET_MODELS.filter((model) => model.keepsNudity).map((model) => model.id),
+    ['dark_beast_krea2_identity_edit_v1_2', 'moss_image_sft_int8_convrot']);
+  const check = personaSheetContentRequest({ name: 'Lilith', description: 'A succubus queen.' }, ['data:image/jpeg;base64,AAAA']);
+  const checkContent = check.messages[1].content as Array<{ type: string; text?: string }>;
+  expect('the check sends each photo then the notes', checkContent.map((part) => part.type), ['image_url', 'text']);
+  expect('the check names the character', checkContent[1].text, 'Character notes: Lilith A succubus queen.');
+  expect('the check asks for one boolean', check.response_format.json_schema.schema.required, ['nude']);
+  expect('the check reads the same photos as a two-photo sheet', PERSONA_SHEET_CONTENT_PHOTOS.maxPhotos, 2);
+  expect('the reply is read as a boolean', [readPersonaSheetContent('{"nude": true}'), readPersonaSheetContent('{ "nude": false }')], [true, false]);
+  expect('an unreadable reply is unknown', [readPersonaSheetContent('yes'), readPersonaSheetContent(null), readPersonaSheetContent('{"nude":"yes"}')], [null, null, null]);
   const krea = personaSheetModel('krea2_identity_edit_v1_2')!;
   const moss = personaSheetModel('moss_image_sft_int8_convrot')!;
   expect('Krea renders sheets square', [krea.width, krea.height], [1024, 1024]);
