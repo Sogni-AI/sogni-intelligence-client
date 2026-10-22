@@ -105,6 +105,10 @@ const MINIMAX_H3_MODEL_IDS = normalizedSet([
   ...['t2v', 'i2v', 'flf2v', 'r2v'].map(workflow => `minimax-h3-${workflow}-balanced`),
   ...['t2v', 'i2v', 'flf2v'].map(workflow => `minimax-h3-fl2va-fp8_${workflow}_balanced`),
   'minimax-h3-ref2va-fp8_r2v_balanced',
+  // FastH3 Reference (FastH3 Omni); its two-stage spellings come with
+  // MINIMAX_H3_TWO_STAGE_MODEL_IDS.
+  'minimax-h3-fasth3-r2v-turbo',
+  'minimax-h3-fastvideo-omni-int8_r2v_turbo',
   ...MINIMAX_H3_TWO_STAGE_MODEL_IDS,
   ...MINIMAX_H3_AUDIO_GUIDE_MODEL_IDS,
 ]);
@@ -122,11 +126,15 @@ const LOOSE_REFERENCE_VIDEO_MODEL_IDS = normalizedSet([
   'minimax-h3-r2v-balanced',
   'minimax-h3-r2v-2stage',
   'minimax-h3-r2v-balanced-2stage',
+  'minimax-h3-fasth3-r2v-turbo',
+  'minimax-h3-fasth3-r2v-turbo-2stage',
   'minimax-h3-ref2va-fp8_r2v',
   'minimax-h3-ref2va-fp8_r2v_turbo',
   'minimax-h3-ref2va-fp8_r2v_balanced',
   'minimax-h3-ref2va-fp8_r2v_2stage',
   'minimax-h3-ref2va-fp8_r2v_balanced_2stage',
+  'minimax-h3-fastvideo-omni-int8_r2v_turbo',
+  'minimax-h3-fastvideo-omni-int8_r2v_turbo_2stage',
   'happyhorse-1.1-r2v',
 ]);
 

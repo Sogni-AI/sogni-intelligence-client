@@ -19,10 +19,14 @@ import {
   classifySkillError,
   compileForModel,
   getBuiltinVideoModelConfig,
+  VIDEO_GENERATION_SKILL,
 } from '../src/public-skill-runtime/index.js';
 import {
   MODELS_BY_TOOL,
   SEEDANCE_25_UNCENSORED_MODEL_DESCRIPTION,
+  SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE,
+  seedanceSocketContentRefusalMessage,
+  seedanceTerminalPolicyPayloadFromError,
   animatePhotoDefinition,
   extendVideoDefinition,
   generateVideoDefinition,
@@ -33,6 +37,7 @@ import {
   videoToVideoDefinition,
 } from '../src/tools/index.js';
 import { getVideoModelConfig } from '../src/media/index.js';
+import { textIndicatesModelConsentRequired } from '../src/media/modelConsentRequired.js';
 
 const UNCENSORED_ID = 'seedance-2-5-uncensored';
 const SOCKET_MESSAGE =
@@ -393,4 +398,80 @@ test('createProject turns the SDK 4104 job error into SogniModelNotYetAvailableE
     },
   );
   assert.equal(created, 1);
+});
+
+// sogni-socket's real-person refusal on regular Seedance 2.5 for an account
+// without the likeness agreement (2026-10-21 contract). The second sentence
+// carries the agreement link, so it must reach the user whole: the published
+// pattern's lazy "Try .+? instead." stops at the only "instead." there is.
+const SEEDANCE_25_AGREEMENT_REFUSAL =
+  'Seedance rejected the input image because it may contain a real person. Try again after accepting the one-time likeness agreement at https://app.sogni.ai/account/model-consents/seedance-2-5, or try Seedance 2.5 Uncensored or MiniMax H3 instead.';
+
+test('a Seedance 2.5 real-person refusal passes the socket sentence through with its agreement link', () => {
+  for (const error of [
+    // SDK ErrorData from the socket's jobError.
+    {
+      code: 5061,
+      message: SEEDANCE_25_AGREEMENT_REFUSAL,
+      vendorFailureCategory: 'content_policy',
+      vendorErrorCode: 'InputImageSensitiveContentDetected.PrivacyInformation',
+    },
+    // A wrapper's text with trailing detail after the sentence.
+    new Error(`All 1 video generation jobs failed: ${SEEDANCE_25_AGREEMENT_REFUSAL} (job 1a2b3c)`),
+    // The same ErrorData nested under a wrapper's cause.
+    Object.assign(new Error('Project failed'), {
+      cause: { code: 5061, message: SEEDANCE_25_AGREEMENT_REFUSAL, vendorFailureCategory: 'content_policy' },
+    }),
+  ]) {
+    assert.equal(seedanceSocketContentRefusalMessage(error), SEEDANCE_25_AGREEMENT_REFUSAL);
+    const payload = seedanceTerminalPolicyPayloadFromError(error);
+    assert.equal(payload?.error, 'seedance_input_image_privacy_policy');
+    assert.equal(payload?.message, SEEDANCE_25_AGREEMENT_REFUSAL);
+    assert.equal(payload?.nextAction, 'wait_for_user');
+    assert.equal(payload?.vendorErrorCode, 'InputImageSensitiveContentDetected.PrivacyInformation');
+    // Regular Seedance 2.5 never refuses with 4103: the agreement link is not
+    // a consent refusal, and the failure mapping must not turn it into one.
+    assert.equal(modelConsentRequiredPayloadFromError(error), null);
+    assert.notEqual(seedanceTerminalGenerationFailurePayloadFromError(error)?.error, 'model_consent_required');
+  }
+  assert.equal(textIndicatesModelConsentRequired(SEEDANCE_25_AGREEMENT_REFUSAL), false);
+  // Raw vendor errors that never passed through the socket keep the package fallback.
+  assert.equal(
+    seedanceTerminalPolicyPayloadFromError(
+      new Error('Seedance vendor task status=failed code 5061 InputImageSensitiveContentDetected.PrivacyInformation may contain a real person'),
+    )?.message,
+    SEEDANCE_REAL_PERSON_PRIVACY_MESSAGE,
+  );
+});
+
+test('a Seedance 2.0 Mini real-person refusal passes through whole with its own agreement link', () => {
+  const refusal = SEEDANCE_25_AGREEMENT_REFUSAL
+    .replace('model-consents/seedance-2-5', 'model-consents/seedance-2-0-mini')
+    .replace('Seedance 2.5 Uncensored', 'Seedance 2.0 Mini Uncensored');
+  const error = { code: 5061, message: refusal, vendorFailureCategory: 'content_policy' };
+  assert.equal(seedanceSocketContentRefusalMessage(error), refusal);
+  assert.equal(seedanceTerminalPolicyPayloadFromError(error)?.message, refusal);
+  assert.equal(modelConsentRequiredPayloadFromError(error), null);
+});
+
+test('agents learn that every regular Seedance model takes real people after the shared likeness agreement', () => {
+  const agreementUrl = 'https://app.sogni.ai/account/model-consents/seedance-2-5';
+  for (const text of [
+    SEEDANCE_25_UNCENSORED_MODEL_DESCRIPTION,
+    VIDEO_GENERATION_SKILL.constraints?.find(line => line.startsWith('Every regular Seedance model (seedance2-5, seedance2, seedance2-mini) takes photos')) ?? '',
+  ]) {
+    assert.ok(text.includes(agreementUrl), text);
+    assert.match(text, /never requires? it/);
+    assert.match(text, /retry the same request on the same model at its regular price/);
+    for (const model of ['seedance2-5', 'seedance2', 'seedance2-mini']) assert.ok(text.includes(model), model);
+    assert.doesNotMatch(text, /still refuse real people/);
+    // Unlimited members see the model their plan includes first (Mark, 2026-10-21).
+    assert.match(text, /active Sogni Unlimited plan, offer MiniMax H3 first instead \(it is included with Unlimited\), then the agreement/);
+    // Mark retired the stylize and LTX workarounds on 2026-10-09.
+    assert.doesNotMatch(text, /styliz|cartoon|ltx/i);
+  }
+  for (const definition of [generateVideoDefinition, soundToVideoDefinition, videoToVideoDefinition]) {
+    const description = definition.function.parameters.properties.videoModel.description as string;
+    assert.ok(description.includes(agreementUrl), definition.function.name);
+  }
 });

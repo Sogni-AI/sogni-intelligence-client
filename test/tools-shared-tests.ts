@@ -132,8 +132,19 @@ export function runToolsSharedTests(): { passed: number; failed: number } {
       r2vTurbo: generateVideoModelKeys.includes('minimax-h3-r2v-turbo'),
       r2vTwoStage: generateVideoModelKeys.includes('minimax-h3-r2v-2stage'),
       r2vBalancedTwoStage: generateVideoModelKeys.includes('minimax-h3-r2v-balanced-2stage'),
+      fastH3R2v: generateVideoModelKeys.includes('minimax-h3-fasth3-r2v-turbo'),
+      fastH3R2vTwoStage: generateVideoModelKeys.includes('minimax-h3-fasth3-r2v-turbo-2stage'),
     },
-    { t2vTurbo: true, fastH3T2vTurbo: true, fastH3T2vTwoStage: true, r2vTurbo: true, r2vTwoStage: true, r2vBalancedTwoStage: true },
+    {
+      t2vTurbo: true,
+      fastH3T2vTurbo: true,
+      fastH3T2vTwoStage: true,
+      r2vTurbo: true,
+      r2vTwoStage: true,
+      r2vBalancedTwoStage: true,
+      fastH3R2v: true,
+      fastH3R2vTwoStage: true,
+    },
   );
   expect(
     'model registry: animate_photo includes H3 I2V and FLF2V Turbo selectors',
@@ -459,6 +470,21 @@ Directly reuse <Audio 1> unchanged.`;
     }).ok,
     false,
   );
+  // FastH3 Reference is new, so both of its selectors take the rule the tool
+  // description states for every H3 R2V call: reference video or audio needs a
+  // sourceAudioPolicy.
+  for (const videoModel of ['minimax-h3-fasth3-r2v-turbo', 'minimax-h3-fasth3-r2v-turbo-2stage']) {
+    expect(
+      `generate_video requires sourceAudioPolicy on ${videoModel} with a reference video`,
+      h3TwoStageSourceAudio(videoModel),
+      false,
+    );
+    expect(
+      `generate_video accepts typed exact source-audio reuse on ${videoModel}`,
+      h3TwoStageSourceAudio(videoModel, 'reuse_exact'),
+      true,
+    );
+  }
   expect(
     'generate_video still rejects sourceAudioPolicy on an H3 model that is not reference to video',
     validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
@@ -468,7 +494,12 @@ Directly reuse <Audio 1> unchanged.`;
     }).ok,
     false,
   );
-  for (const videoModel of ['minimax-h3-r2v-2stage', 'minimax-h3-r2v-balanced-2stage']) {
+  for (const videoModel of [
+    'minimax-h3-r2v-2stage',
+    'minimax-h3-r2v-balanced-2stage',
+    'minimax-h3-fasth3-r2v-turbo',
+    'minimax-h3-fasth3-r2v-turbo-2stage',
+  ]) {
     expect(
       `generate_video accepts ${videoModel} with image references and an H3 LoRA`,
       validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
@@ -799,7 +830,7 @@ function runMinimaxH3KeyframeToolTests(): void {
     MINIMAX_H3_KEYFRAMES_DESCRIPTION,
     'MiniMax H3 only. Pin up to 8 images at exact moments inside the video, in addition to the first/last frame. Each item is {imageIndex, atSeconds}: imageIndex uses the endImageIndex convention (negative = uploads, 0+ = generated results); atSeconds is when the video should land on that image. Keyframes must fall strictly inside the clip (not on the first or last frame) and at distinct times. Describe what each keyframe shows in the prompt at its time; a keyframe with a new angle, place or light starts a new shot. Two keyframes are included in the price; each additional keyframe adds a little.',
   );
-  // Which selectors pin keyframes: 18 on this surface, decided by H3 workflow.
+  // Which selectors pin keyframes: 20 on this surface, decided by H3 workflow.
   expect('keyframe selectors per tool', MINIMAX_H3_KEYFRAME_SELECTORS_BY_TOOL, {
     animate_photo: [
       'minimax-h3-i2v',
@@ -824,6 +855,8 @@ function runMinimaxH3KeyframeToolTests(): void {
       'minimax-h3-r2v-turbo',
       'minimax-h3-r2v-2stage',
       'minimax-h3-r2v-balanced-2stage',
+      'minimax-h3-fasth3-r2v-turbo',
+      'minimax-h3-fasth3-r2v-turbo-2stage',
     ],
   });
   expect(
@@ -983,7 +1016,7 @@ function runMinimaxH3KeyframeValidationTests(): void {
         keyframes: twoKeyframes,
       })),
     ],
-    Array.from({ length: 18 }, () => 'ok'),
+    Array.from({ length: 20 }, () => 'ok'),
   );
   expect(
     'eight keyframes are accepted and the cleaned arguments keep every one',
@@ -1001,14 +1034,14 @@ function runMinimaxH3KeyframeValidationTests(): void {
       validate('animate_photo', { keyframes: twoKeyframes }).startsWith('Argument "keyframes" needs a MiniMax H3 videoModel: on animate_photo only "minimax-h3-i2v"'),
       validate('animate_photo', { videoModel: 'ltx25', keyframes: twoKeyframes }).startsWith('videoModel "ltx25" cannot pin keyframes. On animate_photo only "minimax-h3-i2v"'),
       validate('sound_to_video', { videoModel: 'ltx25-a2v', keyframes: twoKeyframes }).includes('"minimax-h3-fasth3-a2v-turbo-2stage" take "keyframes"'),
-      validate('generate_video', { videoModel: 'seedance2-5', keyframes: twoKeyframes }).includes('"minimax-h3-r2v-balanced-2stage" take "keyframes"'),
+      validate('generate_video', { videoModel: 'seedance2-5', keyframes: twoKeyframes }).includes('"minimax-h3-fasth3-r2v-turbo-2stage" take "keyframes"'),
     ],
     [true, true, true, true],
   );
   expect(
     'generate_video refuses keyframes on MiniMax H3 text-to-video and points at R2V or animate_photo',
     validate('generate_video', { videoModel: 'minimax-h3-fasth3-t2v-turbo', duration: 8, keyframes: twoKeyframes }),
-    'videoModel "minimax-h3-fasth3-t2v-turbo" is MiniMax H3 text-to-video, which cannot pin keyframes. On generate_video only the reference-to-video selectors "minimax-h3-r2v", "minimax-h3-r2v-turbo", "minimax-h3-r2v-2stage", "minimax-h3-r2v-balanced-2stage" take "keyframes" (with an image or video reference); for a clip that starts on or passes through images use animate_photo with a MiniMax H3 image-to-video selector, or remove "keyframes".',
+    'videoModel "minimax-h3-fasth3-t2v-turbo" is MiniMax H3 text-to-video, which cannot pin keyframes. On generate_video only the reference-to-video selectors "minimax-h3-r2v", "minimax-h3-r2v-turbo", "minimax-h3-r2v-2stage", "minimax-h3-r2v-balanced-2stage", "minimax-h3-fasth3-r2v-turbo", "minimax-h3-fasth3-r2v-turbo-2stage" take "keyframes" (with an image or video reference); for a clip that starts on or passes through images use animate_photo with a MiniMax H3 image-to-video selector, or remove "keyframes".',
   );
   expect(
     'nine keyframes are refused, not trimmed',

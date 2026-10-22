@@ -72,13 +72,16 @@ test('automatic reference resizing does not write into JSON stdout', async () =>
   assert.deepEqual(messages, []);
 });
 
-test('two-stage and Balanced reference-to-video references never define the canvas', async () => {
+test('two-stage, Balanced and FastH3 Reference reference-to-video references never define the canvas', async () => {
   const portrait = await still(768, 1344);
   for (const modelId of [
     'minimax-h3-ref2va-fp8_r2v_2stage',
     'minimax-h3-ref2va-fp8_r2v_balanced_2stage',
     'minimax-h3-ref2va-fp8_r2v_balanced',
     'minimax-h3-r2v-2stage',
+    'minimax-h3-fastvideo-omni-int8_r2v_turbo',
+    'minimax-h3-fastvideo-omni-int8_r2v_turbo_2stage',
+    'minimax-h3-fasth3-r2v-turbo-2stage',
   ]) {
     const prepared = await prepare(config(modelId, portrait));
     assert.equal(prepared.width, 672, modelId);
