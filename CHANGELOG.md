@@ -1,3 +1,10 @@
+## [4.19.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.19.0...v4.19.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* **video:** prefer FastH3 Omni for MiniMax reference video ([97f59bf](https://github.com/Sogni-AI/sogni-intelligence-client/commit/97f59bf007a15b5dc699a224b3228ec551e4259f))
+
 # [4.19.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.18.1...v4.19.0) (2026-10-22)
 
 
