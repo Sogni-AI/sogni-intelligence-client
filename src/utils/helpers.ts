@@ -21,6 +21,7 @@ import {
   SogniValidationError,
 } from './errors.js';
 import { isGptImageModel } from '../media/gptImage.js';
+import { isSeedreamImageModel, SEEDREAM_MAX_REFERENCE_IMAGES } from '../media/seedream.js';
 import { VIDEO_UPSCALE_MAX_OUTPUT, VIDEO_UPSCALE_MODEL_ID } from '../media/videoUpscale.js';
 import {
   WAN22_MAX_VIDEO_PIXELS,
@@ -190,6 +191,9 @@ export function getVideoDimensionRules(modelId?: string): VideoDimensionRules {
 export function getMaxContextImages(modelId: string): number {
   if (isGptImageModel(modelId)) {
     return 16;
+  }
+  if (isSeedreamImageModel(modelId)) {
+    return SEEDREAM_MAX_REFERENCE_IMAGES;
   }
   if (
     modelId === 'krea2_identity_edit_v1_2' ||
@@ -405,7 +409,7 @@ export function validateProjectConfig(config: ProjectConfig): void {
         throw new SogniValidationError('contextImages must be an array');
       }
 
-      // Per-model limit (FLUX 3 Image Klein 10, GPT Image 16). Models the table
+      // Per-model limit (FLUX 3 Image Klein 10, Seedream 10, GPT Image 16). Models the table
       // does not list keep the earlier cap of 6; sogni-client applies its own.
       const maxImages = getMaxContextImages(config.modelId) || 6;
       if (config.contextImages.length > maxImages) {

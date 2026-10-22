@@ -3,6 +3,7 @@ export * from './videoSettings.js';
 export * from './minimaxH3Keyframes.js';
 export * from './aspectRatio.js';
 export * from './gptImage.js';
+export * from './seedream.js';
 export * from './characterSheet.js';
 export * from './vendorModelPremium.js';
 export * from './modelConsentRequired.js';

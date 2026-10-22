@@ -1131,14 +1131,20 @@ export const QUALITY_AUDIT_SKILL: SkillManifest = {
   ],
 };
 
+// Seedream 5.0 Pro Uncensored generates (generate_image) and edits from 1-10
+// references (edit_image) under the Seedance Uncensored likeness agreement.
+const SEEDREAM_SKILL_CONSTRAINT =
+  'Seedream 5.0 Pro Uncensored uses model seedream-5-0-pro-uncensored on generate_image and on edit_image (1-10 reference images). Use it only when the user asks for Seedream 5.0 Pro Uncensored, Seedream Uncensored, or Seedream Spicy, and never swap it in for another image model. It shares the Seedance 2.5 Uncensored likeness and consent agreement, so error 4103 means the account has not accepted it: tell the user to accept it in the Sogni app and do not retry.';
+
 export const IMAGE_GENERATION_SKILL: SkillManifest = {
   id: 'image_generation',
   name: 'Image generation',
   description:
-    'Text-to-image synthesis with Sogni image models including Z-Image, Krea 2 Turbo, Dark Beast Krea 2, Chroma, Flux, Qwen image, and GPT Image 2. Use when the user wants a new image generated from a prompt with no source asset.',
+    'Text-to-image synthesis with Sogni image models including Z-Image, Krea 2 Turbo, Dark Beast Krea 2, Chroma, Flux, Qwen image, GPT Image 2, and Seedream 5.0 Pro Uncensored. Use when the user wants a new image generated from a prompt with no source asset.',
   toolNames: ['generate_image'],
   constraints: [
     'For persona-driven requests, defer to image_editing — personas must be conditioned on reference photos, never generated from scratch.',
+    SEEDREAM_SKILL_CONSTRAINT,
   ],
 };
 
@@ -1153,6 +1159,7 @@ export const IMAGE_EDITING_SKILL: SkillManifest = {
     'Krea 2 Identity Edit and Dark Beast Krea 2 Identity Edit use edit_image with 1-2 context images, context_image_N refs, 512-2048 px output, default steps=10, guidance=1, sampler=euler, and scheduler=simple.',
     'refine_result acts on a prior generation in the session; do not call it before any image has been produced or uploaded.',
     'Use upscale_image for promptless, deterministic enlargement that must preserve the exact image. Do not substitute restore_photo, refine_result, or edit_image when the user only wants more pixels.',
+    SEEDREAM_SKILL_CONSTRAINT,
   ],
 };
 
