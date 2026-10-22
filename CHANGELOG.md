@@ -1,3 +1,11 @@
+## [4.18.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.18.0...v4.18.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* **deps:** pin @sogni-ai/sogni-client 5.68.1 for FastH3 Reference ([d1e5fd0](https://github.com/Sogni-AI/sogni-intelligence-client/commit/d1e5fd08e2924c043303cd0a4c64360fe4ca9ae8))
+* **tools:** say FastH3 Reference takes Personal LoRAs ([6f2568a](https://github.com/Sogni-AI/sogni-intelligence-client/commit/6f2568a0deaecb759e1241ee60b3a1192052bf08))
+
 # [4.18.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.17.0...v4.18.0) (2026-10-21)
 
 
