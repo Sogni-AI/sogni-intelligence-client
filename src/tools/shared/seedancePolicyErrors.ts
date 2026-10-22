@@ -184,27 +184,77 @@ function seedanceAudioDurationLimitFromText(text: string): number | null {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
+/** Every JSON object written out in `text`, outermost first (the socket embeds BytePlus bodies after its own prefix). */
+function jsonObjectsIn(text: string): unknown[] {
+  const objects: unknown[] = [];
+  for (let start = text.indexOf('{'); start >= 0; start = text.indexOf('{', start + 1)) {
+    let depth = 0;
+    let inString = false;
+    for (let index = start; index < text.length; index++) {
+      const char = text[index];
+      if (inString) {
+        if (char === '\\') index++;
+        else if (char === '"') inString = false;
+      } else if (char === '"') inString = true;
+      else if (char === '{') depth++;
+      else if (char === '}' && --depth === 0) {
+        try {
+          objects.push(JSON.parse(text.slice(start, index + 1)));
+          start = index;
+        } catch {
+          /* not JSON from here; try the next brace */
+        }
+        break;
+      }
+    }
+  }
+  return objects;
+}
+
+/** The message of the first error object in `value` whose code is InvalidParameter or InvalidParameter.*. */
+function invalidParameterMessageIn(value: unknown): string | null {
+  if (!value || typeof value !== 'object') return null;
+  const { code, message } = value as { code?: unknown; message?: unknown };
+  if (typeof code === 'string' && /^InvalidParameter(?:\.|$)/.test(code) && typeof message === 'string') {
+    return message;
+  }
+  for (const child of Object.values(value)) {
+    const found = invalidParameterMessageIn(child);
+    if (found !== null) return found;
+  }
+  return null;
+}
+
+/** Longest provider reason shown, as in Sogni Web; BytePlus's run to about 200 characters. */
+const SEEDANCE_VENDOR_REASON_MAX_LENGTH = 300;
+
 /**
- * BytePlus / Seedance returns terse `InvalidParameter` messages embedded in a
- * `400 {"error":{...,"message":"…"}}` blob. Pull the inner message so we can
- * surface it to the user instead of swallowing it as a generic
- * "no specific reason" failure.
+ * BytePlus's reason for refusing a Seedance input: the `message` of the error
+ * object whose `code` is InvalidParameter or InvalidParameter.* (the artist's
+ * input, such as an image's aspect ratio or a task type), from a submit's
+ * `400 {"error":{…}}` body or a failed task's response. Every other code, such
+ * as AccessDenied or AccountOverdue, describes Sogni's own account with
+ * BytePlus, and a message outside such an object has no code to vouch for it;
+ * neither is ever shown. Request ids and links are dropped. Sogni Web applies
+ * the same gate (errorMessages.ts, seedanceInputRefusalReason).
  */
 function seedanceInvalidParameterMessageFromText(text: string): string | null {
   if (!text) return null;
-  // Capture both `"message":"…"` and `'message':'…'` shapes.
-  const match = text.match(
-    /"(?:message|Message)"\s*:\s*"((?:[^"\\]|\\.)*)"/,
-  );
-  if (!match?.[1]) return null;
-  let parsed = match[1];
-  try {
-    parsed = JSON.parse(`"${parsed}"`);
-  } catch {
-    /* leave raw — escapes will read fine in plain English */
+  for (const object of jsonObjectsIn(text)) {
+    const raw = invalidParameterMessageIn(object);
+    if (raw === null) continue;
+    const reason = raw
+      .replace(/\s*Request id:\s*\S+/gi, '')
+      .replace(/https?:\/\/\S+/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!reason) return null;
+    if (reason.length <= SEEDANCE_VENDOR_REASON_MAX_LENGTH) return reason;
+    const cut = reason.slice(0, SEEDANCE_VENDOR_REASON_MAX_LENGTH);
+    const lastSpace = cut.lastIndexOf(' ');
+    return `${lastSpace > 0 ? cut.slice(0, lastSpace) : cut}…`;
   }
-  parsed = parsed.replace(/\s*Request id:\s*[A-Za-z0-9._-]+/i, '').trim();
-  return parsed.length > 0 ? parsed : null;
+  return null;
 }
 
 interface SeedanceInvalidParameterShape {
