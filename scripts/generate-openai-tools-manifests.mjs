@@ -54,7 +54,7 @@ for (const file of manifestFiles) {
     if (typeof generateVideoModel?.description === 'string') {
       generateVideoModel.description = generateVideoModel.description.replace(
         'FastH3 has no R2V mode. ',
-        '"minimax-h3-fasth3-r2v-turbo" is FastH3 Reference, the FastH3 tier\'s reference-to-video engine, with the same references, durations and catalog LoRAs as the other R2V selectors (Personal LoRAs are not available on it); "minimax-h3-fasth3-r2v-turbo-2stage" is its two-stage form and reads targetResolution like the other two-stage selectors. ',
+        '"minimax-h3-fasth3-r2v-turbo" is FastH3 Reference, the FastH3 tier\'s reference-to-video engine, with the same references, durations, catalog LoRAs and Personal LoRAs as the other R2V selectors; "minimax-h3-fasth3-r2v-turbo-2stage" is its two-stage form and reads targetResolution like the other two-stage selectors. ',
       );
     }
     const animatePhoto = manifest.tools?.find((candidate) => candidate?.function?.name === 'animate_photo');

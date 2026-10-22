@@ -654,7 +654,7 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     supportsAudioToggle: true,
     supportsNegativePrompt: false,
   },
-  // FastH3 Reference (Comfy worker 1.0.239+): FastVideo's FastH3 Omni, the
+  // FastH3 Reference (Comfy worker 1.0.240+): FastVideo's FastH3 Omni, the
   // FastH3 tier's own distilled Ref2VA checkpoint. It runs 8 steps Euler/simple
   // although its socket id ends in `_turbo`, with the same references, catalog
   // LoRAs (no Personal LoRAs) and canvas as the other R2V selectors. Its two-stage selector renders the

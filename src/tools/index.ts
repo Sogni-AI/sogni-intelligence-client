@@ -66,10 +66,12 @@ export {
   HAPPYHORSE_TOOL_REFERENCE_GUIDANCE,
 } from '../contracts/toolPromptMarkers.js';
 // Seedance 2.5 Uncensored and Seedance 2.0 Mini Uncensored videoModel wording,
-// re-exported so the creative-agent patch layers quote it exactly.
+// and the Seedream 5.0 Pro Uncensored image model wording, re-exported so the
+// creative-agent patch layers quote it exactly.
 export {
   SEEDANCE_25_UNCENSORED_MODEL_DESCRIPTION,
   SEEDANCE_MINI_UNCENSORED_MODEL_DESCRIPTION,
+  SEEDREAM_5_PRO_UNCENSORED_MODEL_DESCRIPTION,
 } from '../contracts/toolPromptMarkers.js';
 // MiniMax H3 FastH3 audio-guide sound_to_video guidance, re-exported so the
 // creative-agent patch layers reuse the exact wording instead of copying it.

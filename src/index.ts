@@ -133,6 +133,7 @@ export {
   MODEL_CONSENT_REQUIRED_ERROR_CODE,
   MODEL_CONSENT_REQUIRED_MESSAGE,
   SEEDANCE_MINI_UNCENSORED_CONSENT_REQUIRED_MESSAGE,
+  SEEDREAM_5_PRO_UNCENSORED_CONSENT_REQUIRED_MESSAGE,
   modelConsentRequiredPayload,
   modelConsentRequiredPayloadFromError,
 } from './media/modelConsentRequired.js';
