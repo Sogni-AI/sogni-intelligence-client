@@ -133,10 +133,10 @@ export function runPersonaReferenceVideoTests(): { passed: number; failed: numbe
     true,
   );
   expect(
-    'resolve_personas warns that regular Seedance rejects real-person photos',
-    resolvePersonas.includes('Regular Seedance rejects')
-      && resolvePersonas.includes('Seedance Uncensored and MiniMax H3 accept them'),
-    true,
+    // Every regular Seedance model takes real people after the likeness agreement (2026-10-21).
+    'resolve_personas no longer steers real people away from regular Seedance',
+    resolvePersonas.includes('Regular Seedance rejects'),
+    false,
   );
   expect(
     'resolve_personas keeps the LTX direct-image path on animate_photo',
