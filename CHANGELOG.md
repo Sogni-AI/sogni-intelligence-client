@@ -1,3 +1,19 @@
+# [4.20.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.19.1...v4.20.0) (2026-10-22)
+
+
+### Bug Fixes
+
+* **personas:** stop steering real people away from regular Seedance ([ffdef48](https://github.com/Sogni-AI/sogni-intelligence-client/commit/ffdef4833f2b446c9beee01e4b0d481e7618d035))
+* **tools:** show BytePlus's Seedance reason only for InvalidParameter codes ([1aaae19](https://github.com/Sogni-AI/sogni-intelligence-client/commit/1aaae193ae6fb77d9b954fb8287421a23d80298f))
+
+
+### Features
+
+* **contracts:** send persona references straight to reference-to-video models ([0c7610c](https://github.com/Sogni-AI/sogni-intelligence-client/commit/0c7610cdeabad214641c9b40cbf0c188e83881ba))
+* **media:** share My Personas reference rules across hosts ([b20100b](https://github.com/Sogni-AI/sogni-intelligence-client/commit/b20100bf365a53932bc894e2a62fa4a7696de349))
+* **media:** share one-pass persona character sheets ([0358ed6](https://github.com/Sogni-AI/sogni-intelligence-client/commit/0358ed65a0dd62a4dd33c0a63e7ee40542ac8568))
+* **personas:** start sheets on FLUX 3 Image Klein and keep nude characters nude ([f47c4df](https://github.com/Sogni-AI/sogni-intelligence-client/commit/f47c4dfb22f5adbdbe793467df66a4a6b6280386))
+
 ## [4.19.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.19.0...v4.19.1) (2026-10-22)
 
 
