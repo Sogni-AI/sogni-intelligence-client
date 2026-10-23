@@ -94,8 +94,8 @@ export const H3_VIDEO_LORA_CATALOG_REFERENCE =
   + 'simple prompt sentences and are not validated on reference-to-video. h3-mystic-xxx-v5 is an '
   + 'uncensored adult fine-tune, stronger than v4 at the same strength; h3-mystic-xxx-v4 remains '
   + 'available. h3-action-speed-slider changes motion speed: negative slows the action, positive '
-  + 'speeds it up, and 0 is off. Neither Mystic version nor Action Speed is offered on '
-  + 'reference-to-video. Personal imports are discovered through authenticated GET /v1/loras/personal/catalog; use only owned ready ids with the selected model in modelIds, and respect their strength range and requirements. Do not invent ids.';
+  + 'speeds it up, and 0 is off. On reference-to-video only h3-mystic-xxx-v5 is offered (on its '
+  + 'own Ref2VA file); h3-mystic-xxx-v4 and Action Speed are not. Personal imports are discovered through authenticated GET /v1/loras/personal/catalog; use only owned ready ids with the selected model in modelIds, and respect their strength range and requirements. Do not invent ids.';
 
 /** Shared video `loraStrengths` guidance: fine-tunes, signed sliders, and usable bands. */
 export const H3_VIDEO_LORA_STRENGTHS_GUIDANCE =

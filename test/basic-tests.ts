@@ -1245,9 +1245,10 @@ async function runTests() {
     const generateParams = generateVideoDefinition.function.parameters.properties;
     const contract = PROMPT_CONTRACTS.find((entry) => entry.toolName === 'generate_video');
     for (const guidance of [generateParams.videoModel.description, contract?.baseDescription]) {
-      if (!guidance?.includes('Prefer FastH3 Omni R2V (minimax-h3-fasth3-r2v-turbo)')
-        || !guidance.includes('Use Standard, Balanced, or LightX2V Turbo R2V only when explicitly requested.')) {
-        throw new Error('MiniMax R2V tool and contract guidance must prefer Omni and preserve explicit tiers');
+      // Mark, 2026-10-22: only Balanced passes the mature-content quality bar on MiniMax H3.
+      if (!guidance?.includes('Prefer Balanced R2V (minimax-h3-r2v-balanced)')
+        || !guidance.includes('Use Standard, LightX2V Turbo, or FastH3 Omni R2V only when explicitly requested.')) {
+        throw new Error('MiniMax R2V tool and contract guidance must prefer Balanced and preserve explicit tiers');
       }
     }
     const generateModels = generateParams.videoModel.enum ?? [];
