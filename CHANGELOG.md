@@ -1,3 +1,10 @@
+## [4.20.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.20.1...v4.20.2) (2026-10-23)
+
+
+### Bug Fixes
+
+* **video:** prefer Balanced for MiniMax reference-to-video ([5d7a3d2](https://github.com/Sogni-AI/sogni-intelligence-client/commit/5d7a3d20b6bd853bd38b80d9ae1d8d1369773e94))
+
 ## [4.20.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.20.0...v4.20.1) (2026-10-23)
 
 
