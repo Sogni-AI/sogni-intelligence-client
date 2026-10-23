@@ -15,7 +15,7 @@ export const definition: ToolDefinition = {
   function: {
     name: 'generate_speech',
     description:
-      'Turn written words into spoken audio. Use when the user wants something read aloud, a narration, a voiceover, a line of dialogue, an audiobook passage, or a voice cloned from a recording they uploaded. This tool speaks text; it does not compose music — use generate_music for songs and instrumentals.',
+      'Turn written words into spoken audio. Use when the user wants something read aloud, a narration, a voiceover, a line of dialogue, an audiobook passage, or a voice cloned from a recording they uploaded or from a saved persona\'s voice recording. This tool speaks text; it does not compose music — use generate_music for songs and instrumentals.',
     parameters: {
       type: 'object',
       properties: {
@@ -36,7 +36,7 @@ Limit 4096 characters, roughly five minutes of speech. A longer script is refuse
           type: 'string',
           enum: ['voice', 'clone', 'design'],
           description:
-            'Which speech model to use, chosen by what the user gave you. "voice" (default): one of nine studio voices, optionally restyled by voiceDescription — the right choice for narration, voiceover and dialogue when no particular person is being imitated. "clone": reproduces a specific voice from a recording the user uploaded; requires voiceSourceIndex. "design": invents a speaker who does not exist from a written description; requires voiceDescription and takes no recording. Pick "clone" whenever the user uploads a voice clip and asks for that person, and "design" when they describe a speaker instead of choosing one.',
+            'Which speech model to use, chosen by what the user gave you. "voice" (default): one of nine studio voices, optionally restyled by voiceDescription — the right choice for narration, voiceover and dialogue when no particular person is being imitated. "clone": reproduces a specific voice from a recording the user uploaded or a resolved persona\'s voice recording; requires voiceSourceIndex. "design": invents a speaker who does not exist from a written description; requires voiceDescription and takes no recording. Pick "clone" whenever the user uploads a voice clip and asks for that person, or asks for a saved persona\'s own voice, and "design" when they describe a speaker instead of choosing one.',
         },
         voice: {
           type: 'string',
@@ -63,13 +63,13 @@ Limit 4096 characters, roughly five minutes of speech. A longer script is refuse
         voiceSourceIndex: {
           type: 'number',
           description:
-            'Which audio holds the voice to clone, using the same numbering every other tool uses for audio: negative indices are uploads (-1 = first/primary upload, -2 = second upload, and so on) and 0-based non-negative indices are audio generated earlier in this conversation. A clip the user just uploaded is -1. Required when model="clone" and ignored otherwise. The clip should be three to thirty seconds of one person speaking cleanly, with no music, no second speaker and no heavy room echo; anything past thirty seconds is trimmed.',
+            'Which audio holds the voice to clone, using the same numbering every other tool uses for audio: negative indices are uploads (-1 = first/primary upload, -2 = second upload, and so on) and 0-based non-negative indices are audio generated earlier in this conversation. A clip the user just uploaded is -1. A resolved persona\'s full voice recording uses the index resolve_personas reports. Required when model="clone" and ignored otherwise. The clip should be three to thirty seconds of one person speaking cleanly, with no music, no second speaker and no heavy room echo; anything past thirty seconds is trimmed.',
         },
         voice_source_url: { type: 'string', description: 'REST alternative to voiceSourceIndex: retrievable original recording for clone mode.' },
         voiceTranscript: {
           type: 'string',
           description:
-            'The exact words spoken in the uploaded clip, when model="clone". Supplying it lets the model condition on the recording itself rather than on a speaker fingerprint alone, which is markedly closer to the source — set it whenever the user tells you what the clip says or the transcript is otherwise known. Omitting it still produces a recognisable clone, just a looser one. Limit 1024 characters.',
+            'The exact words spoken in the uploaded clip, when model="clone". Supplying it lets the model condition on the recording itself rather than on a speaker fingerprint alone, which is markedly closer to the source — set it whenever the user tells you what the clip says or the transcript is otherwise known. Omitting it still produces a recognisable clone, just a looser one. Leave it out for a persona voice recording: the persona\'s saved transcript is filled in automatically. Limit 1024 characters.',
           maxLength: 1024,
         },
         language: {

@@ -1,6 +1,6 @@
 {
   "name": "@sogni-ai/sogni-intelligence-client",
-  "version": "4.19.0",
+  "version": "4.20.0",
   "description": "Public Sogni Intelligence client — Node.js convenience wrapper for the Sogni SDK plus the public-safe subset of @sogni/creative-agent contracts (ContractRegistry, AssetManifest, RunRecord, tool envelopes). For agent builders, third-party integrations, and downstream SDKs.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -167,7 +167,7 @@
     "dev": "tsc --watch",
     "prepare": "npm run codegen && husky",
     "prepublishOnly": "npm run build",
-    "test": "node --import tsx test/basic-tests.ts && node --import tsx --test test/replay-redaction.test.ts test/chat-run-model-media.test.ts test/durable-workflow-content-filter.test.ts test/gpt-image-25.test.ts test/video-estimate-context.test.ts test/video-reference-detail.test.ts test/prompt-limits.test.ts test/reconnect-and-retry.test.ts test/batch-prompt-preservation.test.ts test/context-budget-check.test.ts test/context-user-history.test.ts test/seedance-25-uncensored.test.ts test/seedance-mini-uncensored.test.ts test/seedream-5-pro-uncensored.test.ts test/project-failure-reason.test.ts",
+    "test": "node --import tsx test/basic-tests.ts && node --import tsx --test test/replay-redaction.test.ts test/chat-run-model-media.test.ts test/durable-workflow-content-filter.test.ts test/gpt-image-25.test.ts test/video-estimate-context.test.ts test/video-reference-detail.test.ts test/prompt-limits.test.ts test/reconnect-and-retry.test.ts test/batch-prompt-preservation.test.ts test/context-budget-check.test.ts test/context-user-history.test.ts test/seedance-25-uncensored.test.ts test/seedance-mini-uncensored.test.ts test/seedream-5-pro-uncensored.test.ts test/seedance-vendor-reason.test.ts test/project-failure-reason.test.ts",
     "test:e2e": "node --import tsx test/e2e-test.ts",
     "test:e2e:llm": "SOGNI_E2E_SCOPE=llm node --import tsx test/e2e-test.ts",
     "typecheck:examples": "tsc --noEmit -p tsconfig.examples.json",

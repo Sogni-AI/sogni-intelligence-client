@@ -145,6 +145,8 @@ import { runWorkflowExecutorTests } from './workflow-executor-tests';
 import { runCostApprovalTests } from './cost-approval-tests';
 import { runSpeechSettingsTests } from './speech-settings-tests';
 import { runVideoUpscaleTests } from './video-upscale-tests';
+import { runPersonaReferenceVideoTests } from './persona-reference-video-tests';
+import { runPersonaReferencesTests } from './persona-references-tests';
 import {
   isTurnAnalysis,
   isTurnTextArtifact,
@@ -1241,6 +1243,13 @@ async function runTests() {
 
   await test('Should expose every real MiniMax H3 Turbo tool and video-only Ref2VA guidance', () => {
     const generateParams = generateVideoDefinition.function.parameters.properties;
+    const contract = PROMPT_CONTRACTS.find((entry) => entry.toolName === 'generate_video');
+    for (const guidance of [generateParams.videoModel.description, contract?.baseDescription]) {
+      if (!guidance?.includes('Prefer FastH3 Omni R2V (minimax-h3-fasth3-r2v-turbo)')
+        || !guidance.includes('Use Standard, Balanced, or LightX2V Turbo R2V only when explicitly requested.')) {
+        throw new Error('MiniMax R2V tool and contract guidance must prefer Omni and preserve explicit tiers');
+      }
+    }
     const generateModels = generateParams.videoModel.enum ?? [];
     const animateModels = animatePhotoDefinition.function.parameters.properties.videoModel.enum ?? [];
     if (!generateModels.includes('minimax-h3-t2v-turbo')) {
@@ -6342,6 +6351,16 @@ async function runTests() {
   const videoUpscaleResults = runVideoUpscaleTests();
   testsPassed += videoUpscaleResults.passed;
   testsFailed += videoUpscaleResults.failed;
+
+  // My Personas on reference-to-video models, persona voice and persona clone
+  const personaReferenceVideoResults = runPersonaReferenceVideoTests();
+  testsPassed += personaReferenceVideoResults.passed;
+  testsFailed += personaReferenceVideoResults.failed;
+
+  // My Personas naming, ordering, reference selection and voice choice shared by every host
+  const personaReferencesResults = runPersonaReferencesTests();
+  testsPassed += personaReferencesResults.passed;
+  testsFailed += personaReferencesResults.failed;
 
   // Summary
   console.log('\n' + '='.repeat(50));

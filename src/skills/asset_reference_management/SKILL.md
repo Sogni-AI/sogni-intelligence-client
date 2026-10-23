@@ -26,10 +26,15 @@ Keep a session-level manifest of every uploaded or generated asset and translate
 
 | Model id | Image | Video | Audio |
 |---|---|---|---|
-| `seedance` (incl. `seedance2`, `seedance2-mini`) | `@Image1` | `@Video1` | `@Audio1` |
+| `seedance` (incl. `seedance2`, `seedance2-mini`, `seedance2-5`, Uncensored variants) | `@Image1` | `@Video1` | `@Audio1` |
+| `minimax-h3` (MiniMax H3 reference-to-video, `minimax-h3-r2v*`) | `<Picture 1>` | `<Video 1>` | `<Audio 1>` |
+| `wan3` (`wan3.0-video`, `wan3.0-spicy-video`) | `Image 1` | `Video 1` | `Audio 1` |
+| `happyhorse` (HappyHorse 1.1, images only) | `[Image 1]` | — | — |
 | `gpt-image-2`, legacy `flux` | `Image 1` | `Video 1` | `Audio 1` |
-| `flux-3-klein` (FLUX 3 Image Klein) | `the first image`, `the second image`, … | — | — |
-| `ltx25`, `ltx23`, `wan`, `qwen-image-edit` | `context_image_0` (0-indexed) | `context_video_0` | `context_audio_0` |
+| `flux3-klein` (FLUX 3 Image Klein, `flux-3-klein`) | `the first image`, `the second image`, … | — | — |
+| `ltx25`, `ltx23`, `wan`, `qwen-image-edit`, `krea-identity-edit` | `context_image_0` (0-indexed) | `context_video_0` | `context_audio_0` |
+
+Numbering is 1-based and per media type unless the row says otherwise. On MiniMax H3 the image tag is `Picture`, not `Image`, and a reference video's own soundtrack takes the next `<Audio N>` before standalone audio clips.
 
 ## Constraints
 

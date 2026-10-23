@@ -20,3 +20,5 @@ export * from './videoUpscale.js';
 export * from './generationJob.js';
 export * from './danceMontage.js';
 export * from './imageEditRouting.js';
+export * from './personaReferences.js';
+export * from './personaCharacterSheet.js';
