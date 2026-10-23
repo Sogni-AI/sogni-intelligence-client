@@ -116,6 +116,12 @@ COMPOSITE GPT IMAGE 2 STORYBOARD SHEETS: When numberOfVariations=1 and the user 
           description:
             'Index of the primary image to use as the main reference. For follow-up edits when generated image results already exist, use the 0-based generated image result index; for example, editing the latest generated storyboard/image should use that generated result index so the model modifies the existing image instead of redrawing from uploads. When no generated image results exist, use sourceImageIndex=-1 to use the uploaded image references. The primary image and any additional uploaded images are passed as context images to guide generation.',
         },
+        sourceImageIndices: {
+          type: 'array',
+          items: { type: 'number' },
+          description:
+            'Further images this one edit uses as references, in order after the sourceImageIndex image, when the edit needs particular images rather than the uploads, such as two people from two earlier generated results. Same indices as sourceImageIndex: 0-based for generated results, negative for uploads (-1 = first upload). Every listed image goes into the same edit; it is not one edit per image. When set, the edit uses only the sourceImageIndex image and these, without adding other uploads, and all of them count toward the model\'s reference limit. To edit one image by itself, list only that image.',
+        },
         loras: {
           type: 'array',
           minItems: 1,
