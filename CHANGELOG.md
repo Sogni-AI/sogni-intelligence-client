@@ -1,3 +1,11 @@
+## [4.20.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.20.0...v4.20.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **deps:** consume sogni-client 5.69.1 with protocol alpha.55 ([1d4ab00](https://github.com/Sogni-AI/sogni-intelligence-client/commit/1d4ab00eaa7a7bb7d80cc1c17975413ceee34f22))
+* **deps:** use the published protocol alpha.55 artifacts ([323f2f5](https://github.com/Sogni-AI/sogni-intelligence-client/commit/323f2f56bc46641576744559f9d8d5bdd58082af))
+
 # [4.20.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.19.1...v4.20.0) (2026-10-22)
 
 
