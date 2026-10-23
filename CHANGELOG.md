@@ -1,3 +1,10 @@
+# [4.21.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.20.2...v4.21.0) (2026-10-23)
+
+
+### Features
+
+* **tools:** let edit_image name every reference image it uses ([22828d7](https://github.com/Sogni-AI/sogni-intelligence-client/commit/22828d727a535356f9fc1830f04ddb1096b979ed))
+
 ## [4.20.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.20.1...v4.20.2) (2026-10-23)
 
 
