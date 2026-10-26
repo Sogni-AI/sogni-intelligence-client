@@ -201,6 +201,12 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
           description:
             "Seedance or MiniMax H3 r2v image references. Use negative indices for uploaded images and non-negative indices for generated image results. Seedance uses @Image tags. H3 Ref2VA requires at least one visual reference—an image or video—and uses the official <Subject N>/<Picture N> semantics; these are loose references, not locked first frames. Wan 3 loose images use Image 1, Image 2, and so on, with up to 10 images.",
         },
+        referenceVideoCompression: {
+          type: "string",
+          enum: ["none", "vpack"],
+          description:
+            'Optional compression for one-stage MiniMax H3 Reference to Video (Standard, Balanced, LightX2V Turbo, or FastH3). Requires a video reference. Omit or use "none" to preserve normal behavior; use "vpack" only when the user explicitly chooses reference-video compression. It can reduce memory use but change fine detail and motion. It does not apply to two-stage output, other video models, or image-only references. Never silently enable it or remove it after a worker-capability refusal.',
+        },
         referenceVideoIndices: {
           type: "array",
           items: { type: "number" },

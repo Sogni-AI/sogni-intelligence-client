@@ -1,3 +1,4 @@
+import { generationToolsManifest } from '../src/openai-tools/_manifests.generated';
 /**
  * Unit tests for the public-safe tool-arg normalization helpers.
  */
@@ -56,6 +57,11 @@ function expect<T>(label: string, actual: T, expected: T) {
 
 export function runToolsSharedTests(): { passed: number; failed: number } {
   console.log('\n🧪 tools/shared helpers\n');
+
+  const manifestVideo = (generationToolsManifest as { tools: Array<{ function: { name: string; parameters: { properties: Record<string, unknown> } } }> }).tools.find(tool => tool.function.name === 'generate_video');
+  expect('public manifest and live tool expose identical optional compression',
+    manifestVideo?.function.parameters.properties.referenceVideoCompression,
+    generateVideoDefinition.function.parameters.properties.referenceVideoCompression);
 
   // extractDynamicPromptBranches
   expect(
@@ -250,6 +256,22 @@ export function runToolsSharedTests(): { passed: number; failed: number } {
     }).ok,
     true,
   );
+  for (const compression of [undefined, 'none', 'vpack']) {
+    const result = validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
+      prompt: 'Create a new scene guided by the supplied reference video.',
+      videoModel: 'minimax-h3-r2v',
+      referenceVideoIndices: [-1],
+      sourceAudioPolicy: 'replace',
+      ...(compression === undefined ? {} : { referenceVideoCompression: compression }),
+    });
+    expect(`H3 compression ${compression ?? 'omitted'} passes tool validation`, result.ok, true);
+    expect(`H3 compression ${compression ?? 'omitted'} survives without a default`, result.cleaned.referenceVideoCompression, compression);
+  }
+  expect('H3 compression rejects an unsupported value', validateAndNormalizeHostedToolArguments(
+    [generateVideoDefinition], 'generate_video', {
+      prompt: 'A new scene', videoModel: 'minimax-h3-r2v', referenceVideoCompression: 'automatic',
+    },
+  ).ok, false);
   const h3ExactAudioPrompt = `subject_definitions:
 <Video 1> supplies the dance. <Audio 1> is its immutable soundtrack.
 

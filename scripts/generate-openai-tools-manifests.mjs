@@ -46,6 +46,19 @@ for (const file of manifestFiles) {
     // protocol's "FastH3 has no R2V mode" lines. A no-op once the protocol has them.
     const fastH3ReferenceSelectors = ['minimax-h3-fasth3-r2v-turbo', 'minimax-h3-fasth3-r2v-turbo-2stage'];
     const generateVideo = manifest.tools?.find((candidate) => candidate?.function?.name === 'generate_video');
+    // Add the optional VPack contract until the published protocol pin carries it.
+    // Matches canonical protocol commit ceddc59; never introduces a default.
+    const generateVideoProperties = generateVideo?.function?.parameters?.properties;
+    if (generateVideoProperties && !generateVideoProperties.referenceVideoCompression) {
+      generateVideoProperties.referenceVideoCompression = {
+        "type": "string",
+        "enum": [
+          "none",
+          "vpack"
+        ],
+        "description": "Optional compression for one-stage MiniMax H3 Reference to Video (Standard, Balanced, LightX2V Turbo, or FastH3). Requires a video reference. Omit or use \"none\" to preserve normal behavior; use \"vpack\" only when the user explicitly chooses reference-video compression. It can reduce memory use but change fine detail and motion. It does not apply to two-stage output, other video models, or image-only references. Never silently enable it or remove it after a worker-capability refusal."
+      };
+    }
     const generateVideoModel = generateVideo?.function?.parameters?.properties?.videoModel;
     if (Array.isArray(generateVideoModel?.enum) && !generateVideoModel.enum.includes(fastH3ReferenceSelectors[0])) {
       const after = generateVideoModel.enum.indexOf('minimax-h3-r2v-balanced-2stage');
