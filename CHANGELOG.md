@@ -1,3 +1,10 @@
+## [4.21.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.21.0...v4.21.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **deps:** adopt Sogni client 5.70.0 ([dbc2021](https://github.com/Sogni-AI/sogni-intelligence-client/commit/dbc2021c7cfe1ddd5fbc4e77fe7429171198c346))
+
 # [4.21.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.20.2...v4.21.0) (2026-10-23)
 
 
