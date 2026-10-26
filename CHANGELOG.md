@@ -1,3 +1,10 @@
+# [4.22.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.21.1...v4.22.0) (2026-10-26)
+
+
+### Features
+
+* **tools:** expose opt-in H3 reference compression ([4946491](https://github.com/Sogni-AI/sogni-intelligence-client/commit/4946491d2ce08f68485c92e94f4de89ce37594e7))
+
 ## [4.21.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.21.0...v4.21.1) (2026-10-26)
 
 
