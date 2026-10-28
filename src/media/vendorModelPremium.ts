@@ -1,7 +1,7 @@
 export const VENDOR_MODEL_PREMIUM_REQUIRED_ERROR = 'vendor_model_premium_required';
 
 export const VENDOR_MODEL_PREMIUM_REQUIRED_MESSAGE =
-  'Third-party vendor models (GPT Image 2, Seedance, Seedream, HappyHorse, and Wan 3) require Premium Spark Points on this account. Buy Premium Spark with a card or choose a Sogni-native model.';
+  'Third-party vendor models (GPT Image, Seedance, Seedream, HappyHorse, and Wan 3) require Premium Spark Points on this account; Free Spark can\'t be used. Buy Spark or choose a Sogni-native model.';
 
 export interface VendorModelPremiumRequiredPayload {
   error: typeof VENDOR_MODEL_PREMIUM_REQUIRED_ERROR;
