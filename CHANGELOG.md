@@ -1,3 +1,10 @@
+## [4.22.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.0...v4.22.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* **media:** stop telling users vendor models need card-bought Spark ([b2bfdd9](https://github.com/Sogni-AI/sogni-intelligence-client/commit/b2bfdd993dc7f6418de29b111a8ec95839311a77))
+
 # [4.22.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.21.1...v4.22.0) (2026-10-26)
 
 
