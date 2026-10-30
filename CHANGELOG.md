@@ -1,3 +1,11 @@
+## [4.22.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.1...v4.22.2) (2026-10-30)
+
+
+### Bug Fixes
+
+* **prompts:** preserve identity through artistic transformations ([a7611ff](https://github.com/Sogni-AI/sogni-intelligence-client/commit/a7611ffc1dcfff2d95844f7a002dd2ea1d2b8307))
+* **prompts:** scope Klein captions to the requested transformation ([24cb379](https://github.com/Sogni-AI/sogni-intelligence-client/commit/24cb379017f6746decc6d11b86815b2123509fc5))
+
 ## [4.22.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.0...v4.22.1) (2026-10-28)
 
 
