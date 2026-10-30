@@ -2,6 +2,7 @@ import type { SogniChatContentPart, SogniChatMessage } from "../runtime/chatType
 import type { ToolDefinition } from "../tools/definitions/types.js";
 import { getRandomTheme } from "./randomThemes.js";
 import { withAdultRequesterDirective } from "./adultRequesterDirective.js";
+import { REFERENCE_IDENTITY_GUIDANCE } from "./imageIdentity.js";
 
 export type ImagePromptingType =
   /** Legacy family key retained for direct callers; active Chroma profiles use `chroma`. */
@@ -243,12 +244,12 @@ const KREA2_EDIT_GUIDE = `Krea 2 Identity Edit performs best with a concise delt
 const FLUX3_KLEIN_EDIT_GUIDE = `FLUX 3 Image Klein edits and composes from one to ten ordered reference images. It was trained on captions its own prompt upsampler wrote while looking at those images, so write the prompt as that caption.
 - Refer to the references only by order: the first image, the second image, and so on. Use every attached image, say what is taken from each, and never mention content that is not in them. Read a vague or conversational request as the most plausible edit of these images.
 - Write one continuous prose block, typically 80 to 220 words, with no lists, headings, coordinates, or ids. All prose is English; only quoted on-image text keeps its own language.
-- When one reference stays and gets bounded changes, write a complete caption of that reference with the change folded in. Open with "Create a photograph preserving the first image exactly as the canvas:" (name the real medium instead for an illustration, painting, or render), name what stays (camera position and framing, the subject's pose, the setting, the lighting, the colors) by its visible appearance, then state the change. A whole-image transformation opens with its scope ("Convert the entire image into ...", "Shift the camera viewpoint to ...") and says where the major elements now sit.
+- When one reference stays and gets bounded changes, write a complete caption of that reference with the change folded in. Open with "Create a photograph preserving the first image exactly as the canvas:" (name the real medium instead for an illustration, painting, or render), name the genuinely untargeted details that stay by their visible appearance, then state the change. Camera position, framing, pose, setting, lighting and colors stay only where unaffected by the requested change and its necessary consequences. A whole-image transformation opens with its scope ("Convert the entire image into ...", "Shift the camera viewpoint to ...") and says where the major elements now sit.
 - When references are drawn into a newly composed frame (combining subjects, a new scene, a garment, object, or style donor), write a generation request ("Create a photograph of ...") that says what to take from each image by its order and what is newly generated.
 - State every end state concretely (which color, how large, which pose, which material) and give new content enough appearance to be generated. Cover the knock-on effects of the change (shadows, reflections, occlusion, perspective, scale, lighting) and say what fills a removed region. A zoom-in names what stays in frame and which neighbors are cropped out; an outpainting continues the scene in the same medium.
-- Close with one compact clause naming what stays unchanged. Transferred people keep their identity, face, and accessories unless the request changes them.
+- Close with a compact preservation clause when it serves a bounded edit or an explicitly fixed requirement. For a newly composed scene or artistic transformation, make preservation task-specific; do not lock the source person's physical appearance, accessories, pose or framing against changes implied by the brief.
 - Transcribe on-image text verbatim inside double quotes in its original language, writing each line break of multi-line text as \\n, and match the original font, size, and color when replacing it. Directions are frame-relative; use no evaluative or quality words. Guidance is fixed and a negative prompt has no effect.
-- The request may begin with a "TARGET CANVAS: W:H" line, the output aspect ratio: compose the result for that frame, with the least destructive crop or extension where it differs from the first image's shape, and never state the ratio or mention that line.
+- The request may begin with a "TARGET CANVAS: W:H" line, the output aspect ratio: compose the result for that frame. Use the least destructive crop or extension when the brief calls for retaining the source composition; a new composition or artistic transformation follows the requested framing. Never state the ratio or mention that line.
 - When the reference images are not attached for you to see, do not guess what they contain: state the requested change and its end state concretely, refer to the references by order, and describe only what the request establishes about them.`;
 
 const GPT_IMAGE_EDIT_GUIDE = `GPT Image 2 editing follows precise natural-language transformation instructions and ordered image references.
@@ -321,6 +322,7 @@ RULES:
 - If the user provides a style context, complement it — don't repeat or contradict it.
 - Keep the result focused: one coherent scene or subject, not a list of disconnected ideas.
 - Before returning, silently compare the result with the user's prompt. Remove every object, action, tonal claim, and relationship claim that is not traceable to the request or strictly necessary to stage it. Restore the user's literal content-bearing wording anywhere the result made it gentler, stronger, more generic, or more abstract.
+- Reference identity, when the brief calls for the same person or character: ${REFERENCE_IDENTITY_GUIDANCE}
 - Output only the prompt text — no explanations, no preamble.`;
 }
 
@@ -867,6 +869,9 @@ AUTHORING RULES:
 - If the request is already production-ready, polish it lightly instead of replacing its direction.
 - Never claim to have inspected a reference image that is not attached to this authoring request.
 - A "TARGET CANVAS: W:H" line before the request gives the output aspect ratio: compose for it, and never state the ratio or mention that line.
+
+REFERENCE IDENTITY, WHEN THE BRIEF CALLS FOR THE SAME PERSON OR CHARACTER:
+${REFERENCE_IDENTITY_GUIDANCE}
 
 ${imageAuthoringOutputInstruction(input.profile)}`;
   const request = [

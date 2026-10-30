@@ -5,6 +5,7 @@
 
 import type { ToolDefinition } from '../types.js';
 import { LITERAL_PROMPT_OVERRIDE } from '../../../contracts/promptOverrideMarker.js';
+import { REFERENCE_IDENTITY_GUIDANCE } from '../../../contracts/imageIdentity.js';
 import { ASPECT_RATIO_DESCRIPTION } from '../../../media/index.js';
 
 export const definition: ToolDefinition = {
@@ -22,15 +23,16 @@ export const definition: ToolDefinition = {
 
 ${LITERAL_PROMPT_OVERRIDE}
 
-PROMPT ORDER: [IDENTITY LOCK if people] → [SPECIFIC CHANGE] → [PRESERVE EVERYTHING ELSE]
+For a targeted refinement, state the requested change, its necessary consequences, and what should remain stable.
+
+${REFERENCE_IDENTITY_GUIDANCE}
 
 Rules:
-- Use POSITIVE phrasing only. The model ignores negatives ("preserve exact facial likeness" NOT "don't change the face").
-- Describe ONLY what needs to change (the delta). The base image already contains most of the truth — do not rewrite the entire image.
+- Describe the intended visible result in direct, positive language.
+- For a bounded change, use a concise delta instruction and preserve genuinely untargeted content. Keep the existing result as the basis rather than inventing a different image.
 - Be specific about what to change: "warmer skin tones", "cooler shadows", "sharper facial features", "more natural greens".
-- For creative refinements: lean into specifics — "add more dramatic Rembrandt lighting", "push the colors more toward Warhol neon pop", "make the anime eyes larger and more expressive", "add more superhero energy with glowing effects".
-- CRITICAL for photos with people: FRONT-LOAD identity preservation before the edit. Start with "Preserve exact facial likeness, face structure, eye shape, nose shape, mouth shape, jawline, skin tone, hairline, apparent age, and overall recognizability."
-- ALWAYS end with "Preserve all unmentioned details" to prevent unwanted changes.
+- For creative refinements, realize the full implied transformation: "add more dramatic Rembrandt lighting", "push the colors more toward Warhol neon pop", "make the anime eyes larger and more expressive", "add more superhero energy with glowing effects". Do not countermand that direction with a blanket physical-feature or composition lock.
+- Use a compact preservation clause for genuinely untargeted content or explicitly fixed requirements, without freezing changes the brief calls for.
 
 BATCH VARIATIONS: Only use Dynamic Prompt syntax when the user explicitly asks to explore different refinement directions. Example: "refine with {more contrast|softer lighting|richer colors}". Default to identical prompts for refine_result batches.`,
         },

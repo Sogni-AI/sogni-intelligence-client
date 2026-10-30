@@ -5,6 +5,7 @@
 
 import type { ToolDefinition } from '../types.js';
 import { LITERAL_PROMPT_OVERRIDE } from '../../../contracts/promptOverrideMarker.js';
+import { REFERENCE_IDENTITY_GUIDANCE } from '../../../contracts/imageIdentity.js';
 import { ASPECT_RATIO_DESCRIPTION } from '../../../media/index.js';
 
 export const definition: ToolDefinition = {
@@ -18,20 +19,21 @@ export const definition: ToolDefinition = {
       properties: {
         prompt: {
           type: 'string',
-          description: `Editing prompt (50-200 words, natural language). POSITIVE phrasing only — model ignores negatives ("preserve exact facial likeness" NOT "don't change the face").
+          description: `Editing prompt (50-200 words, natural language). Describe the intended visible result in direct, positive language.
 
 ${LITERAL_PROMPT_OVERRIDE}
 
-PROMPT ORDER: [IDENTITY LOCK if people] → [RESTORATION/EDIT INSTRUCTION] → [PRESERVE UNMENTIONED DETAILS]
+Describe the desired restoration or edit and the source content that should remain stable.
 
-Describe desired final state, not what to remove.
-- CRITICAL for photos with people (unless removing them): FRONT-LOAD identity preservation as the FIRST priority. Start with "Preserve exact facial likeness, face structure, eye shape, nose shape, mouth shape, jawline, skin tone, hairline, apparent age, and overall recognizability." Then describe the restoration or edit.
+${REFERENCE_IDENTITY_GUIDANCE}
+
+- For restoration alone, repair damage while retaining the photographed people, scene and historical character. Do not invent a makeover or a different person. Broader changes follow the actual edit brief.
 - Restoration: "remove scratches, tears, stains, dust spots, and noise"
 - Object removal: describe scene WITHOUT the object, matching surrounding textures
 - Colorization: "Restore and colorize the photo" or "Apply natural [decade] color palette"
-- Creative transformation: identity lock comes FIRST, then the transformation. Example: "Preserve exact facial likeness and recognizability. Reimagine as a Pixar character with glossy 3D features. Preserve all unmentioned details."
+- For a creative transformation, describe a convincing result in the requested visual language, including its shape and material treatment. Translate the source individual's likeness into that design; a stylized character need not retain photographic anatomy or skin treatment.
 - No keyword spam ("8k, masterpiece") — use plain descriptions. Be specific — name the artist, franchise, or era.
-- Always end with "Preserve all unmentioned details."
+- For bounded repairs or edits, preserve genuinely untargeted content and its necessary visual continuity. Honor explicit locks without freezing changes implied by a creative brief.
 
 BATCH VARIATIONS: Only use Dynamic Prompt syntax when the user explicitly requests multiple approaches to compare. Example: "restore with {warm vintage|cool modern|natural balanced} tones". Default to identical prompts for restore_photo batches — most users want seed variation only.`,
         },

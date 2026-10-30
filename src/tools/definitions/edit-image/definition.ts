@@ -10,6 +10,7 @@ import {
   LORA_STRENGTHS_GUIDANCE,
 } from '../../shared/loraGuidance.js';
 import { LITERAL_PROMPT_OVERRIDE } from '../../../contracts/promptOverrideMarker.js';
+import { REFERENCE_IDENTITY_GUIDANCE } from '../../../contracts/imageIdentity.js';
 import { ASPECT_RATIO_DESCRIPTION } from '../../../media/index.js';
 import { SEEDREAM_5_PRO_UNCENSORED_MODEL_DESCRIPTION } from '../../../contracts/toolPromptMarkers.js';
 
@@ -24,41 +25,22 @@ export const definition: ToolDefinition = {
       properties: {
         prompt: {
           type: 'string',
-          description: `Edit instruction describing what to generate using the reference images as guidance. 50-200 words recommended.
+          description: `Model-native instruction describing the requested result using the reference images as guidance. Match the selected model's prompt grammar and the detail the task needs.
 
 ${LITERAL_PROMPT_OVERRIDE}
 
-PROMPT CONSTRUCTION ORDER — build the prompt in this sequence:
-1. IDENTITY LOCK — state which picture owns the person's identity (GOLDEN RULE: never leave identity ambiguous when editing a person)
-2. REQUESTED EDIT — describe only what CHANGES (the delta), not the whole image
-3. REFERENCE ROLE MAPPING — assign each picture ONE primary role: base_identity (face/person), pose_reference, outfit_reference, style_reference, background_reference, or color_reference
-4. POSE / COMPOSITION — pose, framing, camera angle (omit if unchanged)
-5. STYLE — artistic style, genre, era (omit if unchanged)
-6. LIGHTING / REALISM — "maintain realistic anatomy, perspective, and lighting integration"
-7. PRESERVE clause — always end with "preserve all unmentioned details"
+REFERENCE-GUIDED AUTHORING:
+- Assign clear roles to the attached images: identity, base scene, pose, outfit, style, environment, or color. State which individual each identity reference depicts; a style or costume donor does not silently become a different person in the result.
+- For a bounded edit, describe the requested change and its necessary consequences while keeping genuinely untargeted content stable. For a new composition or creative transformation, describe the intended result and the changes the complete brief implies.
+- Follow the selected model's grammar below. Specify the relevant medium, subject treatment, composition, setting and lighting; use a preservation clause only for content that should actually remain fixed.
 
-IDENTITY LOCK (required when a person is in any reference image):
-"Preserve the exact facial likeness from picture N — face structure, eye shape, nose shape, mouth shape, jawline, skin tone, hairline, apparent age, and overall recognizability."
-Never let a style, pose, or clothing reference silently override the face. If multiple images are provided, explicitly state "identity comes only from picture N — do not borrow identity from other pictures."
-
-MINIMAL-CHANGE PRINCIPLE: The base image already contains the subject, composition, camera angle, expression, lighting, and background. Describe only the delta. Use positive constraints ("preserve exact facial likeness") not negative ones ("don't change the face").
-
-SINGLE-IMAGE PATTERN:
-"Preserve the exact facial likeness and recognizability of the person from picture 1. [Describe only the requested change]. Keep the same pose, framing, camera angle, and expression unless the user specifically requests changes to these. Preserve all unmentioned details."
-
-MULTI-IMAGE PATTERN:
-"Use the person from picture 1 as the final subject and preserve their exact facial likeness. [Requested edit]. Identity comes only from picture 1. Pose from picture 2. Outfit from picture 3. Do not borrow identity from pictures 2 or 3. Maintain realistic anatomy, perspective, and lighting integration. Preserve all unmentioned details."
+${REFERENCE_IDENTITY_GUIDANCE}
 
 KREA IDENTITY EDIT: Use model="krea-identity-edit" whenever an edit of a referenced person or character must keep likeness or character identity while changing clothes, hair or makeup, pose or position, face/head/body, background, lighting, or visual style. Infer that semantic intent in any language; never route from keyword or regex matching. Also use it for a single-character sheet in non-Pro mode. This semantic default applies even when the user did not name Krea; an explicitly user-requested model always wins. Use model="dark-beast-krea2-identity-edit" only when the user explicitly requests Dark Beast Krea 2 Identity Edit, its community/uncensored variant, or the dark_beast_krea2_identity_edit_v1_2 model id. These models require one reference image, accept up to two context images, work best at 512-2048 px, let the model tier and worker choose their current execution defaults, and do not use negative prompts. Put the primary scene/base image first and the person/detail reference second for scene-plus-person edits; reference them with context_image_0 and context_image_1 when model_ref tokens are needed.
 
 KREA 2 IDENTITY EDIT PROMPTING: Krea performs best with a concise, direct delta instruction rather than a generic 50-200 word expansion. For one reference, state the requested change in 1-4 concrete sentences and name only the details that must remain fixed; avoid restating the entire image or dumping a long facial-feature inventory. For two references, explicitly assign roles in a compact instruction: base scene/image first, person/detail/outfit/pose/style reference second. Use sourceImageIndex to make the base scene the first context image when uploads arrive in another order (-1 = first upload, -2 = second). End with a short preservation clause only when useful. Longer structured prompts remain appropriate for character sheets, grids, editorial layouts, or exact visible text.
 
-CREATIVE TRANSFORMATIONS — be vivid and reference-specific, name the artist, franchise, or era, but always anchor identity first:
-  - "Preserve the exact facial likeness from picture 1. Transform them into a Renaissance oil painting in the style of Vermeer — rich warm tones, dramatic chiaroscuro lighting, ornate period clothing. Maintain realistic anatomy. Preserve all unmentioned details."
-  - "Preserve the exact facial likeness from picture 1. Reimagine them as a Marvel superhero — cinematic dramatic lighting, heroic pose, detailed costume with cape, glowing energy effects. Preserve all unmentioned details."
-  - "Preserve the exact facial likeness from picture 1. Transform them into a Studio Ghibli anime character — soft watercolor backgrounds, gentle Ghibli-style rendering, whimsical atmosphere. Preserve all unmentioned details."
-  - "Preserve the exact facial likeness from picture 1. Place them into a Star Wars scene — Jedi robes, lightsaber glow, dramatic sci-fi backdrop. Preserve all unmentioned details."
-  - "Preserve the exact facial likeness from picture 1. Turn them into a GTA loading screen character — bold outlines, saturated colors, attitude-filled pose, urban backdrop. Preserve all unmentioned details."
+CREATIVE TRANSFORMATIONS: Make the requested visual language convincing. Name the artist, franchise, or era when requested and describe its relevant shape language, proportions, materials, color and rendering. Translate the referenced individual's likeness into that design rather than placing an unchanged photographic face on a stylized body. For a photographic makeover, describe the intended styling, lighting and retouching as treatment of that particular individual. Choose composition and visible identity cues together; the brief may imply a new pose, expression, framing or accessory treatment.
 
 FAILURE MODES TO AVOID:
 - Face drift: identity source not specified, or style/pose reference overrides the face
@@ -79,18 +61,17 @@ ORIGINAL + VARIANT BATCHES: When one option is a remade/preserved original and t
 
 NEW SETTING PER OPTION: When the variant theme implies a new place, culture, era, or context, every option must name its own setting (location, props, lighting). Do NOT carry the source background forward, do NOT write "in the same pose and placement as the original photo" without also naming the new background, and do NOT rely on "preserve all unmentioned details" to handle the setting — the new setting IS a mentioned detail.
 
-RECOGNIZABILITY OVER FEATURE LOCK: For ethnic / age / character / art-style transformations, do NOT paste the strict IDENTITY LOCK feature list ("face structure, eye shape, nose shape, mouth shape, jawline, skin tone, hairline") inside each option — that list contradicts the requested face change and the source face will pass through unchanged. Anchor recognizability per option through apparent age, signature hair silhouette, build, posture, and expression, and explicitly allow skin tone, facial features, and proportions to shift toward the target.
+RECOGNIZABILITY ACROSS VARIANTS: Give each option a clear identity source and a coherent interpretation of that individual within the requested transformation. Choose identifying cues from the actual references that remain meaningful in that option's visual language. Do not repeat a fixed feature inventory across options or treat source observations as requirements to keep every physical trait unchanged.
 
 Correct shape (each option self-contained, concrete, with a fresh setting and a recognizability anchor instead of a strict feature lock):
-"{The subject wearing [specific garment, color, cut, and material], standing in [specific NEW setting with props and lighting — never the source background], bold text at the bottom reads [literal requested text], [specific requested visual symbol] appears as a sign or prop, [requested per-variant facial or appearance shift, e.g. "skin tone, eye shape, and bone structure shift toward <target> features"], recognizable through apparent age, signature hair silhouette, build, posture, and expression|The subject wearing [second specific garment, color, cut, and material], standing in [second specific NEW setting with props and lighting], bold text at the bottom reads [second literal requested text], [second requested visual symbol] appears as a sign or prop, [second requested facial or appearance shift], recognizable through apparent age, signature hair silhouette, build, posture, and expression|...}"
+"{The individual from picture 1 reimagined in [specific requested visual language], wearing [specific garment, color, cut, and material], in [specific NEW setting with props and lighting], bold text at the bottom reads [literal requested text], [specific requested visual symbol] appears as a sign or prop, [concrete translation of the individual's likeness appropriate to this design]|The individual from picture 1 reimagined in [second requested visual language], wearing [second specific garment, color, cut, and material], in [second specific NEW setting with props and lighting], bold text at the bottom reads [second literal requested text], [second requested visual symbol] appears as a sign or prop, [concrete translation of the individual's likeness appropriate to this second design]|...}"
 
 Wrong shape (placeholder labels masquerading as prompts):
 "{First variant with variant-specific facial features, placeholder wardrobe, alternate name, and requested symbol baked in|Second variant with different variant-specific facial features, placeholder wardrobe, alternate name, and requested symbol baked in|...}"
 
-Also wrong (strict feature lock + no new setting — the source face and source background pass through unchanged):
-"{Preserve the exact facial likeness — face structure, eye shape, nose shape, mouth shape, jawline, skin tone, hairline. Reimagine as <variant>: [garment description], standing in the exact same pose and placement as the original photo. Preserve all unmentioned details.|Preserve the exact facial likeness — [same strict lock]. Reimagine as <other variant>: [other garment], standing in the exact same pose and placement as the original photo. Preserve all unmentioned details.|...}"
+Also wrong: attaching an unchanged-feature inventory or a blanket source-pose/background preservation clause to every option when the requested transformation calls for those elements to change.
 
-SCREENPLAY / STORYBOARD BATCHES: For multi-scene story, commercial, or longer-form video keyframes, use one Dynamic Prompt branch with one full scene prompt per option. Recurring characters must keep stable names and repeated visual anchors in every scene option where they appear: face/identity source if available, age range, build, hairstyle, outfit silhouette, color palette, signature prop/accessory, posture, and role. Do not let style, scene changes, or pose references alter identity. Include screenplay-style speaker tags when dialogue matters, e.g. CHARACTER: "We made it."
+SCREENPLAY / STORYBOARD BATCHES: For multi-scene story, commercial, or longer-form video keyframes, use one Dynamic Prompt branch with one full scene prompt per option. Recurring characters must keep stable names, clear identity sources when available, and repeated visual anchors appropriate to the story and each scene's design. Carry explicitly fixed character details consistently; changes in costume, pose or artistic treatment do not make a recurring character a different individual. Include screenplay-style speaker tags when dialogue matters, e.g. CHARACTER: "We made it."
 
 COMPOSITE GPT IMAGE 2 STORYBOARD SHEETS: When numberOfVariations=1 and the user asks for one composite video storyboard/keyframe sheet using uploaded or generated references, the prompt must be a compiled storyboard prompt, not a concept summary. Include a SCENES: section with exactly the requested number of concrete entries named SCENE_01, SCENE_02, etc. Every scene entry must include Visual/Action, Camera/Motion, Dialogue/VO (or [no dialogue]), Audio/SFX, and any visible text or reference usage for that scene. Do not provide only the source brief or generic layout instructions; malformed compiled storyboard prompts are blocked by quality audit.`,
         },

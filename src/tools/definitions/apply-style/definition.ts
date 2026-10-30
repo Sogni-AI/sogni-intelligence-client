@@ -5,6 +5,7 @@
 
 import type { ToolDefinition } from '../types.js';
 import { LITERAL_PROMPT_OVERRIDE } from '../../../contracts/promptOverrideMarker.js';
+import { REFERENCE_IDENTITY_GUIDANCE } from '../../../contracts/imageIdentity.js';
 import { ASPECT_RATIO_DESCRIPTION } from '../../../media/index.js';
 
 export const definition: ToolDefinition = {
@@ -22,17 +23,18 @@ export const definition: ToolDefinition = {
 
 ${LITERAL_PROMPT_OVERRIDE}
 
-PROMPT ORDER: [IDENTITY LOCK if people] → [STYLE TRANSFER INSTRUCTION] → [PRESERVE UNMENTIONED DETAILS]
+Describe the requested visual treatment and identify the source subject when its identity should carry into the result.
+
+${REFERENCE_IDENTITY_GUIDANCE}
 
 Rules:
-- Use POSITIVE phrasing only. The model ignores negatives ("preserve exact facial likeness" NOT "don't change the face").
-- Transfer the visual STYLE ONLY, not the identity. Borrow palette, texture, contrast behavior, and stylistic treatment — NOT face structure.
+- Describe the intended visible result in direct, positive language.
+- A palette or photographic finish change keeps genuinely untargeted content stable. A character or medium transformation may require new shape language, proportions, anatomy, surface treatment or composition to realize the requested design.
 - Reference known art styles, artists, and franchises BY NAME to anchor the style — be specific, never generic.
 - Describe specific visual characteristics: brushstrokes, color palette, texture, composition approach, mood.
 - For era looks: describe the photographic qualities of that era (e.g., "warm faded Kodachrome tones with soft vignette, typical of 1970s amateur photography").
-- CRITICAL for photos with people: FRONT-LOAD identity preservation BEFORE the style instruction. Start with "Preserve exact facial likeness, face structure, eye shape, nose shape, mouth shape, jawline, skin tone, hairline, apparent age, and overall recognizability." Then describe the style. End with "Keep the subject recognizable as the same person. Maintain exact positioning, poses, and composition."
 - Go bold with pop culture and iconic styles: "Andy Warhol pop art with bold neon screen-print colors", "Banksy stencil street art with gritty urban textures", "Studio Ghibli watercolor with soft pastoral warmth", "Pixar 3D render with glossy skin and exaggerated features", "Tim Burton gothic with pale skin and dark spiraling backgrounds", "Van Gogh Starry Night with thick impasto swirls and vibrant blues", "Takashi Murakami superflat with psychedelic flowers and bold outlines".
-- Always end with "Preserve the subject's identity, pose, and composition."`,
+- Preserve explicitly fixed elements and use a compact preservation clause only where it helps this particular transformation.`,
         },
         sourceImageIndex: {
           type: 'number',
