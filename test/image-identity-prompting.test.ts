@@ -67,7 +67,9 @@ test('Klein preserves ordered sources, literal user locks and the bounded canvas
     referenceImageUrls: ['data:image/jpeg;base64,FIRST', 'data:image/png;base64,SECOND'],
   });
   const system = String(messages[0].content);
-  assert.ok(system.includes('preserving the first image exactly as the canvas'));
+  assert.ok(system.includes('For a bounded edit that retains the source scene'));
+  assert.ok(!system.includes('preserving the first image exactly as the canvas'));
+  assert.ok(system.includes('without repeating its label, ratio or dimensions'));
   assert.ok(system.includes('genuinely untargeted details'));
   assert.ok(system.includes('when the brief calls for retaining the source composition'));
   assert.ok(!system.includes('Transferred people keep their identity, face, and accessories unless the request changes them.'));

@@ -370,7 +370,7 @@ async function runTests() {
     });
     const kleinEditUser = kleinEditMessages[1]?.content;
     if (
-      !String(kleinEditMessages[0]?.content).includes('preserving the first image exactly as the canvas')
+      !String(kleinEditMessages[0]?.content).includes('For a bounded edit that retains the source scene')
       || !Array.isArray(kleinEditUser)
       || kleinEditUser.map((part) => (part.type === 'text' ? part.text : part.image_url.url)).join('|')
         !== 'The first image:|data:image/jpeg;base64,AAA|The second image:|data:image/jpeg;base64,BBB|'
