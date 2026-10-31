@@ -584,8 +584,11 @@ export interface BalanceInfo {
   /** SOGNI token balance */
   sogni: number;
   
-  /** Spark token balance */
+  /** Total Spark token balance, including Premium Spark */
   spark: number;
+
+  /** Premium Spark included in spark; absent in snapshots from older clients */
+  premiumSpark?: number;
   
   /** Total balance in USD equivalent (if available) */
   usdEquivalent?: number;

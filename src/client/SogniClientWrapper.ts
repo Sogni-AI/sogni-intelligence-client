@@ -588,6 +588,7 @@ export class SogniClientWrapper extends EventEmitter {
     return {
       sogni: parseFloat(balances.sogni.net) || 0,
       spark: parseFloat(balances.spark.net) || 0,
+      premiumSpark: parseFloat(balances.spark.premiumCredit),
       lastUpdated: new Date(),
     };
   }
