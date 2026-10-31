@@ -1,3 +1,10 @@
+## [4.22.5](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.4...v4.22.5) (2026-10-31)
+
+
+### Bug Fixes
+
+* **deps:** preserve browser chat delivery order ([8ee469f](https://github.com/Sogni-AI/sogni-intelligence-client/commit/8ee469f38b486a15b13a43732bbe90fe91ae38b2))
+
 ## [4.22.4](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.3...v4.22.4) (2026-10-31)
 
 
