@@ -217,7 +217,7 @@
     "@types/node": "^22.0.0",
     "dotenv": "^17.2.3",
     "husky": "^9.1.7",
-    "semantic-release": "^24.2.9",
+    "semantic-release": "25.0.9",
     "tsx": "^4.20.6",
     "typescript": "^5.0.0"
   },
@@ -243,5 +243,8 @@
     "README.md",
     "LICENSE",
     ".env.example"
-  ]
+  ],
+  "overrides": {
+    "undici@7": "7.30.1"
+  }
 }
