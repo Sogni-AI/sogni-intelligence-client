@@ -1,3 +1,10 @@
+## [4.22.4](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.3...v4.22.4) (2026-10-31)
+
+
+### Bug Fixes
+
+* **account:** expose Premium Spark in balance snapshots ([d6efac0](https://github.com/Sogni-AI/sogni-intelligence-client/commit/d6efac0b432de4888856a2e57bca91cc8ed015b0))
+
 ## [4.22.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.2...v4.22.3) (2026-10-31)
 
 
