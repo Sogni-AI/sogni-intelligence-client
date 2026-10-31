@@ -150,8 +150,10 @@ function textHasSeedanceContentPolicySignal(text: string): boolean {
 // regular Seedance real-person refusal for an account without the likeness
 // agreement starts that sentence with "Try again after accepting the one-time
 // likeness agreement at <link>, or try …", which the lazy match keeps whole.
+// A refusal of the soundtrack Seedance generated (the provider's own audio check, mostly copyright) adds what was
+// flagged and what to change, ending "…with sound turned off." (socket, 2026-10-31).
 const SOCKET_SEEDANCE_CONTENT_REFUSAL_PATTERNS: readonly RegExp[] = [
-  /Seedance blocked this video because it did not pass the provider's content policy\. No video was returned\.(?: Try .+? instead\.)?/,
+  /Seedance blocked this video because it did not pass the provider's content policy\. No video was returned\.(?: Its generated soundtrack .+? with sound turned off\.)?(?: Try .+? instead\.)?/,
   /Seedance rejected the input image because it may contain a real person\.(?: Try .+? instead\.)?/,
 ];
 

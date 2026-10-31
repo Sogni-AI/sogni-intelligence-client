@@ -454,6 +454,21 @@ test('a Seedance 2.0 Mini real-person refusal passes through whole with its own 
   assert.equal(modelConsentRequiredPayloadFromError(error), null);
 });
 
+test('a refusal of the soundtrack Seedance generated passes through whole, saying what was flagged', () => {
+  const blocked = "Seedance blocked this video because it did not pass the provider's content policy. No video was returned.";
+  for (const refusal of [
+    `${blocked} Its generated soundtrack may match copyrighted audio, such as a song or a recording given as a reference. Try again without that audio, with a shorter part of it, or with sound turned off.`,
+    `${blocked} Its generated soundtrack was flagged, not the picture. Try again with different dialogue or sounds, or with sound turned off.`,
+  ]) {
+    const error = { code: 5061, message: refusal, vendorFailureCategory: 'content_policy', vendorErrorCode: 'OutputAudioSensitiveContentDetected.PolicyViolation' };
+    assert.equal(seedanceSocketContentRefusalMessage(error), refusal);
+    const payload = seedanceTerminalPolicyPayloadFromError(error);
+    assert.equal(payload?.error, 'seedance_content_policy');
+    assert.equal(payload?.message, refusal);
+    assert.equal(payload?.nextAction, 'wait_for_user');
+  }
+});
+
 test('agents learn that every regular Seedance model takes real people after the shared likeness agreement', () => {
   const agreementUrl = 'https://app.sogni.ai/account/model-consents/seedance-2-5';
   for (const text of [
