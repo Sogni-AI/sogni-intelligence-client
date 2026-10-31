@@ -157,6 +157,11 @@ new SogniClientWrapper({ token, cookies });
 
 Connection management, reconnection, and credit/balance polling are handled automatically. Call `client.disconnect()` when finished.
 
+`await client.getBalance()` returns the total `spark` balance, its `premiumSpark`
+portion, the `sogni` balance, and `lastUpdated`. Premium Spark is already included
+in `spark`; do not add the two together. The Premium amount comes from the SDK's
+`spark.premiumCredit` field. This is a read-only balance check.
+
 ### App id and the request budget
 
 Pass a **stable `appId`** in any long-lived or restartable consumer (a server, bot, worker, or a CLI that resumes work):
