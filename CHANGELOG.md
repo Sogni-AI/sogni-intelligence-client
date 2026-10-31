@@ -1,3 +1,10 @@
+## [4.22.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.2...v4.22.3) (2026-10-31)
+
+
+### Bug Fixes
+
+* **tools:** keep the socket's Seedance soundtrack refusal whole ([c4851ef](https://github.com/Sogni-AI/sogni-intelligence-client/commit/c4851ef1a9dcadc610ef9da5c124d0372d917dd5))
+
 ## [4.22.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.1...v4.22.2) (2026-10-30)
 
 
