@@ -1,3 +1,10 @@
+## [4.22.6](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.5...v4.22.6) (2026-11-01)
+
+
+### Bug Fixes
+
+* **deps:** pin @sogni-ai/sogni-client 5.72.0 ([1b3ef49](https://github.com/Sogni-AI/sogni-intelligence-client/commit/1b3ef4963e938a48418ee044d6d3b51ff0a6f818))
+
 ## [4.22.5](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.4...v4.22.5) (2026-10-31)
 
 
