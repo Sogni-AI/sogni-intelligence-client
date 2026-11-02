@@ -59,7 +59,7 @@ export function runToolsSharedTests(): { passed: number; failed: number } {
   console.log('\n🧪 tools/shared helpers\n');
 
   const manifestVideo = (generationToolsManifest as { tools: Array<{ function: { name: string; parameters: { properties: Record<string, unknown> } } }> }).tools.find(tool => tool.function.name === 'generate_video');
-  expect('public manifest and live tool expose identical optional compression',
+  expect('public manifest and live tool expose the same legacy compression field',
     manifestVideo?.function.parameters.properties.referenceVideoCompression,
     generateVideoDefinition.function.parameters.properties.referenceVideoCompression);
 
