@@ -3506,6 +3506,20 @@ async function runTests() {
     if (capturedEstimateParams.model !== 'ace-step-v1') {
       throw new Error(`Unexpected model param: ${capturedEstimateParams.model}`);
     }
+    if (["network", "billingMode", "priorityMode"].some(key => key in capturedEstimateParams)) {
+      throw new Error("Ordinary audio quotes must keep their existing request shape");
+    }
+    for (const priorityMode of [true, false]) {
+      await client.estimateAudioCost({
+        modelId: "ace-step-v1", duration: 30, steps: 20,
+        network: "fast", billingMode: "subscription", priorityMode,
+      });
+      if (capturedEstimateParams.network !== "fast" ||
+          capturedEstimateParams.billingMode !== "subscription" ||
+          capturedEstimateParams.priorityMode !== priorityMode) {
+        throw new Error("Audio quote must retain explicit plan and Priority choices");
+      }
+    }
   })();
 
   // Test 53: createAudioProject returns audio URLs

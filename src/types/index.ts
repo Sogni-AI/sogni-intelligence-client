@@ -426,7 +426,9 @@ export interface VideoCostEstimateParams
 /**
  * Audio cost estimate parameters
  */
-export interface AudioCostEstimateParams {
+export interface AudioCostEstimateParams
+  extends Pick<Parameters<SogniClient["projects"]["estimateAudioCost"]>[0],
+    "network" | "billingMode" | "priorityMode"> {
   /** Model ID to use */
   modelId: string;
 
