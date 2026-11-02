@@ -1,3 +1,11 @@
+## [4.22.7](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.6...v4.22.7) (2026-11-02)
+
+
+### Bug Fixes
+
+* **deps:** adopt the current SDK and protocol releases ([38fcffc](https://github.com/Sogni-AI/sogni-intelligence-client/commit/38fcffcb6c7394a2df38549f64965fd61ec28622))
+* **security:** refresh release tooling dependency versions ([a5f7bc2](https://github.com/Sogni-AI/sogni-intelligence-client/commit/a5f7bc275ab7880bc9d5bd1ef3bc8a79b0a3e4dd))
+
 ## [4.22.6](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.5...v4.22.6) (2026-11-01)
 
 
