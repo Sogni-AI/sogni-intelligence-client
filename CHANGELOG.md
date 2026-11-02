@@ -1,3 +1,10 @@
+## [4.22.8](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.7...v4.22.8) (2026-11-02)
+
+
+### Bug Fixes
+
+* **deps:** align Priority client transport support ([3a46566](https://github.com/Sogni-AI/sogni-intelligence-client/commit/3a465668818249295241a8b8f17f4b1633f7c4b0))
+
 ## [4.22.7](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.6...v4.22.7) (2026-11-02)
 
 
