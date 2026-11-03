@@ -116,3 +116,26 @@ test('MCP null validation follows declared fields while preserving opaque native
   const preview = { acceptedCostPreview: { reservation: null, nested: { detail: null } } };
   assert.deepEqual(validateMcpArguments('approve_cost', { ...approval, approval: preview }).approval, preview);
 });
+
+test('JSON-owned prototype names cannot inject undeclared MCP fields through normalization', () => {
+  const input = JSON.parse('{"prompt":"A cup.","model":"test-model","request_id":"proto-probe","__proto__":{"width":1920,"height":1080,"count":2,"safe_content_filter":false,"billing_mode":"tokens"}}') as Record<string, unknown>;
+  assert.equal(Object.hasOwn(input, '__proto__'), true);
+  assert.throws(() => validateMcpArguments('generate_image', input), /Unknown argument arguments\.__proto__/);
+  assert.throws(() => routeMcpCall('generate_image', input), /Unknown argument arguments\.__proto__/);
+  const normal = routeMcpCall('generate_image', base);
+  assert.deepEqual(normal.arguments, { prompt: base.prompt, model: base.model });
+  assert.equal(normal.safeContentFilter, undefined);
+  assert.equal(normal.billingMode, undefined);
+  assert.equal(Object.hasOwn(Object.prototype, 'safe_content_filter'), false);
+});
+
+test('closed MCP schemas refuse inherited property names at each declared object boundary', () => {
+  for (const name of ['__proto__', 'constructor', 'toString', 'prototype']) {
+    const unknown = JSON.parse(`{"${name}": {"notASchemaField": true}}`) as Record<string, unknown>;
+    assert.throws(() => validateMcpArguments('get_balance', unknown), /Unknown argument/);
+    assert.throws(() => routeMcpCall('generate_image', { ...base, ...unknown }), /Unknown argument/);
+    assert.throws(() => validateMcpArguments('approve_cost', {
+      job_id: 'run_one', kind: 'run', decision: 'confirm', request_id: 'approval', approval: unknown,
+    }), /Unknown argument/);
+  }
+});

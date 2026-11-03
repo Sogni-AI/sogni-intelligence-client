@@ -19,10 +19,10 @@ const definitions = MCP_TOOLS.map(tool => ({ function: {
   name: `mcp_${tool.name}`, parameters: tool.inputSchema as unknown as HostedToolSchema,
 } }));
 
-// The legacy native validator treats null object fields as omitted. MCP's new
-// schemas use JSON Schema semantics: optional does not mean nullable. Inspect
-// only schema-owned fields; opaque native parameters/approval payloads stay open.
-function assertMcpNulls(schema: HostedToolSchema, value: unknown, path = 'arguments'): void {
+// Enforce MCP's closed fields and non-nullable types before legacy native
+// normalization, whose property lookup also sees inherited JavaScript names.
+// Opaque native parameters and approval payloads keep their open schemas.
+function assertMcpSchemaBoundary(schema: HostedToolSchema, value: unknown, path = 'arguments'): void {
   if (value === null) {
     const types = typeof schema.type === 'string' ? [schema.type] : schema.type;
     if ((types && !types.includes('null')) || (schema.enum && !schema.enum.includes(null))
@@ -33,22 +33,22 @@ function assertMcpNulls(schema: HostedToolSchema, value: unknown, path = 'argume
     const items = schema.items;
     if (items) value.forEach((item, index) => {
       const child = Array.isArray(items) ? items[index] : items;
-      if (child) assertMcpNulls(child, item, `${path}[${index}]`);
+      if (child) assertMcpSchemaBoundary(child, item, `${path}[${index}]`);
     });
   } else if (value !== undefined && typeof value === 'object') {
     if (!schema.properties && schema.additionalProperties === true) return;
     for (const [key, entry] of Object.entries(value)) {
       const property = schema.properties && Object.prototype.hasOwnProperty.call(schema.properties, key) ? schema.properties[key] : undefined;
-      if (property) assertMcpNulls(property, entry, `${path}.${key}`);
-      else if (typeof schema.additionalProperties === 'object') assertMcpNulls(schema.additionalProperties, entry, `${path}.${key}`);
-      else if (entry === null && schema.additionalProperties === false) throw new Error(`Unknown argument ${path}.${key}`);
+      if (property) assertMcpSchemaBoundary(property, entry, `${path}.${key}`);
+      else if (typeof schema.additionalProperties === 'object') assertMcpSchemaBoundary(schema.additionalProperties, entry, `${path}.${key}`);
+      else if (schema.additionalProperties === false) throw new Error(`Unknown argument ${path}.${key}`);
     }
   }
 }
 
 export function validateMcpArguments(name: string, input: unknown): Record<string, unknown> {
   const schema = definitions.find(tool => tool.function.name === `mcp_${name}`)?.function.parameters;
-  if (schema) assertMcpNulls(schema, input);
+  if (schema) assertMcpSchemaBoundary(schema, input);
   const result = validateAndNormalizeHostedToolArguments(definitions, `mcp_${name}`, input as Record<string, unknown>, {
     skipEnumProperties: [],
   });
