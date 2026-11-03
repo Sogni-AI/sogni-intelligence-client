@@ -68,7 +68,7 @@ ${LITERAL_SEEDANCE_PROMPT_OVERRIDE}
 
 STRUCTURE: shot/style and scale → subject → environment, lighting, color, texture, atmosphere → visual action synced to audio → camera movement. For LTX 2.3 image+audio mode, do not re-describe static details already visible in the reference image; focus on motion, action, camera, and how the image responds to the audio.
 
-MOTION PACING: Scale complexity to duration. <=6s: 1 main visual beat + 1 simple camera move. Around 10s: 2-3 clear beats + 1 camera move. >10s: up to 4 beats in clear sequence. Let the audio define timing, but avoid stacking subject, camera, and environment motion in short clips.
+MOTION PACING: Keep every visual beat the user names, in order, timed to the audio; when you add beats of your own, fewer clear beats read better than many.
 
 BLOCKING: Direct layout when it affects the shot: left/right placement, foreground/background, facing direction, and relative distance between subjects.
 
@@ -80,9 +80,9 @@ AUDIO-REACTIVE: Motion and visual changes that correspond to sounds in the track
 
 LTX VOCABULARY: camera (tracking, dolly, pan, tilt, handheld, static frame), lighting/atmosphere (golden hour, neon glow, dramatic shadows, fog, rain, smoke, reflections), scale/pacing (expansive, epic, intimate, claustrophobic, slow motion, time-lapse, lingering shot, continuous shot), style/genre (film noir, painterly, cyberpunk, stop-motion, claymation, 2D/3D animation, hand-drawn, fantasy, thriller, experimental film).
 
-AVOID: Vague prompts, too many competing visual elements, abstract descriptions without visible behavior, rigid numeric constraints, readable text or logos. QUOTING RULE: ONLY use double quotes for spoken dialogue. Never quote on-screen text, overlay text, titles, captions, signs, or any visual text — describe them without quotes.
+AVOID: Vague prompts, abstract descriptions without visible behavior, exact camera angles in degrees. ON-SCREEN TEXT: Put text that must appear on screen in double quotes after "reads", e.g. a sign that reads "OPEN 24H"; mark spoken lines with a speaker and a verb of speech so the model can tell them from visible text. Include logos and readable text whenever the user asks for them.
 
-NON-SEEDANCE POSITIVE CONSTRAINTS: For ltx25-ia2v, ltx25-a2v, ltx23-ia2v, ltx23-a2v, and wan-s2v, prompt is a positive prompt. Translate user avoid/no/don't constraints into affirmative production constraints instead of copying negative phrasing. Preserve exact quoted visible text or dialogue when the user explicitly requests it; keep surrounding surfaces blank.
+NON-SEEDANCE POSITIVE CONSTRAINTS: For ltx25-ia2v, ltx25-a2v, ltx23-ia2v, ltx23-a2v, and wan-s2v, prompt is a positive prompt. Translate user avoid/no/don't constraints into affirmative production constraints instead of copying negative phrasing. Preserve exact quoted visible text or dialogue when the user explicitly requests it.
 
 BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary the visual interpretation while keeping audio sync intent consistent. This is one Sogni project with multiple jobs, so prefer it when all outputs share the same audio source/window, image source, model, duration, dimensions, and parameters and only prompt text varies. Example: "{abstract neon visualization|nature scene with swaying trees|urban street with rain} synced to the beat".
 

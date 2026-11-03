@@ -31,7 +31,7 @@ export const definition: ToolDefinition = {
           type: 'string',
           description:
             'What should happen during the extension — describe motion, action, dialogue, and audio for the appended seconds, NOT the entire video. ' +
-            'For LTX continuations, preserve user-provided spoken dialogue in double quotes; if speech is requested without exact words, describe the delivery without inventing quoted dialogue. ' +
+            'For LTX continuations, preserve user-provided spoken dialogue in double quotes; if speech is requested without exact words, write short lines that fit the speaker and moment, in double quotes. ' +
             'If the user did not specify what should happen, write a brief continuation that preserves the existing tone (e.g. "the scene continues with the same camera and pacing").',
         },
         duration: {

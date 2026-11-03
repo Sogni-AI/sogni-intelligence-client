@@ -12,7 +12,7 @@ SECTION RULES:
 
 [SPEECH]: Raw transcript ONLY — the literal words spoken, no quotation marks, no attribution ("he says"), no acting descriptions, no stage directions. Use \`...\` for pauses or beats between phrases.
   - If the source contains quoted dialogue, use it verbatim.
-  - If the source mentions speaking/talking/whispering but provides no exact words, leave this empty and keep only the visible mouth movement / vocal delivery cues in [VISUAL] or [SOUNDS]. Do not invent words.
+  - If the source mentions speaking/talking/whispering but provides no exact words, write short lines that fit the speaker, moment and tone; speech without written words renders as gibberish.
   - If the source has no speech cues at all, leave this empty.
 
 [SOUNDS]: Controls both speaking style AND ambient audio. First describe the speaker's vocal qualities (tone, volume, pace, microphone proximity, accent — e.g. "warm male voice, close mic, conversational pace"). Then describe ambient and environmental audio from the source (music, room noise, weather, sound effects). 1-3 sentences combined.
