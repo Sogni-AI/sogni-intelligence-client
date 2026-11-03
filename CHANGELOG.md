@@ -1,3 +1,11 @@
+## [4.22.10](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.9...v4.22.10) (2026-11-03)
+
+
+### Bug Fixes
+
+* **prompts:** keep the storyboard's own look in the full-frame line ([645e1a1](https://github.com/Sogni-AI/sogni-intelligence-client/commit/645e1a1f394abf4b09f2cee15b2e8c4550386839))
+* **prompts:** stop guidance from shrinking, slowing and rewriting requested media ([62305a8](https://github.com/Sogni-AI/sogni-intelligence-client/commit/62305a80378da03a77df2a63f078131797642f6d))
+
 ## [4.22.9](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.8...v4.22.9) (2026-11-03)
 
 
