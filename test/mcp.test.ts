@@ -30,8 +30,20 @@ test('image routing preserves prompts, concrete settings, LoRAs and billing', ()
 test('image references select edit without changing image identity or order', () => {
   const routed = routeMcpCall('generate_image', { ...base, reference_images: [image, `${image}?second=1`] });
   assert.equal(routed.toolName, 'edit_image');
-  assert.equal(routed.arguments.sourceImageIndex, 0);
+  assert.equal(routed.arguments.sourceImageIndex, -1);
   assert.deepEqual(routed.mediaReferences.map(ref => ref.url), [image, `${image}?second=1`]);
+});
+
+test('one-image edits and masks retain the primary source and exact mask URL', () => {
+  const mask = `${image}?mask=1`;
+  const one = routeMcpCall('generate_image', { ...base, reference_images: [image], mask });
+  assert.equal(one.arguments.sourceImageIndex, 0);
+  assert.equal(one.arguments.mask_image_url, mask);
+  assert.deepEqual(one.mediaReferences, [{ type: 'image', url: image }]);
+  const multiple = routeMcpCall('generate_image', { ...base, reference_images: [image, `${image}?second=1`], mask });
+  assert.equal(multiple.arguments.sourceImageIndex, -1);
+  assert.equal(multiple.arguments.mask_image_url, mask);
+  assert.deepEqual(multiple.mediaReferences.map(ref => ref.url), [image, `${image}?second=1`]);
 });
 
 for (const [mode, fields, tool, expected] of [
@@ -88,4 +100,19 @@ test('invalid routing fails before a job can be created', () => {
   assert.throws(() => validateMcpArguments('get_balance', { account_id: 'someone-else' }));
   assert.throws(() => routeMcpCall('transform_media', { operation: 'extend_video', request_id: 'x' }));
   assert.throws(() => routeMcpCall('generate_image', { ...base, parameters: { prompt: 'replace intent' } }));
+});
+
+test('MCP null validation follows declared fields while preserving opaque native payloads', () => {
+  assert.throws(() => validateMcpArguments('get_balance', { unexpected: null }));
+  for (const fields of [{ width: null }, { parameters: null }, { reference_images: null }, { reference_images: [null] }]) {
+    assert.throws(() => routeMcpCall('generate_image', { ...base, ...fields }));
+  }
+  const approval = { job_id: 'run_one', kind: 'run', decision: 'confirm', request_id: 'approve-one' };
+  assert.throws(() => validateMcpArguments('approve_cost', { ...approval, approval: { toolCallId: null } }));
+  assert.throws(() => validateMcpArguments('approve_cost', { ...approval, approval: { unexpected: null } }));
+  const native = { providerSpecific: null, nested: { providerSpecific: null } };
+  assert.deepEqual(routeMcpCall('generate_image', { ...base, parameters: native }).arguments,
+    { prompt: base.prompt, model: base.model, ...native });
+  const preview = { acceptedCostPreview: { reservation: null, nested: { detail: null } } };
+  assert.deepEqual(validateMcpArguments('approve_cost', { ...approval, approval: preview }).approval, preview);
 });
