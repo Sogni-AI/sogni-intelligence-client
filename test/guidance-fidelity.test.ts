@@ -103,7 +103,7 @@ test('IC-4 and IC-5: Seedance storyboard prompts state the result positively and
   const plan = compileHarvestStoryboard('Make a storyboard video of a farmer fleeing scarecrows, without gore.');
   const prompt = plan.seedanceVideoPrompt;
   assert.doesNotMatch(prompt, /NEGATIVE \/ AVOID|collage|split-screen|panel dividers/);
-  assert.match(prompt, /Each shot fills the whole frame as live footage\./);
+  assert.match(prompt, /Each shot fills the whole frame as moving footage of its scene, in the look the storyboard shows\./);
   assert.match(prompt, /without gore\./, 'the user\'s own avoid direction is kept');
   assert.match(prompt, /cuts sync perfectly to the snare hits of the drum break/);
   assert.doesNotMatch(prompt, /generated music bed/);
