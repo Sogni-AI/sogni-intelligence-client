@@ -1,3 +1,10 @@
+## [4.22.9](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.8...v4.22.9) (2026-11-03)
+
+
+### Bug Fixes
+
+* **media:** keep 30-second Seedance 2.5 reference video and audio ([cb2e77e](https://github.com/Sogni-AI/sogni-intelligence-client/commit/cb2e77eb22297c75439eac94a535c13df708501a))
+
 ## [4.22.8](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.7...v4.22.8) (2026-11-02)
 
 
