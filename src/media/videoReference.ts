@@ -1,4 +1,19 @@
+import { isSeedance25VideoModelId } from '../utils/seedanceModelIds.js';
+
+/** Seedance 2.0-family ceiling for a video-to-video source, and the default when no model is named. */
 export const SEEDANCE_V2V_REFERENCE_MAX_DURATION_SECONDS = 15;
+/**
+ * Seedance 2.5 and Seedance 2.5 Uncensored accept 30 seconds of reference video (BytePlus refuses more
+ * than 30.2 s). Trimming their sources to the 2.0 ceiling silently halved 30-second edits.
+ */
+export const SEEDANCE_25_V2V_REFERENCE_MAX_DURATION_SECONDS = 30;
+
+/** The longest video-to-video source a Seedance model accepts; the 2.0 ceiling for any other id. */
+export function getSeedanceV2VReferenceMaxDurationSeconds(modelId?: string | null): number {
+  return isSeedance25VideoModelId(modelId)
+    ? SEEDANCE_25_V2V_REFERENCE_MAX_DURATION_SECONDS
+    : SEEDANCE_V2V_REFERENCE_MAX_DURATION_SECONDS;
+}
 const TRIM_TOLERANCE_SECONDS = 0.15;
 
 export interface PreparedReferenceVideo {
@@ -31,6 +46,8 @@ export type ReferenceVideoTrimmer = (
 
 export interface PrepareSeedanceV2VSourceVideoOptions {
   trimVideo?: ReferenceVideoTrimmer;
+  /** Target Seedance model. Seedance 2.5 sources keep up to 30 s; omitted keeps the 2.0 ceiling. */
+  modelId?: string | null;
 }
 
 export interface ShouldTrimSeedanceV2VSourceVideoInput {
@@ -83,17 +100,17 @@ export async function prepareSeedanceV2VSourceVideo(
     ? Math.max(0, Number(requestedDurationSeconds))
     : null;
   const trimStart = finiteNonNegative(startOffsetSeconds, 0);
+  const maxDuration = getSeedanceV2VReferenceMaxDurationSeconds(options.modelId);
   const trimDuration = Math.min(
-    requestedDuration && requestedDuration > 0
-      ? requestedDuration
-      : SEEDANCE_V2V_REFERENCE_MAX_DURATION_SECONDS,
-    SEEDANCE_V2V_REFERENCE_MAX_DURATION_SECONDS,
+    requestedDuration && requestedDuration > 0 ? requestedDuration : maxDuration,
+    maxDuration,
   );
 
   if (!shouldTrimSeedanceV2VSourceVideo({
     sourceDurationSeconds: sourceDuration,
     requestedDurationSeconds: requestedDuration,
     startOffsetSeconds: trimStart,
+    maxDurationSeconds: maxDuration,
   })) {
     return {
       data,

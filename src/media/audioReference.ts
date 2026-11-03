@@ -1,3 +1,5 @@
+import { isSeedance25VideoModelId } from '../utils/seedanceModelIds.js';
+
 export type ReferenceAudioFormat = 'mp3' | 'm4a' | 'wav' | 'flac' | 'ogg' | 'unknown';
 
 export interface PreparedReferenceAudio {
@@ -28,6 +30,15 @@ export type ReferenceAudioTranscoder = (
 ) => Promise<ReferenceAudioTranscodeResult>;
 
 export const SEEDANCE_R2V_REFERENCE_AUDIO_MAX_DURATION_SECONDS = 15.2;
+/** Seedance 2.5 and 2.5 Uncensored accept 30 s of reference audio (BytePlus allows 30.2 s). */
+export const SEEDANCE_25_R2V_REFERENCE_AUDIO_MAX_DURATION_SECONDS = 30.2;
+
+/** The longest reference audio a Seedance model accepts; the 2.0 ceiling for any other id. */
+export function getSeedanceReferenceAudioMaxDurationSeconds(modelId?: string | null): number {
+  return isSeedance25VideoModelId(modelId)
+    ? SEEDANCE_25_R2V_REFERENCE_AUDIO_MAX_DURATION_SECONDS
+    : SEEDANCE_R2V_REFERENCE_AUDIO_MAX_DURATION_SECONDS;
+}
 
 export interface ReferenceAudioTrimRequest {
   data: Uint8Array;
