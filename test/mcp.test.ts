@@ -49,7 +49,7 @@ test('one-image edits and masks retain the primary source and exact mask URL', (
 for (const [mode, fields, tool, expected] of [
   ['t2v', {}, 'generate_video', {}],
   ['i2v', { first_frame: image }, 'animate_photo', { sourceImageIndex: 0 }],
-  ['flf', { first_frame: image, last_frame: `${image}?end=1` }, 'animate_photo', { sourceImageIndex: 0, endImageIndex: 1 }],
+  ['flf', { first_frame: image, last_frame: `${image}?end=1` }, 'animate_photo', { sourceImageIndex: 0, endImageIndex: 1, frameRole: 'both' }],
   ['a2v', { audio }, 'sound_to_video', { audioSourceIndex: 0 }],
   ['ia2v', { first_frame: image, audio }, 'sound_to_video', { sourceImageIndex: 0, audioSourceIndex: 0 }],
   ['flfa2v', { first_frame: image, last_frame: `${image}?end=1`, audio }, 'sound_to_video', { sourceImageIndex: 0, endImageIndex: 1, audioSourceIndex: 0 }],

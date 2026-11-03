@@ -126,6 +126,7 @@ export function routeMcpCall(name: string, raw: unknown): McpRoutedCall {
       put('aspectRatio', `${String(input.width)}x${String(input.height)}`);
     }
     put('sourceImageIndex', first); put('endImageIndex', last); put('audioSourceIndex', audio); put('videoSourceIndex', source);
+    if (toolName === 'animate_photo' && last !== undefined) put('frameRole', 'both');
     if (mode === 'r2v') {
       if (!refs.length) throw new Error('r2v requires reference media');
       for (const [type, field] of [['image', 'referenceImageIndices'], ['video', 'referenceVideoIndices'], ['audio', 'referenceAudioIndices']] as const) {
