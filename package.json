@@ -53,6 +53,9 @@
       ],
       "prompt-guides": [
         "./dist/prompt-guides/index.d.ts"
+      ],
+      "mcp": [
+        "./dist/mcp/index.d.ts"
       ]
     }
   },
@@ -167,7 +170,13 @@
       "default": "./dist/skill-runtime-source/index.js"
     },
     "./schemas/*": "./dist/schemas/*",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist-esm/mcp/index.js",
+      "require": "./dist/mcp/index.js",
+      "default": "./dist/mcp/index.js"
+    }
   },
   "scripts": {
     "codegen": "node scripts/generate-openai-tools-manifests.mjs && node scripts/generate-catalogs.mjs",
@@ -176,13 +185,15 @@
     "dev": "tsc --watch",
     "prepare": "npm run codegen && husky",
     "prepublishOnly": "npm run build",
-    "test": "node --import tsx test/basic-tests.ts && node --import tsx --test test/balance.test.ts test/replay-redaction.test.ts test/chat-run-model-media.test.ts test/durable-workflow-content-filter.test.ts test/gpt-image-25.test.ts test/video-estimate-context.test.ts test/video-reference-detail.test.ts test/prompt-limits.test.ts test/reconnect-and-retry.test.ts test/batch-prompt-preservation.test.ts test/context-budget-check.test.ts test/context-user-history.test.ts test/seedance-25-uncensored.test.ts test/seedance-mini-uncensored.test.ts test/seedream-5-pro-uncensored.test.ts test/seedance-vendor-reason.test.ts test/project-failure-reason.test.ts test/image-identity-prompting.test.ts test/seedance-reference-duration.test.ts test/guidance-fidelity.test.ts test/prompt-guides.test.ts",
+    "test": "node --import tsx test/basic-tests.ts && node --import tsx --test test/balance.test.ts test/replay-redaction.test.ts test/chat-run-model-media.test.ts test/durable-workflow-content-filter.test.ts test/gpt-image-25.test.ts test/video-estimate-context.test.ts test/video-reference-detail.test.ts test/prompt-limits.test.ts test/reconnect-and-retry.test.ts test/batch-prompt-preservation.test.ts test/context-budget-check.test.ts test/context-user-history.test.ts test/seedance-25-uncensored.test.ts test/seedance-mini-uncensored.test.ts test/seedream-5-pro-uncensored.test.ts test/seedance-vendor-reason.test.ts test/project-failure-reason.test.ts test/image-identity-prompting.test.ts test/seedance-reference-duration.test.ts test/guidance-fidelity.test.ts test/prompt-guides.test.ts test/mcp.test.ts",
     "test:e2e": "node --import tsx test/e2e-test.ts",
     "test:e2e:llm": "SOGNI_E2E_SCOPE=llm node --import tsx test/e2e-test.ts",
     "typecheck:examples": "tsc --noEmit -p tsconfig.examples.json",
     "test:examples": "npm run typecheck:examples",
     "test:all": "npm run test && npm run test:examples && npm run test:e2e",
-    "release": "semantic-release"
+    "release": "semantic-release",
+    "test:mcp": "node --import tsx --test test/mcp.test.ts",
+    "sync:mcp": "node scripts/generate-mcp-manifest.mjs"
   },
   "keywords": [
     "sogni",
@@ -214,8 +225,8 @@
   },
   "homepage": "https://github.com/Sogni-AI/sogni-intelligence-client#readme",
   "dependencies": {
-    "@sogni-ai/sogni-client": "5.73.0",
-    "@sogni-ai/sogni-protocol": "1.0.0-alpha.57",
+    "@sogni-ai/sogni-client": "5.74.1",
+    "@sogni-ai/sogni-protocol": "1.0.0-alpha.58",
     "sharp": "^0.35.5"
   },
   "devDependencies": {
@@ -251,7 +262,8 @@
     "skills",
     "README.md",
     "LICENSE",
-    ".env.example"
+    ".env.example",
+    "mcp"
   ],
   "overrides": {
     "undici@7": "7.30.1"
