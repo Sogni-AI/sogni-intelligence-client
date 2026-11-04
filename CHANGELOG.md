@@ -1,3 +1,19 @@
+# [4.24.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.23.0...v4.24.0) (2026-11-04)
+
+
+### Bug Fixes
+
+* **deps:** align the released client and protocol ([e74c6c1](https://github.com/Sogni-AI/sogni-intelligence-client/commit/e74c6c101a42f7bc56de2498eece43b3993713d4))
+* **mcp:** enforce declared facade fields consistently ([98f15c3](https://github.com/Sogni-AI/sogni-intelligence-client/commit/98f15c3e78da59a3a67b606070b219cd3f0ce944))
+* **mcp:** preserve both animation endpoints ([13f20ef](https://github.com/Sogni-AI/sogni-intelligence-client/commit/13f20ef86b8cdab4c49f61b6610008e08fb120f1))
+* **mcp:** preserve image references and facade inputs ([6161b18](https://github.com/Sogni-AI/sogni-intelligence-client/commit/6161b18249e22aa066c1d2a44d11f635576eb39f))
+
+
+### Features
+
+* **mcp:** add shared creative tool routing ([8ce7eb6](https://github.com/Sogni-AI/sogni-intelligence-client/commit/8ce7eb60228e0973485aded132d2dbd97731e6e4))
+* **mcp:** add shared creative tool routing ([9407433](https://github.com/Sogni-AI/sogni-intelligence-client/commit/940743385c4d2b878f4deb29080fc1ccbe9928f2))
+
 # [4.23.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.10...v4.23.0) (2026-11-04)
 
 
