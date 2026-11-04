@@ -41,6 +41,7 @@ The package exposes the following subpath entry points so consumers import only 
 | `…/chatRun` | Durable hosted `ChatRun` contracts — state machine, events, cost‑approval types |
 | `…/context` | Context‑window primitives — token accounting, message protection, summarization budgeting |
 | `…/openai-tools` | OpenAI‑shaped tool manifests (`app-tools.json`, `composition-tools.json`, `generation-tools.json`) baked into TS so consumers can compile a tool surface without filesystem reads |
+| `…/prompt-guides` | The model prompt rules Sogni's own prompt writers use, per model family and mode: `getModelPromptGuide(model, mode)`, `renderModelPromptGuide(guide, { audience: 'agent' \| 'shaper' })` and the `MODEL_PROMPT_GUIDES` registry |
 | `…/skill-runtime-source` | Cross‑surface parity helpers (workflow status, Seedance audio windows) shared with the private skill runtime |
 | `…/schemas/*` | Raw JSON Schema artifacts for cross‑language codegen (Swift, Kotlin, Python, etc.) |
 

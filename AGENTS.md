@@ -82,6 +82,9 @@ src/
                                  message protection, summary budgeting)
   openai-tools/                — OpenAI-shaped manifests (app/composition/
                                  generation tools) baked into TS
+  prompt-guides/               — model prompt rules per family and mode (moved
+                                 from creative-agent's shaper), registry, lookup
+                                 and rendering for agents and prompt writers
   skill-runtime-source/        — cross-surface parity helpers shared with the
                                  private skill runtime (published as source)
   skills/asset_reference_management/  — SKILL.md + asset manifest tools

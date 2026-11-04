@@ -267,7 +267,8 @@ const EDITING_GUIDE = `Image editing models accept reference images alongside te
 - Short, clear instructions often work better than long detailed descriptions.
 - The reference image drives the result more than the prompt.`;
 
-const PROMPTING_GUIDES: Record<ImagePromptingType, string> = {
+/** Read by `prompt-guides`; not part of the `./contracts` barrel. */
+export const PROMPTING_GUIDES: Record<ImagePromptingType, string> = {
   flux: CHROMA_GUIDE,
   "flux1-schnell": FLUX1_SCHNELL_GUIDE,
   chroma: CHROMA_GUIDE,
