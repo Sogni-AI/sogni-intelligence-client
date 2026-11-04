@@ -33,7 +33,7 @@ ${LITERAL_SEEDANCE_V2V_PROMPT_OVERRIDE}
 For LTX 2.5 or 2.3 canny/depth/pose modes, the source video preserves composition, depth, or motion. Spend prompt detail on style, atmosphere, lighting, surface texture, color palette, scale, and pacing. LTX 2.5 Fast, HQ, and Pro use the release-validated official Distilled workflow for canny/pose/depth/detailer/inpaint/outpaint; Dev is not publicly routed until upstream publishes and Sogni validates an official ComfyUI Dev recipe.
 
 Examples by mode:
-- animate-move (DEFAULT — WAN 2.2 Animate Move: applies camera/motion from source video to reference image): "Smooth cinematic camera movement following the subject through the scene."
+- animate-move (DEFAULT — WAN 2.2 Animate Move: applies camera/motion from source video to reference image): "The camera follows the subject through the scene, matching the source video's motion."
 - animate-replace (WAN 2.2 Animate Replace: replaces the subject in the source video with the reference image): "The person from the reference photo performing the actions from the video."
 - canny (LTX 2.5 default; LTX 2.3 rollback — edge-detection restyle): "Hand-drawn watercolor anime style with soft ink edges, muted teal and coral palette, rain mist, neon reflections, warm rim light, preserving original silhouettes and composition."
 - pose (LTX 2.5 or LTX 2.3 — tracks skeleton and transfers the reference-image subject): "A glossy cartoon robot from the reference image performs the source video's motion, with brushed metal texture, glowing cyan joints, and energetic stage lighting." This mode requires a reference image as well as the source video.
@@ -45,7 +45,7 @@ Examples by mode:
 
 Present tense. Positive phrasing. Concrete visual details.
 
-NON-SEEDANCE POSITIVE CONSTRAINTS: For LTX 2.5, LTX 2.3, and WAN 2.2 modes, prompt is a positive prompt. Translate user avoid/no/don't constraints into affirmative production constraints instead of copying negative phrasing. Preserve exact quoted visible text when the user explicitly requests it; keep surrounding surfaces blank.
+NON-SEEDANCE POSITIVE CONSTRAINTS: For LTX 2.5, LTX 2.3, and WAN 2.2 modes, prompt is a positive prompt. Translate user avoid/no/don't constraints into affirmative production constraints instead of copying negative phrasing. Preserve exact quoted visible text when the user explicitly requests it.
 
 BATCH VARIATIONS: When numberOfVariations > 1, use Dynamic Prompt syntax to vary the artistic treatment while keeping control mode and structural intent consistent. Example: "transform to {watercolor with soft edges|oil painting with bold strokes|anime with clean lines} style".
 

@@ -177,7 +177,7 @@ Write it in this order:
 2. The scene, the lighting, and the camera position.
 3. Each subject with concrete colors, materials, and state. Make the layout reconstructable from the words: frame-relative positions (frame-left, frame-right, upper, lower, foreground, midground, background), sentence-initial anchors ("On the left, ...", "In the background, ..."), relations (holds, faces, behind), and one consistent order. Every person in focus gets an observable profile: ethnicity, gender, age range, skin tone, hair, and clothing, keeping whatever the user specified. Give a photograph a few ordinary, non-ideal specifics drawn from the scene's own objects. Describe up to about ten instances one by one; beyond that, give the exact count and arrangement.
 4. Requested visible text: the wording verbatim inside double quotes in its original language and script, with its line breaks, typography, color, and placement. When the request asks for text without supplying the wording, write concrete, domain-correct wording. Name a canonical structure (a calendar, a keyboard, a periodic table) exactly and lay it out in full.
-5. The background, about a sixth of the caption: out-of-focus or distant planes are shapes, colors, and silhouettes, never identities or readable text. It comes last: add no summary, mood, or atmosphere sentence, and state no detail twice.
+5. The background, about a sixth of the caption: out-of-focus or distant planes are shapes, colors, and silhouettes, never identities or readable text, unless the request places them there. It comes last: add no summary, mood, or atmosphere sentence, and state no detail twice.
 Decide everything the request leaves open as one concrete plan. Add camera optics (depth of field, bokeh, blur) only when the request asks for or implies them. Do not invent names, brands, logos, or celebrities; keep the ones the user names. Use no hedging adverbs, appraisal or sales vocabulary, or quality and emotion judgments: turn moods into observable physical facts, and state exclusions as what is present instead. Time of day is lighting, not rendered text. The request may begin with a "TARGET CANVAS: W:H" line, the output aspect ratio: compose for that frame (a wide one spreads content sideways, a tall one stacks it) and never state the ratio or mention that line. Guidance is fixed and a negative prompt has no effect.`;
 
 const MOSS_IMAGE_GUIDE = `MOSS-Image SFT is an uncensored model that generates new images from natural-language captions, tag sequences or experimental JSON layouts.
@@ -267,7 +267,8 @@ const EDITING_GUIDE = `Image editing models accept reference images alongside te
 - Short, clear instructions often work better than long detailed descriptions.
 - The reference image drives the result more than the prompt.`;
 
-const PROMPTING_GUIDES: Record<ImagePromptingType, string> = {
+/** Read by `prompt-guides`; not part of the `./contracts` barrel. */
+export const PROMPTING_GUIDES: Record<ImagePromptingType, string> = {
   flux: CHROMA_GUIDE,
   "flux1-schnell": FLUX1_SCHNELL_GUIDE,
   chroma: CHROMA_GUIDE,

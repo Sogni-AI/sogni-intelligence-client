@@ -5187,7 +5187,10 @@ async function runTests() {
     if (/Visual style:\s*production-ready commercial storyboard sheet/i.test(prompt)) {
       throw new Error(`Seedance prompt leaked storyboard-sheet style: ${prompt}`);
     }
-    if (!prompt.includes('@Image1: approved storyboard reference image.')) {
+    if (/Visual style:/i.test(prompt)) {
+      throw new Error(`Seedance prompt carries a style the brief never stated: ${prompt}`);
+    }
+    if (!prompt.includes('@Image1: approved storyboard reference image, the ordered shot guide')) {
       throw new Error(`Seedance prompt is missing provider-neutral storyboard reference wording: ${prompt}`);
     }
   })();
