@@ -1,3 +1,10 @@
+# [4.23.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.10...v4.23.0) (2026-11-04)
+
+
+### Features
+
+* **prompt-guides:** publish the model prompt rules Sogni's writers use ([9e63fc1](https://github.com/Sogni-AI/sogni-intelligence-client/commit/9e63fc1056573aa060cd23be52de1cb2398e80bf))
+
 ## [4.22.10](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.22.9...v4.22.10) (2026-11-03)
 
 
