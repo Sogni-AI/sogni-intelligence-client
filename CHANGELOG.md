@@ -1,3 +1,10 @@
+## [4.25.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.25.0...v4.25.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* **deps:** consume corrected public image tool guidance ([bca19ea](https://github.com/Sogni-AI/sogni-intelligence-client/commit/bca19ea1b72ad93873c6fecdef3ef25ade7dc2fe))
+
 # [4.25.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.24.0...v4.25.0) (2026-11-05)
 
 
