@@ -7,9 +7,10 @@
 //
 // The generated file is .gitignored. Run via `npm run codegen` or as part of
 // `npm run build` / `npm install` (via `prepare`).
-import { readFile, writeFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
+import { readProtocolToolManifest } from './read-protocol-tool-manifest.mjs';
 
 const require = createRequire(import.meta.url);
 const protocolPkg = require.resolve('@sogni-ai/sogni-protocol/package.json');
@@ -27,8 +28,7 @@ const constNameFor = (filename) => {
 
 const sections = [];
 for (const file of manifestFiles) {
-  const raw = await readFile(join(protocolManifestsDir, file), 'utf8');
-  const manifest = JSON.parse(raw);
+  const manifest = await readProtocolToolManifest(join(protocolManifestsDir, file));
   if (file === 'generation-tools.json') {
     for (const toolName of ['generate_video', 'animate_photo', 'sound_to_video']) {
       const tool = manifest.tools?.find((candidate) => candidate?.function?.name === toolName);
