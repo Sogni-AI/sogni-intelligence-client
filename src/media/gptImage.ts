@@ -1,3 +1,4 @@
+import { resolveGptImageGifSize } from '@sogni-ai/sogni-client';
 import type { MediaDimensionBounds } from './aspectRatio.js';
 import { parseAspectRatio } from './imageDimensions.js';
 import { textRequestsProfessionalCharacterSheetImage } from './characterSheet.js';
@@ -37,29 +38,13 @@ export function isGptImage26Model(value: unknown): boolean {
 
 /** Concrete GIF frame size. Preserve explicit pixels and fit unspecified sizes to the request budget. */
 export function gptImageGifDimensions(width?: number, height?: number, frameCount = 9, aspectRatio?: string): { width: number; height: number } {
-  if (!Number.isInteger(frameCount) || frameCount < 2 || frameCount > 16) throw new Error('GIF frame count must be 2–16');
   const parsed = parseAspectRatio(aspectRatio);
+  if (width === undefined && height === undefined && parsed?.type === 'exact') {
+    return resolveGptImageGifSize(parsed.width, parsed.height, frameCount);
+  }
   const ratio = parsed?.type === 'ratio' ? parsed.ratioW / parsed.ratioH
     : parsed?.type === 'exact' ? parsed.width / parsed.height : 1;
-  if (width === undefined && height === undefined && parsed?.type === 'exact') {
-    width = parsed.width; height = parsed.height;
-  }
-  if (width === undefined && height === undefined) {
-    const side = Math.min(896, Math.sqrt(8294400 / frameCount));
-    width = Math.floor(side * Math.sqrt(ratio) / 16) * 16;
-    height = Math.floor(side / Math.sqrt(ratio) / 16) * 16;
-    // Independent grid rounding can push a valid 3:1 request outside the limit.
-    // Reduce only the inferred long edge; explicit pixel requests are unchanged.
-    if (ratio >= 1 / 3 && ratio <= 3) {
-      width = Math.min(width, height * 3);
-      height = Math.min(height, width * 3);
-    }
-  } else {
-    if (width === undefined) width = Math.max(16, Math.round(height! * ratio / 16) * 16);
-    if (height === undefined) height = Math.max(16, Math.round(width / ratio / 16) * 16);
-  }
-  if (width === undefined || height === undefined || ![width, height].every(n => Number.isInteger(n) && n > 0 && n % 16 === 0) || Math.max(width, height) > 3840 || Math.max(width, height) / Math.min(width, height) > 3 || width * height * frameCount > 8294400) throw new Error('GIF frame dimensions must be multiples of 16, within 3:1 and the 8294400 total pixel budget');
-  return { width, height };
+  return resolveGptImageGifSize(width, height, frameCount, ratio);
 }
 
 /** Sogni capabilities based on provider docs (2026-09-10); retain the 2.0 integration defaults. */
