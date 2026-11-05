@@ -129,6 +129,9 @@ VIDEO KEYFRAMES: When generating images intended as first+last frames for video 
           description:
             LORA_STRENGTHS_GUIDANCE,
         },
+        gptImageComplexity: { type: 'string', enum: ['low', 'medium', 'high'], description: 'GPT Image 2.6 planning complexity. Default high. Lower settings can reduce latency for focused work; quality is separate.' },
+        gptImageFrameCount: { type: 'integer', minimum: 2, maximum: 16, description: 'GPT Image 2.6 GIF only: number of frames, default 9. Frame dimensions times count must fit the request pixel budget.' },
+        gptImageFrameDurationMs: { type: 'integer', minimum: 20, maximum: 2000, description: 'GPT Image 2.6 GIF only: milliseconds per frame, rounded to 10 ms. Default 200.' },
         gptImageQuality: {
           type: 'string',
           enum: ['low', 'medium', 'high', 'xhigh', 'max'],
@@ -148,7 +151,7 @@ VIDEO KEYFRAMES: When generating images intended as first+last frames for video 
         },
         outputFormat: {
           type: 'string',
-          enum: ['png', 'jpg', 'jpeg', 'webp'],
+          enum: ['png', 'jpg', 'jpeg', 'webp', 'gif'],
           description:
             'Optional output file format for generated images. Set only when the user explicitly requests PNG, JPG/JPEG, or WebP. Hosts should normalize "jpeg" to the Sogni project format "jpg".',
         },

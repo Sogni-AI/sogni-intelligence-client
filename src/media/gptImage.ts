@@ -5,10 +5,10 @@ import { textRequestsProfessionalCharacterSheetImage } from './characterSheet.js
 // unsupported value.
 export type GptImageQuality = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 export type GptImageQualityArg = GptImageQuality;
-export type ImageOutputFormat = 'png' | 'jpg' | 'webp';
+export type ImageOutputFormat = 'png' | 'jpg' | 'webp' | 'gif';
 
 export const GPT_IMAGE_MODEL_KEY = 'gpt-image-2';
-export const GPT_IMAGE_MODEL_IDS = ['gpt-image-2', 'gpt-image-2.5-sunburst', 'gpt-image-2.5-flare'] as const;
+export const GPT_IMAGE_MODEL_IDS = ['gpt-image-2', 'gpt-image-2.5-sunburst', 'gpt-image-2.5-flare', 'gpt-image-2.6-sunburst', 'gpt-image-2.6-flare'] as const;
 export type GptImageModelId = (typeof GPT_IMAGE_MODEL_IDS)[number];
 export const GPT_IMAGE_25_SUNBURST_MODEL_KEY = 'gpt-image-2.5-sunburst';
 export const GPT_IMAGE_25_FLARE_MODEL_KEY = 'gpt-image-2.5-flare';
@@ -27,7 +27,31 @@ export function isGptImageModel(value: unknown): value is GptImageModelId {
 }
 
 export function isGptImage25Model(value: unknown): boolean {
-  return value === GPT_IMAGE_25_SUNBURST_MODEL_KEY || value === GPT_IMAGE_25_FLARE_MODEL_KEY;
+  return value === GPT_IMAGE_25_SUNBURST_MODEL_KEY || value === GPT_IMAGE_25_FLARE_MODEL_KEY || isGptImage26Model(value);
+}
+
+export function isGptImage26Model(value: unknown): boolean {
+  return value === 'gpt-image-2.6-sunburst' || value === 'gpt-image-2.6-flare';
+}
+
+/** Concrete GIF frame size. Preserve explicit pixels and fit unspecified sizes to the request budget. */
+export function gptImageGifDimensions(width?: number, height?: number, frameCount = 9, aspectRatio?: string): { width: number; height: number } {
+  if (!Number.isInteger(frameCount) || frameCount < 2 || frameCount > 16) throw new Error('GIF frame count must be 2–16');
+  const exact = aspectRatio?.match(/^(\d+)x(\d+)$/);
+  if (width === undefined && height === undefined && exact) {
+    width = Number(exact[1]); height = Number(exact[2]);
+  }
+  if (width === undefined && height === undefined) {
+    const parts = aspectRatio?.split(':').map(Number);
+    const ratio = parts?.length === 2 && parts.every(n => Number.isFinite(n) && n > 0) ? parts[0] / parts[1] : 1;
+    const side = Math.min(896, Math.sqrt(8294400 / frameCount));
+    width = Math.floor(side * Math.sqrt(ratio) / 16) * 16;
+    height = Math.floor(side / Math.sqrt(ratio) / 16) * 16;
+  } else {
+    width ??= height; height ??= width;
+  }
+  if (width === undefined || height === undefined || ![width, height].every(n => Number.isInteger(n) && n > 0 && n % 16 === 0) || Math.max(width, height) > 3840 || Math.max(width, height) / Math.min(width, height) > 3 || width * height * frameCount > 8294400) throw new Error('GIF frame dimensions must be multiples of 16, within 3:1 and the 8294400 total pixel budget');
+  return { width, height };
 }
 
 /** Sogni capabilities based on provider docs (2026-09-10); retain the 2.0 integration defaults. */
@@ -38,7 +62,9 @@ export function getGptImageCapabilities(modelId: GptImageModelId) {
     qualities: (is25 ? ['low', 'medium', 'high', 'xhigh', 'max'] : ['low', 'medium', 'high']) as readonly GptImageQuality[],
     defaultQuality: 'medium' as const,
     supportsTransparency: is25,
-    outputFormats: ['png', 'jpg', 'webp'] as const,
+    outputFormats: (isGptImage26Model(modelId) ? ['png', 'jpg', 'webp', 'gif'] : ['png', 'jpg', 'webp']) as readonly ImageOutputFormat[],
+    supportsMarkup: isGptImage26Model(modelId),
+    complexities: isGptImage26Model(modelId) ? ['low', 'medium', 'high'] as const : [],
     dimensionStep: 16,
     experimentalAbovePixels: 3_686_400,
   };
@@ -95,6 +121,9 @@ export const GPT_IMAGE_MODEL_ALIASES: ReadonlySet<string> = new Set([
 ]);
 
 const GPT_IMAGE_25_ALIASES: Readonly<Record<string, GptImageModelId>> = {
+  'gpt-image-2.6-sunburst': 'gpt-image-2.6-sunburst',
+  'gpt-image-2.6-flare': 'gpt-image-2.6-flare',
+  'gpt-image-2.6': 'gpt-image-2.6-flare',
   'gpt-image-2.5-sunburst': GPT_IMAGE_25_SUNBURST_MODEL_KEY,
   'gpt-image-2.5-flare': GPT_IMAGE_25_FLARE_MODEL_KEY,
   'gpt-image-2.5': GPT_IMAGE_25_FLARE_MODEL_KEY,
@@ -300,6 +329,9 @@ export function getGptImage2ModelOverride(
   } = {},
 ): string | null {
   if (!GPT_IMAGE_TOOL_NAMES.has(toolName)) return null;
+  // A concrete 2.6 selection comes from the model or saved typed settings.
+  // Legacy text heuristics must not rewrite that selection to an older model.
+  if (isGptImage26Model(currentModel)) return null;
   if (textExplicitlyAvoidsGptImageModel(latestUserText)) return null;
 
   // Exact version requests take precedence over generic GPT routing and a
@@ -355,7 +387,7 @@ export function normalizeGptImageQuality(value: unknown, modelId?: GptImageModel
 export function normalizeImageOutputFormat(value: unknown): ImageOutputFormat | undefined {
   if (typeof value !== 'string') return undefined;
   const normalized = value.trim().toLowerCase();
-  if (normalized === 'png' || normalized === 'webp') return normalized;
+  if (normalized === 'png' || normalized === 'webp' || normalized === 'gif') return normalized;
   if (normalized === 'jpg' || normalized === 'jpeg') return 'jpg';
   return undefined;
 }
@@ -386,18 +418,41 @@ export function getGptImageRequestOptions(args: Record<string, unknown>, modelId
   gptImageBackground?: 'auto' | 'opaque' | 'transparent';
   gptImageOutputCompression?: number;
   gptImageMaskUrl?: string;
+  gptImageComplexity?: 'low' | 'medium' | 'high';
+  gptImageFrameCount?: number;
+  gptImageFrameDurationMs?: number;
+  gptImageMarkupUrl?: string;
 } {
+  const complexity = args.gptImageComplexity ?? args.gpt_image_complexity;
+  const frameCount = args.gptImageFrameCount ?? args.gpt_image_frame_count;
+  const frameDuration = args.gptImageFrameDurationMs ?? args.gpt_image_frame_duration_ms;
+  const markup = args.gptImageMarkupUrl ?? args.markup_image_url;
+  const format26 = normalizeImageOutputFormat(args.outputFormat ?? args.output_format);
+  const has26 = [complexity, frameCount, frameDuration, markup].some(v => v !== undefined) || format26 === 'gif';
+  if (has26 && !isGptImage26Model(modelId)) throw new Error('GIF, complexity and markup require GPT Image 2.6');
+  if (complexity !== undefined && !['low', 'medium', 'high'].includes(String(complexity))) throw new Error('Unsupported complexity');
+  if (format26 !== 'gif' && (frameCount !== undefined || frameDuration !== undefined)) throw new Error('Frame options require GIF output');
+  if (frameCount !== undefined && (typeof frameCount !== 'number' || !Number.isInteger(frameCount) || frameCount < 2 || frameCount > 16)) throw new Error('GIF frame count must be 2–16');
+  if (frameDuration !== undefined && (typeof frameDuration !== 'number' || !Number.isInteger(frameDuration) || frameDuration < 20 || frameDuration > 2000)) throw new Error('GIF frame duration must be 20–2000 ms');
+  if (markup !== undefined && (typeof markup !== 'string' || !markup.trim())) throw new Error('Markup must be a non-empty image URL');
+  const advanced = {
+    ...(complexity !== undefined ? { gptImageComplexity: complexity as 'low' | 'medium' | 'high' } : {}),
+    ...(frameCount !== undefined ? { gptImageFrameCount: frameCount as number } : {}),
+    ...(frameDuration !== undefined ? { gptImageFrameDurationMs: frameDuration as number } : {}),
+    ...(markup !== undefined ? { gptImageMarkupUrl: markup as string } : {}),
+  };
   const background = args.gptImageBackground ?? args.gpt_image_background;
   const compression = args.gptImageOutputCompression ?? args.gpt_image_output_compression;
   const mask = args.mask_image_url ?? args.gptImageMaskUrl;
-  if (background === undefined && compression === undefined && mask === undefined) return {};
+  if (background === undefined && compression === undefined && mask === undefined) return advanced;
   if (!isGptImageModel(modelId)) throw new Error('GPT Image options require a GPT Image model');
   const format = normalizeImageOutputFormat(args.outputFormat ?? args.output_format) ?? 'png';
   if (background !== undefined && !['auto', 'opaque', ...(isGptImage25Model(modelId) ? ['transparent'] : [])].includes(String(background))) throw new Error('Unsupported GPT Image background');
-  if (background === 'transparent' && format === 'jpg') throw new Error('Transparent output requires PNG or WebP');
-  if (compression !== undefined && (typeof compression !== 'number' || !Number.isInteger(compression) || compression < 0 || compression > 100 || format === 'png')) throw new Error('Output compression requires JPEG/WebP and an integer from 0 to 100');
+  if (background === 'transparent' && !['png', 'webp'].includes(format)) throw new Error('Transparent output requires PNG or WebP');
+  if (compression !== undefined && (typeof compression !== 'number' || !Number.isInteger(compression) || compression < 0 || compression > 100 || !['jpg', 'webp'].includes(format))) throw new Error('Output compression requires JPEG/WebP and an integer from 0 to 100');
   if (mask !== undefined && (typeof mask !== 'string' || !mask.trim())) throw new Error('mask_image_url must be a non-empty PNG URL or data URI');
   return {
+    ...advanced,
     ...(background !== undefined ? { gptImageBackground: background as 'auto' | 'opaque' | 'transparent' } : {}),
     ...(compression !== undefined ? { gptImageOutputCompression: compression as number } : {}),
     ...(mask !== undefined ? { gptImageMaskUrl: mask as string } : {}),

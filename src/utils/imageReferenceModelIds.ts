@@ -11,7 +11,7 @@ function normalizeImageReferenceModelId(modelId: string): string {
 
 // This is the reference grammar family, not a model selector. All three use
 // ordered "Image 1" references; callers must retain the selected model ID.
-const GPT_IMAGE_2_REFERENCE_MODEL_IDS = new Set(['gpt-image-2', 'gpt-image-2-5-sunburst', 'gpt-image-2-5-flare']);
+const GPT_IMAGE_2_REFERENCE_MODEL_IDS = new Set(['gpt-image-2', 'gpt-image-2-5-sunburst', 'gpt-image-2-5-flare', 'gpt-image-2-6-sunburst', 'gpt-image-2-6-flare']);
 
 const QWEN_EDIT_REFERENCE_MODEL_IDS = new Set([
   'qwen',

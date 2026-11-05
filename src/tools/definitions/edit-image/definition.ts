@@ -81,6 +81,8 @@ COMPOSITE GPT IMAGE 2 STORYBOARD SHEETS: When numberOfVariations=1 and the user 
             'gpt-image-2',
             'gpt-image-2.5-sunburst',
             'gpt-image-2.5-flare',
+            'gpt-image-2.6-sunburst',
+            'gpt-image-2.6-flare',
             'seedream-5-0-pro-uncensored',
             'qwen-lightning',
             'qwen',
@@ -141,6 +143,8 @@ ${KREA2_LORA_CATALOG_REFERENCE}`,
           description:
             `${ASPECT_RATIO_DESCRIPTION}\n\nSet this whenever the user specifies an image or downstream video orientation/aspect ratio such as 9:16, 16:9, portrait, vertical, landscape, widescreen, TikTok/Reels/Shorts, or exact pixels. This includes selection-gated reference-guided image batches that will feed a later video or dance after the user picks one. For GPT Image 2 exact size requests, preserve exact pixel intent when possible and prefer popular GPT sizes such as 1536x1024, 1024x1536, 2048x1152, 3840x2160, and 2160x3840. Sogni does not expose transparent output for GPT Image 2.0. For transparent assets, select GPT Image 2.5 Sunburst or Flare with gptImageBackground=transparent and PNG or WebP output.`,
         },
+        gptImageComplexity: { type: 'string', enum: ['low', 'medium', 'high'], description: 'GPT Image 2.6 planning complexity. Default high. Lower settings can reduce latency for focused work; quality is separate.' },
+        markup_image_url: { type: 'string', description: 'GPT Image 2.6 edits: annotation layer URL for the FIRST reference, guiding where the prompted change applies. Cannot combine with an edit mask.' },
         gptImageQuality: {
           type: 'string',
           enum: ['low', 'medium', 'high', 'xhigh', 'max'],

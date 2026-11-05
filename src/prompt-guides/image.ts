@@ -67,8 +67,8 @@ export const IMAGE_PROMPT_GUIDES: Pick<ModelPromptGuideRegistry, ImagePromptGuid
   },
   'z-image': { generate: imageGuide('z-image', 'generate', 'Z-Image', 'z-image', ['z-image', 'z-image-turbo', 'dark-beast-z-image-turbo']) },
   'gpt-image': {
-    generate: imageGuide('gpt-image', 'generate', 'GPT Image 2', 'gpt-image', ['gpt-image-2', 'gpt-image-2.5-sunburst', 'gpt-image-2.5-flare']),
-    edit: imageGuide('gpt-image', 'edit', 'GPT Image 2', 'gpt-image-edit', ['gpt-image-2', 'gpt-image-2.5-sunburst', 'gpt-image-2.5-flare']),
+    generate: imageGuide('gpt-image', 'generate', 'GPT Image 2', 'gpt-image', ['gpt-image-2', 'gpt-image-2.5-sunburst', 'gpt-image-2.5-flare', 'gpt-image-2.6-sunburst', 'gpt-image-2.6-flare']),
+    edit: imageGuide('gpt-image', 'edit', 'GPT Image 2', 'gpt-image-edit', ['gpt-image-2', 'gpt-image-2.5-sunburst', 'gpt-image-2.5-flare', 'gpt-image-2.6-sunburst', 'gpt-image-2.6-flare']),
   },
   seedream: {
     generate: imageGuide('seedream', 'generate', 'Seedream 5.0 Pro Uncensored', 'seedream', ['seedream-5-pro-uncensored']),

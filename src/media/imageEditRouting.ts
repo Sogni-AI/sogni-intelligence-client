@@ -17,7 +17,7 @@ export type ImageEditProfile = (typeof IMAGE_EDIT_PROFILES)[number];
 export const IMAGE_EDIT_MODEL_PREFERENCES = [
   'gpt-image-2',
   'gpt-image-2.5-sunburst',
-  'gpt-image-2.5-flare',
+  'gpt-image-2.5-flare', 'gpt-image-2.6-sunburst', 'gpt-image-2.6-flare',
   'qwen-lightning',
   'qwen',
   'krea-identity-edit',

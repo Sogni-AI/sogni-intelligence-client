@@ -1,7 +1,7 @@
 {
   "name": "@sogni-ai/sogni-intelligence-client",
   "version": "4.24.0",
-  "description": "Public Sogni Intelligence client — Node.js convenience wrapper for the Sogni SDK plus the public-safe subset of @sogni/creative-agent contracts (ContractRegistry, AssetManifest, RunRecord, tool envelopes). For agent builders, third-party integrations, and downstream SDKs.",
+  "description": "Public Sogni Intelligence client \u2014 Node.js convenience wrapper for the Sogni SDK plus the public-safe subset of @sogni/creative-agent contracts (ContractRegistry, AssetManifest, RunRecord, tool envelopes). For agent builders, third-party integrations, and downstream SDKs.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "typesVersions": {
@@ -193,7 +193,8 @@
     "test:all": "npm run test && npm run test:examples && npm run test:e2e",
     "release": "semantic-release",
     "test:mcp": "node --import tsx --test test/mcp.test.ts",
-    "sync:mcp": "node scripts/generate-mcp-manifest.mjs"
+    "sync:mcp": "node scripts/generate-mcp-manifest.mjs",
+    "test:gpt-image-26": "node --import tsx --test test/gpt-image-26.test.ts"
   },
   "keywords": [
     "sogni",
