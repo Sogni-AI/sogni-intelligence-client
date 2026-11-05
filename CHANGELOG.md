@@ -1,3 +1,10 @@
+## [4.25.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.25.1...v4.25.2) (2026-11-05)
+
+
+### Bug Fixes
+
+* **deps:** take sogni-client 5.75.2 for the member discount ([3d08e40](https://github.com/Sogni-AI/sogni-intelligence-client/commit/3d08e400a4688ae5f8372066464cd09279c997d7))
+
 ## [4.25.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.25.0...v4.25.1) (2026-11-05)
 
 
