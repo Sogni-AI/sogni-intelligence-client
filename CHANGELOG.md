@@ -1,3 +1,10 @@
+## [4.25.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.25.2...v4.25.3) (2026-11-05)
+
+
+### Bug Fixes
+
+* **deps:** carry MiniMax export through the SDK dependency ([be6fa2c](https://github.com/Sogni-AI/sogni-intelligence-client/commit/be6fa2c9f0041d58756115ebe934fb991db34828))
+
 ## [4.25.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.25.1...v4.25.2) (2026-11-05)
 
 
