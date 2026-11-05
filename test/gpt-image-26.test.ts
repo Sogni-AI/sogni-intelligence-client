@@ -1,7 +1,23 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { getGptImageCapabilities, getGptImageRequestOptions, getGptImage2ModelOverride, gptImageGifDimensions, normalizeImageOutputFormat } from '../src/media/gptImage.js';
 import { getModelOptions } from '../src/tools/shared/modelRegistry.js';
+import { definition as generateImage } from '../src/tools/definitions/generate-image/definition.js';
+import { getHostedToolDefinition } from '../src/openai-tools/index.js';
+
+test('local and generated image output guidance matches the canonical GIF schema', () => {
+  const require = createRequire(`${process.cwd()}/package.json`);
+  const schema = JSON.parse(readFileSync(require.resolve('@sogni-ai/sogni-protocol/schemas/tools/generate_image.schema.json'), 'utf8'));
+  const canonical = schema.properties.outputFormat;
+  assert.match(canonical.description, /GIF requires GPT Image 2\.6 text-to-image/);
+  for (const tool of [generateImage, getHostedToolDefinition('generate_image')!]) {
+    const field = (tool.function.parameters as { properties: Record<string, { description: string; enum: string[] }> }).properties.outputFormat;
+    assert.equal(field.description, canonical.description);
+    assert.ok(field.enum.includes('gif'));
+  }
+});
 
 test('2.6 selections and animation options survive shared routing and validation', () => {
   for (const model of ['gpt-image-2.6-flare', 'gpt-image-2.6-sunburst'] as const) {

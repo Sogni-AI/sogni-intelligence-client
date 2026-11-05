@@ -153,7 +153,7 @@ VIDEO KEYFRAMES: When generating images intended as first+last frames for video 
           type: 'string',
           enum: ['png', 'jpg', 'jpeg', 'webp', 'gif'],
           description:
-            'Optional output file format for generated images. Set only when the user explicitly requests PNG, JPG/JPEG, or WebP. Hosts should normalize "jpeg" to the Sogni project format "jpg".',
+            'Requested image file format; GIF requires GPT Image 2.6 text-to-image generation. Normalize jpeg to jpg.',
         },
         aspectRatio: {
           type: 'string',
