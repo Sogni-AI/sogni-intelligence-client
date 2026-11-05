@@ -1,3 +1,19 @@
+# [4.25.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.24.0...v4.25.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* **deps:** consume published image generation contracts ([9be18d5](https://github.com/Sogni-AI/sogni-intelligence-client/commit/9be18d5df769081481fc0fbb52d53fc1783bf35d))
+* **images:** integrate consistent gif tool guidance ([ebd8ada](https://github.com/Sogni-AI/sogni-intelligence-client/commit/ebd8adaddb6cab448ad69e377d053f534e11094e))
+* **images:** preserve gif dimensions and test in ci ([9aa365e](https://github.com/Sogni-AI/sogni-intelligence-client/commit/9aa365edd2dc9306a39e3bc42f5136e4a9852011))
+* **images:** share validated gif sheet dimensions ([d57053e](https://github.com/Sogni-AI/sogni-intelligence-client/commit/d57053eb92880ed4e9a74e01b58d878e5a7c7fff))
+* **tools:** describe gif output in image generation ([bb19161](https://github.com/Sogni-AI/sogni-intelligence-client/commit/bb191618af5586f864970f2f093997589eb13ca8))
+
+
+### Features
+
+* **images:** integrate gpt image 2.6 generation ([c0c4df6](https://github.com/Sogni-AI/sogni-intelligence-client/commit/c0c4df64ebb6869c4893805fbddd325419d457a4))
+
 ## Unreleased
 
 - Add GPT Image 2.6 Sunburst and Flare as explicit choices, with animated GIF generation, planning complexity, and annotation-guided still-image edits. GIF settings and quoted costs stay together through submission.
