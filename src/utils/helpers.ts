@@ -372,17 +372,22 @@ export function validateProjectConfig(config: ProjectConfig): void {
   }
 
   if (isVideoProjectConfig(config)) {
-    // FlashVSR delivers up to 2560 px on the long edge; other models keep the 2048 px bound.
-    const maxDimension = config.modelId === VIDEO_UPSCALE_MODEL_ID ? VIDEO_UPSCALE_MAX_OUTPUT.longEdge : 2048;
+    // Source-aligned SAM masks can retain small sources and a 2560 px edge.
+    const isVideoSelection = config.modelId === 'sam3_video_segment_fp16';
+    const minDimension = isVideoSelection ? 1 : 256;
+    const maxDimension = isVideoSelection ? 2560
+      : config.modelId === VIDEO_UPSCALE_MODEL_ID ? VIDEO_UPSCALE_MAX_OUTPUT.longEdge : 2048;
     if (config.width !== undefined) {
-      if (typeof config.width !== 'number' || config.width < 256 || config.width > maxDimension) {
-        throw new SogniValidationError(`Width must be between 256 and ${maxDimension}`);
+      if (typeof config.width !== 'number' || config.width < minDimension || config.width > maxDimension
+        || (isVideoSelection && !Number.isSafeInteger(config.width))) {
+        throw new SogniValidationError(`Width must be between ${minDimension} and ${maxDimension}`);
       }
     }
 
     if (config.height !== undefined) {
-      if (typeof config.height !== 'number' || config.height < 256 || config.height > maxDimension) {
-        throw new SogniValidationError(`Height must be between 256 and ${maxDimension}`);
+      if (typeof config.height !== 'number' || config.height < minDimension || config.height > maxDimension
+        || (isVideoSelection && !Number.isSafeInteger(config.height))) {
+        throw new SogniValidationError(`Height must be between ${minDimension} and ${maxDimension}`);
       }
     }
   }
