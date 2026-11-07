@@ -1,3 +1,11 @@
+## [4.25.5](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.25.4...v4.25.5) (2026-11-07)
+
+
+### Bug Fixes
+
+* preserve SAM 3 source video dimensions ([dfc7569](https://github.com/Sogni-AI/sogni-intelligence-client/commit/dfc75696b2f17e9b92725497a0fb25bd58fedb32))
+* **video:** preserve native source geometry for selection masks ([0218522](https://github.com/Sogni-AI/sogni-intelligence-client/commit/0218522f049f2e7f24e25ddd1d7bdb8bc840387c))
+
 ## [4.25.4](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.25.3...v4.25.4) (2026-11-07)
 
 
