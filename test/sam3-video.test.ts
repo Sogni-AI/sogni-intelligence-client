@@ -8,7 +8,7 @@ const selection = {
   type: 'video' as const, modelId: 'sam3_video_segment_fp16', positivePrompt: '', numberOfMedia: 1,
   width: 2160, height: 1080, frames: 160, fps: 30, referenceVideo: Buffer.from('original source bytes'),
   sam3VideoPrompt: { text: 'unicorn', frameIndex: 80 },
-  autoResizeVideoAssets: false, waitForCompletion: false,
+  waitForCompletion: false,
 };
 
 test('video selection retains the full source-size envelope through wrapper validation', () => {
@@ -32,4 +32,32 @@ test('the actual video wrapper forwards native bytes, prompt and fractional timi
   assert.deepEqual(forwarded?.sam3VideoPrompt, selection.sam3VideoPrompt);
   assert.equal(forwarded?.width, 2160);
   assert.equal(forwarded?.fps, 30000 / 1001);
+});
+
+test('video selection preserves native sizes even when generic automatic sizing is enabled', async () => {
+  for (const [width, height] of [[540, 790], [64, 48], [2160, 1080]]) {
+    let forwarded: Record<string, unknown> | undefined;
+    const project = Object.assign(new EventEmitter(), { id: 'native-source-selection', jobs: [] });
+    const wrapper = Object.assign(Object.create(SogniClientWrapper.prototype) as SogniClientWrapper, {
+      config: { timeout: 1000 }, ensureConnected: async () => {}, log: () => {}, emit: () => true,
+      client: { projects: { create: async (params: Record<string, unknown>) => { forwarded = params; return project; } } },
+    });
+    await wrapper.createVideoProject({ ...selection, width, height, autoResizeVideoAssets: true });
+    assert.equal(forwarded?.width, width);
+    assert.equal(forwarded?.height, height);
+    assert.equal(forwarded?.referenceVideo, selection.referenceVideo);
+  }
+});
+
+test('video selection leaves omitted source metadata absent for server probing', async () => {
+  const { width, height, frames, fps, ...withoutMetadata } = selection;
+  let forwarded: Record<string, unknown> | undefined;
+  const project = Object.assign(new EventEmitter(), { id: 'source-probe-selection', jobs: [] });
+  const wrapper = Object.assign(Object.create(SogniClientWrapper.prototype) as SogniClientWrapper, {
+    config: { timeout: 1000 }, ensureConnected: async () => {}, log: () => {}, emit: () => true,
+    client: { projects: { create: async (params: Record<string, unknown>) => { forwarded = params; return project; } } },
+  });
+  await wrapper.createVideoProject(withoutMetadata);
+  for (const field of ['width', 'height', 'frames', 'fps']) assert.equal(forwarded?.[field], undefined);
+  assert.equal(forwarded?.referenceVideo, selection.referenceVideo);
 });
