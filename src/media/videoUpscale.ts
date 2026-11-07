@@ -67,7 +67,7 @@ export const VIDEO_UPSCALE_MAX_OUTPUT = Object.freeze({
 /** RelayVSR source limits per fixed scale; portrait mirrors them. */
 export const RELAYVSR_SOURCE_LIMITS = Object.freeze({
   x2: Object.freeze({ scale: 2, maxShortEdge: 1080, maxLongEdge: 1920 }),
-  x4: Object.freeze({ scale: 4, maxShortEdge: 540, maxLongEdge: 960 }),
+  x4: Object.freeze({ scale: 4, maxShortEdge: 768, maxLongEdge: 1344 }),
 });
 
 /** Largest output RelayVSR delivers (landscape; portrait mirrors it). */
@@ -226,9 +226,12 @@ function relayVsrRequestFor(
       + `RelayVSR goes past twice the size only for sources up to ${x4.maxLongEdge}×${x4.maxShortEdge} pixels, `
       + `or ${x4.maxShortEdge}×${x4.maxLongEdge} in portrait.`;
   }
-  // Each tier's source limit times its scale is 3840 px, so no output passes the long-edge limit.
   const width = Math.round((sourceWidth * ratio) / 2) * 2;
   const height = Math.round((sourceHeight * ratio) / 2) * 2;
+  if (Math.max(width, height) > RELAYVSR_MAX_OUTPUT.longEdge) {
+    return `At ${resolution}p this ${sourceWidth}×${sourceHeight} video would be ${width}×${height}, `
+      + `past the ${RELAYVSR_MAX_OUTPUT.longEdge}px long-edge upscale output limit.`;
+  }
   return { modelId: useX2 ? RELAYVSR_X2_MODEL_ID : RELAYVSR_X4_MODEL_ID, resolution, width, height };
 }
 

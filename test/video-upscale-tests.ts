@@ -371,6 +371,12 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
   expect('portrait 540p source stays portrait at 2160p', relay(540, 960, 2160), {
     modelId: RELAYVSR_X4_MODEL_ID, resolution: 2160, width: 2160, height: 3840,
   });
+  expect('the largest X4 source reaches 2160p', relay(1344, 768, 2160), {
+    modelId: RELAYVSR_X4_MODEL_ID, resolution: 2160, width: 3780, height: 2160,
+  });
+  expect('720p reaches 2160p through X4', relay(1280, 720, 2160), {
+    modelId: RELAYVSR_X4_MODEL_ID, resolution: 2160, width: 3840, height: 2160,
+  });
   expect('a target of exactly twice the short edge stays on X2', relay(960, 540, 1080).modelId, RELAYVSR_X2_MODEL_ID);
   expect('a target just past twice the short edge moves to X4', relay(712, 400, 1080), {
     modelId: RELAYVSR_X4_MODEL_ID, resolution: 1080, width: 1922, height: 1080,
@@ -382,14 +388,22 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
     modelId: RELAYVSR_X2_MODEL_ID, resolution: 1440, width: 2560, height: 1440,
   });
   expect('omitted target picks 1440p through X4 for a small source', relay(640, 360).modelId, RELAYVSR_X4_MODEL_ID);
-  expect('omitted target falls to 1080p when X4 cannot take the source', relay(1120, 630), {
-    modelId: RELAYVSR_X2_MODEL_ID, resolution: 1080, width: 1920, height: 1080,
+  expect('omitted target falls to 1080p when X4 cannot take the source', relay(1400, 600), {
+    modelId: RELAYVSR_X2_MODEL_ID, resolution: 1080, width: 2520, height: 1080,
+  });
+  expect('omitted target falls to 1080p when 1440p would pass 3840px', relay(1344, 400), {
+    modelId: RELAYVSR_X4_MODEL_ID, resolution: 1080, width: 3628, height: 1080,
   });
   expect(
     'a target past twice the size of a source too big for X4 is refused',
-    errorMessage(() => relay(1280, 720, 2160)),
-    '2160p is more than twice the size of this 1280×720 video; RelayVSR goes past twice the size only '
-      + 'for sources up to 960×540 pixels, or 540×960 in portrait.',
+    errorMessage(() => relay(1600, 900, 2160)),
+    '2160p is more than twice the size of this 1600×900 video; RelayVSR goes past twice the size only '
+      + 'for sources up to 1344×768 pixels, or 768×1344 in portrait.',
+  );
+  expect(
+    'a source inside the X4 limit is refused when its output would pass 3840px',
+    errorMessage(() => relay(600, 1344, 2160)),
+    'At 2160p this 600×1344 video would be 2160×4838, past the 3840px long-edge upscale output limit.',
   );
   expect(
     'a target past four times the short edge is refused',
