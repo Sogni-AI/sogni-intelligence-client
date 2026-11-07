@@ -1,5 +1,5 @@
 /**
- * Public request geometry for promptless FlashVSR video upscaling
+ * Public request geometry for promptless FlashVSR and RelayVSR video upscaling
  * (`upscale_video`).
  *
  * These helpers derive the output size a caller must request from a source
@@ -11,9 +11,21 @@
 /** Sogni model id of the FlashVSR v1.1 video upscaler (matches the SDK's FLASHVSR_VIDEO_UPSCALE_MODEL_ID). */
 export const VIDEO_UPSCALE_MODEL_ID = 'flashvsr_v1.1_tiny_long_bf16';
 
-/** Output short-edge resolutions accepted by upscale_video. */
+/** Sogni model ids of the RelayVSR upscalers (match the SDK's RELAYVSR_*_VIDEO_UPSCALE_MODEL_ID). */
+export const RELAYVSR_X2_MODEL_ID = 'relayvsr_x2_lightx2v_int8_convrot';
+export const RELAYVSR_X4_MODEL_ID = 'relayvsr_x4_int8_convrot';
+
+/** upscale_video `model` selectors; omitted means `flashvsr`. */
+export const VIDEO_UPSCALE_MODELS = ['flashvsr', 'relayvsr'] as const;
+export type VideoUpscaleModel = (typeof VIDEO_UPSCALE_MODELS)[number];
+
+/** Output short-edge resolutions accepted by FlashVSR, the upscale_video default. */
 export const VIDEO_UPSCALE_TARGET_RESOLUTIONS = [1080, 1440] as const;
 export type VideoUpscaleTargetResolution = (typeof VIDEO_UPSCALE_TARGET_RESOLUTIONS)[number];
+
+/** Output short-edge resolutions accepted by RelayVSR. */
+export const RELAYVSR_TARGET_RESOLUTIONS = [1080, 1440, 2160] as const;
+export type RelayVsrTargetResolution = (typeof RELAYVSR_TARGET_RESOLUTIONS)[number];
 
 /** FlashVSR detail preferences; `stable` is the default recipe every worker serves. */
 export const VIDEO_UPSCALE_DETAIL_PREFERENCES = ['stable', 'sharper'] as const;
@@ -52,8 +64,25 @@ export const VIDEO_UPSCALE_MAX_OUTPUT = Object.freeze({
   pixels: 2560 * 1440,
 });
 
+/** RelayVSR source limits per fixed scale; portrait mirrors them. */
+export const RELAYVSR_SOURCE_LIMITS = Object.freeze({
+  x2: Object.freeze({ scale: 2, maxShortEdge: 1080, maxLongEdge: 1920 }),
+  x4: Object.freeze({ scale: 4, maxShortEdge: 540, maxLongEdge: 960 }),
+});
+
+/** Largest output RelayVSR delivers (landscape; portrait mirrors it). */
+export const RELAYVSR_MAX_OUTPUT = Object.freeze({ longEdge: 3840 });
+
 export interface VideoUpscaleOutput {
   resolution: VideoUpscaleTargetResolution;
+  width: number;
+  height: number;
+}
+
+/** A resolved upscale: the model that serves it and the output it delivers. */
+export interface VideoUpscaleRequest {
+  modelId: string;
+  resolution: RelayVsrTargetResolution;
   width: number;
   height: number;
 }
@@ -70,6 +99,18 @@ export class VideoUpscaleRequestError extends Error {
 
 export function isVideoUpscaleTargetResolution(value: unknown): value is VideoUpscaleTargetResolution {
   return value === 1080 || value === 1440;
+}
+
+export function isVideoUpscaleModelSelector(value: unknown): value is VideoUpscaleModel {
+  return value === 'flashvsr' || value === 'relayvsr';
+}
+
+export function isRelayVsrModelId(modelId: unknown): boolean {
+  return modelId === RELAYVSR_X2_MODEL_ID || modelId === RELAYVSR_X4_MODEL_ID;
+}
+
+export function isVideoUpscaleModelId(modelId: unknown): boolean {
+  return modelId === VIDEO_UPSCALE_MODEL_ID || isRelayVsrModelId(modelId);
 }
 
 function positiveInteger(value: number): boolean {
@@ -161,6 +202,94 @@ export function resolveVideoUpscaleOutput(input: {
     lastProblem = output;
   }
   throw new VideoUpscaleRequestError(lastProblem);
+}
+
+function relayVsrRequestFor(
+  sourceWidth: number,
+  sourceHeight: number,
+  resolution: RelayVsrTargetResolution,
+): VideoUpscaleRequest | string {
+  const shortEdge = Math.min(sourceWidth, sourceHeight);
+  const longEdge = Math.max(sourceWidth, sourceHeight);
+  const { x2, x4 } = RELAYVSR_SOURCE_LIMITS;
+  const ratio = resolution / shortEdge;
+  if (ratio <= 1) {
+    return `This ${sourceWidth}×${sourceHeight} video is already ${resolution}p or larger.`;
+  }
+  if (ratio > x4.scale) {
+    return `${resolution}p needs a source at least ${Math.ceil(resolution / x4.scale)}px on its short edge; `
+      + `this video is ${sourceWidth}×${sourceHeight}.`;
+  }
+  const useX2 = ratio <= x2.scale;
+  if (!useX2 && (shortEdge > x4.maxShortEdge || longEdge > x4.maxLongEdge)) {
+    return `${resolution}p is more than twice the size of this ${sourceWidth}×${sourceHeight} video; `
+      + `RelayVSR goes past twice the size only for sources up to ${x4.maxLongEdge}×${x4.maxShortEdge} pixels, `
+      + `or ${x4.maxShortEdge}×${x4.maxLongEdge} in portrait.`;
+  }
+  // Each tier's source limit times its scale is 3840 px, so no output passes the long-edge limit.
+  const width = Math.round((sourceWidth * ratio) / 2) * 2;
+  const height = Math.round((sourceHeight * ratio) / 2) * 2;
+  return { modelId: useX2 ? RELAYVSR_X2_MODEL_ID : RELAYVSR_X4_MODEL_ID, resolution, width, height };
+}
+
+/**
+ * Resolve the `relayvsr` selector: X2 when the target is at most twice the
+ * source's short edge, otherwise X4. When `targetResolution` is omitted, 1440p
+ * is used if the source allows it and 1080p otherwise, as with FlashVSR.
+ * Throws VideoUpscaleRequestError with a user-facing message.
+ */
+export function resolveRelayVsrRequest(input: {
+  sourceWidth: number;
+  sourceHeight: number;
+  targetResolution?: number | null;
+}): VideoUpscaleRequest {
+  const { sourceWidth, sourceHeight } = input;
+  if (!positiveInteger(sourceWidth) || !positiveInteger(sourceHeight)) {
+    throw new VideoUpscaleRequestError('The source video dimensions could not be read.');
+  }
+  const { x2 } = RELAYVSR_SOURCE_LIMITS;
+  if (
+    Math.min(sourceWidth, sourceHeight) > x2.maxShortEdge
+    || Math.max(sourceWidth, sourceHeight) > x2.maxLongEdge
+  ) {
+    throw new VideoUpscaleRequestError(
+      `This video is ${sourceWidth}×${sourceHeight}; RelayVSR accepts sources up to `
+        + `${x2.maxLongEdge}×${x2.maxShortEdge} pixels, or ${x2.maxShortEdge}×${x2.maxLongEdge} in portrait.`,
+    );
+  }
+  const requested = input.targetResolution ?? undefined;
+  if (requested !== undefined && !RELAYVSR_TARGET_RESOLUTIONS.includes(requested as RelayVsrTargetResolution)) {
+    throw new VideoUpscaleRequestError('Choose 1080p, 1440p, or 2160p for RelayVSR video upscaling.');
+  }
+  const candidates: RelayVsrTargetResolution[] = requested !== undefined
+    ? [requested as RelayVsrTargetResolution]
+    : [VIDEO_UPSCALE_DEFAULT_RESOLUTION, 1080];
+  let lastProblem = '';
+  for (const resolution of candidates) {
+    const request = relayVsrRequestFor(sourceWidth, sourceHeight, resolution);
+    if (typeof request !== 'string') return request;
+    lastProblem = request;
+  }
+  throw new VideoUpscaleRequestError(lastProblem);
+}
+
+/**
+ * Resolve an upscale_video `model` selector and target into the model id and
+ * output to request. An omitted selector is FlashVSR, with the same limits and
+ * messages as resolveVideoUpscaleOutput.
+ */
+export function resolveVideoUpscaleRequest(input: {
+  sourceWidth: number;
+  sourceHeight: number;
+  targetResolution?: number | null;
+  model?: string | null;
+}): VideoUpscaleRequest {
+  const { model, ...source } = input;
+  if (model === 'relayvsr') return resolveRelayVsrRequest(source);
+  if (model !== undefined && model !== null && model !== 'flashvsr') {
+    throw new VideoUpscaleRequestError('Choose flashvsr or relayvsr for video upscaling.');
+  }
+  return { modelId: VIDEO_UPSCALE_MODEL_ID, ...resolveVideoUpscaleOutput(source) };
 }
 
 /**

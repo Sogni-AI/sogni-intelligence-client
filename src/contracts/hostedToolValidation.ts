@@ -11,6 +11,11 @@ import {
   supportsMinimaxH3Keyframes,
 } from '../tools/shared/modelRegistry.js';
 import { checkToolArgumentPromptLimits } from './promptLimits.js';
+import {
+  VIDEO_UPSCALE_MODELS,
+  VIDEO_UPSCALE_TARGET_RESOLUTIONS,
+  isVideoUpscaleModelSelector,
+} from '../media/videoUpscale.js';
 
 export interface HostedToolSchemaProperty {
   type?: string | string[];
@@ -223,6 +228,29 @@ interface SchemaValidationContext {
   stripUnknownProperties: boolean;
   errors: string[];
   warnings: string[];
+}
+
+/** Options only FlashVSR takes; RelayVSR refuses them. */
+const FLASHVSR_ONLY_ARGUMENTS = ['detailPreference', 'processingSpeed', 'seed'] as const;
+
+/**
+ * upscale_video's cross-argument rules. `model` is checked here because enum
+ * validation skips it by default, and 2160 stays refused without relayvsr with
+ * the same message the 1080/1440 enum gives.
+ */
+function upscaleVideoArgumentErrors(args: Record<string, unknown>): string[] {
+  const model = args.model ?? undefined;
+  if (model !== undefined && !isVideoUpscaleModelSelector(model)) {
+    return [`Argument "model" must be one of ${formatEnum([...VIDEO_UPSCALE_MODELS])}`];
+  }
+  if (model !== 'relayvsr') {
+    return args.targetResolution === 2160
+      ? [`Argument "targetResolution" must be one of ${formatEnum([...VIDEO_UPSCALE_TARGET_RESOLUTIONS])}`]
+      : [];
+  }
+  return FLASHVSR_ONLY_ARGUMENTS
+    .filter(argument => args[argument] !== undefined && args[argument] !== null)
+    .map(argument => `Argument "${argument}" is not available with model "relayvsr"; remove it.`);
 }
 
 function validateNumberBounds(
@@ -680,6 +708,10 @@ export function validateAndNormalizeHostedToolArguments(
     } else {
       context.errors.push(...minimaxH3KeyframeArgumentErrors(toolName, cleanedRecord));
     }
+  }
+
+  if (toolName === 'upscale_video') {
+    context.errors.push(...upscaleVideoArgumentErrors(cleanedRecord));
   }
 
   // Per-model prompt size limits (the Supernet refuses these with 4102). The

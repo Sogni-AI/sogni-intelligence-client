@@ -1,5 +1,5 @@
 /**
- * Unit tests for the promptless FlashVSR video-upscale contract: the
+ * Unit tests for the promptless FlashVSR and RelayVSR video-upscale contract: the
  * upscale_video tool definition, its routing/cost/gating data, and the shared
  * output-geometry helpers in src/media/videoUpscale.ts.
  *
@@ -7,14 +7,26 @@
  * the target, both edges rounded to even pixels), because the server rejects a
  * request whose output size differs from the size it derives from the source.
  */
-import { FLASHVSR_VIDEO_UPSCALE_MODEL_ID } from '@sogni-ai/sogni-client';
 import {
+  FLASHVSR_VIDEO_UPSCALE_MODEL_ID,
+  RELAYVSR_X2_VIDEO_UPSCALE_MODEL_ID,
+  RELAYVSR_X4_VIDEO_UPSCALE_MODEL_ID,
+} from '@sogni-ai/sogni-client';
+import {
+  RELAYVSR_TARGET_RESOLUTIONS,
+  RELAYVSR_X2_MODEL_ID,
+  RELAYVSR_X4_MODEL_ID,
   VIDEO_UPSCALE_MODEL_ID,
+  VIDEO_UPSCALE_MODELS,
   VIDEO_UPSCALE_SOURCE_LIMITS,
   VIDEO_UPSCALE_TARGET_RESOLUTIONS,
   VideoUpscaleRequestError,
   defaultVideoUpscaleResolution,
+  isRelayVsrModelId,
+  isVideoUpscaleModelId,
+  resolveRelayVsrRequest,
   resolveVideoUpscaleOutput,
+  resolveVideoUpscaleRequest,
   validateVideoUpscaleSourceTiming,
 } from '../src/media/index.js';
 import {
@@ -32,6 +44,7 @@ import {
   TOOL_COST_METADATA,
   VIDEO_CONTEXT_TOOL_NAMES,
   getToolPermission,
+  validateAndNormalizeHostedToolArguments,
 } from '../src/contracts/index.js';
 import { VIDEO_EDITING_SKILL } from '../src/public-skill-runtime/index.js';
 import { validateProjectConfig } from '../src/utils/helpers.js';
@@ -72,8 +85,9 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
     { enum?: Array<number | string>; type?: string; minimum?: number; maximum?: number }
   >;
   expect('tool name', fn.name, 'upscale_video');
-  expect('promptless: exposes source, resolution and the FlashVSR options only', Object.keys(properties).sort(), [
+  expect('promptless: exposes source, model, resolution and the FlashVSR options only', Object.keys(properties).sort(), [
     'detailPreference',
+    'model',
     'processingSpeed',
     'seed',
     'sourceVideoIndex',
@@ -92,9 +106,12 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
     true,
   );
   expect('no required arguments', fn.parameters?.required, []);
-  expect('resolution enum is 1080/1440', properties.targetResolution?.enum, [1080, 1440]);
+  expect('model selector is flashvsr/relayvsr', properties.model?.enum, ['flashvsr', 'relayvsr']);
+  expect('model selector matches media constant', properties.model?.enum, [...VIDEO_UPSCALE_MODELS]);
+  expect('FlashVSR resolutions stay 1080/1440', [...VIDEO_UPSCALE_TARGET_RESOLUTIONS], [1080, 1440]);
+  expect('resolution enum adds 2160 for RelayVSR', properties.targetResolution?.enum, [1080, 1440, 2160]);
   expect('resolution enum matches media constant', properties.targetResolution?.enum, [
-    ...VIDEO_UPSCALE_TARGET_RESOLUTIONS,
+    ...RELAYVSR_TARGET_RESOLUTIONS,
   ]);
   expect(
     'description names FlashVSR and the preserved properties',
@@ -131,10 +148,15 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
     String(videoToVideoDefinition.function.description).includes('use upscale_video instead'),
     true,
   );
-  expect('model registry lists FlashVSR', MODELS_BY_TOOL.upscale_video, [
+  expect('model registry lists FlashVSR first, then RelayVSR', MODELS_BY_TOOL.upscale_video, [
     { key: 'flashvsr', displayName: 'FlashVSR v1.1' },
+    { key: 'relayvsr', displayName: 'RelayVSR' },
   ]);
   expect('model id matches the SDK constant', VIDEO_UPSCALE_MODEL_ID, FLASHVSR_VIDEO_UPSCALE_MODEL_ID);
+  expect('RelayVSR model ids match the SDK constants', [RELAYVSR_X2_MODEL_ID, RELAYVSR_X4_MODEL_ID], [
+    RELAYVSR_X2_VIDEO_UPSCALE_MODEL_ID,
+    RELAYVSR_X4_VIDEO_UPSCALE_MODEL_ID,
+  ]);
 
   // --- contract data ---------------------------------------------------------
   const contract = PROMPT_CONTRACTS.find((candidate) => candidate.toolName === 'upscale_video');
@@ -142,7 +164,7 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
   expect(
     'prompt contract documents every parameter',
     Object.keys(contract?.parameterDocs ?? {}).sort(),
-    ['detailPreference', 'processingSpeed', 'seed', 'sourceVideoIndex', 'targetResolution'],
+    ['detailPreference', 'model', 'processingSpeed', 'seed', 'sourceVideoIndex', 'targetResolution'],
   );
   expect(
     'prompt contract keeps Seedance re-renders on video_to_video',
@@ -328,6 +350,135 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
     wrapperMessage({ type: 'video', modelId: 'ltx25-22b-int8_t2v_distilled', positivePrompt: 'x', width: 2560, height: 1440 }),
     'Width must be between 256 and 2048',
   );
+
+  // --- RelayVSR selector ------------------------------------------------------
+  const relay = (sourceWidth: number, sourceHeight: number, targetResolution?: number) =>
+    resolveRelayVsrRequest({ sourceWidth, sourceHeight, targetResolution });
+  expect('model ids are recognized', [
+    isRelayVsrModelId(RELAYVSR_X2_MODEL_ID),
+    isRelayVsrModelId(RELAYVSR_X4_MODEL_ID),
+    isRelayVsrModelId(VIDEO_UPSCALE_MODEL_ID),
+    isVideoUpscaleModelId(RELAYVSR_X4_MODEL_ID),
+    isVideoUpscaleModelId(VIDEO_UPSCALE_MODEL_ID),
+    isVideoUpscaleModelId('wan_v2.2-14b-fp8_t2v'),
+  ], [true, true, false, true, true, false]);
+  expect('1080p source to 2160p uses X2 at the 3840×2160 limit', relay(1920, 1080, 2160), {
+    modelId: RELAYVSR_X2_MODEL_ID, resolution: 2160, width: 3840, height: 2160,
+  });
+  expect('540p source to 2160p uses X4', relay(960, 540, 2160), {
+    modelId: RELAYVSR_X4_MODEL_ID, resolution: 2160, width: 3840, height: 2160,
+  });
+  expect('portrait 540p source stays portrait at 2160p', relay(540, 960, 2160), {
+    modelId: RELAYVSR_X4_MODEL_ID, resolution: 2160, width: 2160, height: 3840,
+  });
+  expect('a target of exactly twice the short edge stays on X2', relay(960, 540, 1080).modelId, RELAYVSR_X2_MODEL_ID);
+  expect('a target just past twice the short edge moves to X4', relay(712, 400, 1080), {
+    modelId: RELAYVSR_X4_MODEL_ID, resolution: 1080, width: 1922, height: 1080,
+  });
+  expect('X2 takes the source sizes FlashVSR refuses', relay(1920, 1080, 1440), {
+    modelId: RELAYVSR_X2_MODEL_ID, resolution: 1440, width: 2560, height: 1440,
+  });
+  expect('omitted target picks 1440p when the source allows it', relay(1280, 720), {
+    modelId: RELAYVSR_X2_MODEL_ID, resolution: 1440, width: 2560, height: 1440,
+  });
+  expect('omitted target picks 1440p through X4 for a small source', relay(640, 360).modelId, RELAYVSR_X4_MODEL_ID);
+  expect('omitted target falls to 1080p when X4 cannot take the source', relay(1120, 630), {
+    modelId: RELAYVSR_X2_MODEL_ID, resolution: 1080, width: 1920, height: 1080,
+  });
+  expect(
+    'a target past twice the size of a source too big for X4 is refused',
+    errorMessage(() => relay(1280, 720, 2160)),
+    '2160p is more than twice the size of this 1280×720 video; RelayVSR goes past twice the size only '
+      + 'for sources up to 960×540 pixels, or 540×960 in portrait.',
+  );
+  expect(
+    'a target past four times the short edge is refused',
+    errorMessage(() => relay(640, 360, 2160)),
+    '2160p needs a source at least 540px on its short edge; this video is 640×360.',
+  );
+  expect(
+    'a target at or below the source short edge is refused',
+    errorMessage(() => relay(1920, 1080, 1080)),
+    'This 1920×1080 video is already 1080p or larger.',
+  );
+  expect(
+    'a source past the X2 limit is refused',
+    errorMessage(() => relay(1921, 1080, 2160)),
+    'This video is 1921×1080; RelayVSR accepts sources up to 1920×1080 pixels, or 1080×1920 in portrait.',
+  );
+  expect(
+    'a resolution off the list is refused',
+    errorMessage(() => relay(960, 400, 1600)),
+    'Choose 1080p, 1440p, or 2160p for RelayVSR video upscaling.',
+  );
+  expect(
+    'a wide source stays within 3840px at the top of each tier',
+    [relay(1920, 720, 1440), relay(960, 360, 1440)].map(({ width, height }) => [width, height]),
+    [[3840, 1440], [3840, 1440]],
+  );
+
+  // --- resolveVideoUpscaleRequest ---------------------------------------------
+  expect(
+    'no selector is FlashVSR with FlashVSR output',
+    resolveVideoUpscaleRequest({ sourceWidth: 1280, sourceHeight: 720 }),
+    { modelId: VIDEO_UPSCALE_MODEL_ID, ...resolveVideoUpscaleOutput({ sourceWidth: 1280, sourceHeight: 720 }) },
+  );
+  expect(
+    'flashvsr selector keeps the 4K refusal',
+    errorMessage(() => resolveVideoUpscaleRequest({ sourceWidth: 1280, sourceHeight: 720, targetResolution: 2160, model: 'flashvsr' })),
+    'Choose 1080p or 1440p for video upscaling.',
+  );
+  expect(
+    'relayvsr selector resolves a model id',
+    resolveVideoUpscaleRequest({ sourceWidth: 1920, sourceHeight: 1080, targetResolution: 2160, model: 'relayvsr' }).modelId,
+    RELAYVSR_X2_MODEL_ID,
+  );
+  expect(
+    'an unknown selector is refused',
+    errorMessage(() => resolveVideoUpscaleRequest({ sourceWidth: 1280, sourceHeight: 720, model: 'seedvr' })),
+    'Choose flashvsr or relayvsr for video upscaling.',
+  );
+
+  // --- hosted argument validation ---------------------------------------------
+  const hosted = (args: Record<string, unknown>) =>
+    validateAndNormalizeHostedToolArguments([upscaleVideoDefinition], 'upscale_video', args);
+  expect('no arguments stay valid', hosted({}).ok, true);
+  expect('FlashVSR options stay valid without a model', hosted({ targetResolution: 1440, detailPreference: 'sharper', seed: 7 }).ok, true);
+  expect('FlashVSR options stay valid with flashvsr', hosted({ model: 'flashvsr', processingSpeed: 'faster' }).ok, true);
+  expect('2160 is valid with relayvsr', hosted({ model: 'relayvsr', targetResolution: 2160 }).ok, true);
+  expect('2160 without a model gives the 1080/1440 refusal', hosted({ targetResolution: 2160 }).errors, [
+    'Argument "targetResolution" must be one of 1080, 1440',
+  ]);
+  expect('2160 with flashvsr gives the 1080/1440 refusal', hosted({ model: 'flashvsr', targetResolution: 2160 }).errors, [
+    'Argument "targetResolution" must be one of 1080, 1440',
+  ]);
+  expect('an unknown model is refused even though enum checks skip model', hosted({ model: 'seedvr' }).errors, [
+    'Argument "model" must be one of "flashvsr", "relayvsr"',
+  ]);
+  expect('relayvsr refuses each FlashVSR option', hosted({
+    model: 'relayvsr', detailPreference: 'stable', processingSpeed: 'stable', seed: 0,
+  }).errors, [
+    'Argument "detailPreference" is not available with model "relayvsr"; remove it.',
+    'Argument "processingSpeed" is not available with model "relayvsr"; remove it.',
+    'Argument "seed" is not available with model "relayvsr"; remove it.',
+  ]);
+
+  // --- request validation -----------------------------------------------------
+  const projectConfig = {
+    type: 'video' as const, modelId: RELAYVSR_X2_MODEL_ID, positivePrompt: '', numberOfMedia: 1,
+    width: 3840, height: 2160, frames: 1800,
+  };
+  expect('RelayVSR 3840×2160 passes request validation', (() => {
+    try { validateProjectConfig(projectConfig); return null; } catch (error) { return String(error); }
+  })(), null);
+  expect('FlashVSR keeps its 2560px bound', (() => {
+    try {
+      validateProjectConfig({ ...projectConfig, modelId: VIDEO_UPSCALE_MODEL_ID });
+      return null;
+    } catch (error) {
+      return (error as Error).message;
+    }
+  })(), 'Width must be between 256 and 2560');
 
   console.log(`\nvideoUpscale: ${testsPassed} passed, ${testsFailed} failed`);
   return { passed: testsPassed, failed: testsFailed };

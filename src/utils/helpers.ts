@@ -22,7 +22,13 @@ import {
 } from './errors.js';
 import { isGptImageModel } from '../media/gptImage.js';
 import { isSeedreamImageModel, SEEDREAM_MAX_REFERENCE_IMAGES } from '../media/seedream.js';
-import { VIDEO_UPSCALE_MAX_OUTPUT, VIDEO_UPSCALE_MODEL_ID } from '../media/videoUpscale.js';
+import {
+  RELAYVSR_MAX_OUTPUT,
+  VIDEO_UPSCALE_MAX_OUTPUT,
+  VIDEO_UPSCALE_MODEL_ID,
+  isRelayVsrModelId,
+  isVideoUpscaleModelId,
+} from '../media/videoUpscale.js';
 import {
   WAN22_MAX_VIDEO_PIXELS,
   WAN22_MAX_VIDEO_SIDE,
@@ -373,9 +379,12 @@ export function validateProjectConfig(config: ProjectConfig): void {
 
   if (isVideoProjectConfig(config)) {
     // Source-aligned SAM masks can retain small sources and a 2560 px edge.
+    // FlashVSR delivers up to 2560 px on the long edge and RelayVSR up to 3840 px;
+    // other models keep the 2048 px bound.
     const isVideoSelection = config.modelId === 'sam3_video_segment_fp16';
     const minDimension = isVideoSelection ? 1 : 256;
     const maxDimension = isVideoSelection ? 2560
+      : isRelayVsrModelId(config.modelId) ? RELAYVSR_MAX_OUTPUT.longEdge
       : config.modelId === VIDEO_UPSCALE_MODEL_ID ? VIDEO_UPSCALE_MAX_OUTPUT.longEdge : 2048;
     if (config.width !== undefined) {
       if (typeof config.width !== 'number' || config.width < minDimension || config.width > maxDimension
@@ -471,8 +480,8 @@ export function validateProjectConfig(config: ProjectConfig): void {
     }
 
     if (config.frames !== undefined) {
-      if (config.modelId === VIDEO_UPSCALE_MODEL_ID) {
-        // FlashVSR keeps the source's own frame count and has no client-side
+      if (isVideoUpscaleModelId(config.modelId)) {
+        // Upscaling keeps the source's own frame count and has no client-side
         // length cap: the server's admission check alone refuses a long source.
         if (typeof config.frames !== 'number' || !Number.isInteger(config.frames) || config.frames < 1) {
           throw new SogniValidationError('Frames must be a whole number of at least 1');

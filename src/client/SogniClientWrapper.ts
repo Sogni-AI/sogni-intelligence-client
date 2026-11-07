@@ -5,7 +5,7 @@
 
 import { EventEmitter } from 'events';
 import { SogniClient, Project, Job, ChatStream, isVideoSegmentationModel } from '@sogni-ai/sogni-client';
-import { VIDEO_UPSCALE_MODEL_ID } from '../media/videoUpscale.js';
+import { isVideoUpscaleModelId } from '../media/videoUpscale.js';
 import { getWan22VideoSizeRefusal, isMinimaxH3TwoStageModelId } from '../media/videoSettings.js';
 import { MINIMAX_H3_MAX_KEYFRAMES } from '../media/minimaxH3Keyframes.js';
 import type {
@@ -1084,10 +1084,10 @@ export class SogniClientWrapper extends EventEmitter {
       return config;
     }
 
-    // FlashVSR and video selection operate on the uploaded source. The server
+    // Video upscalers and video selection operate on the uploaded source. The server
     // derives their geometry from it; never apply a generation model's grid or
     // rewrite their reference media.
-    if (config.modelId === VIDEO_UPSCALE_MODEL_ID || isVideoSegmentationModel(config.modelId)) {
+    if (isVideoUpscaleModelId(config.modelId) || isVideoSegmentationModel(config.modelId)) {
       return config;
     }
 

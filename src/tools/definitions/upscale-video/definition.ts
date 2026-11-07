@@ -1,11 +1,12 @@
-/** Tool definition for promptless FlashVSR video upscaling. */
+/** Tool definition for promptless FlashVSR and RelayVSR video upscaling. */
 
 import {
+  RELAYVSR_TARGET_RESOLUTIONS,
   VIDEO_UPSCALE_DETAIL_PREFERENCES,
   VIDEO_UPSCALE_MAX_SEED,
+  VIDEO_UPSCALE_MODELS,
   VIDEO_UPSCALE_PROCESSING_SPEEDS,
   VIDEO_UPSCALE_RANDOM_SEED,
-  VIDEO_UPSCALE_TARGET_RESOLUTIONS,
 } from '../../../media/videoUpscale.js';
 import type { ToolDefinition } from '../types.js';
 
@@ -14,22 +15,28 @@ export const definition: ToolDefinition = {
   function: {
     name: 'upscale_video',
     description:
-      'Upscale an existing video to 1080p or 1440p with FlashVSR video super-resolution. ' +
-      'This is promptless, deterministic enhancement, not a generative edit: it keeps every source frame, ' +
-      'the exact frame rate, the full aspect ratio, and the original audio, and it never changes content, ' +
-      'trims, crops, restyles, or interpolates frames. Use it when the user asks to upscale, enlarge, sharpen, ' +
-      'or increase the resolution of an uploaded or previously generated video, or wants an HD, 1080p, 1440p, ' +
-      'or 2K copy of it. Do not use it to create, restyle, extend, or edit a video; when the user explicitly ' +
-      'asks a generative model such as Seedance to re-render the clip, use video_to_video. The output is at most ' +
-      'twice the source size, so 1080p needs a source whose short edge is 540-768px and 1440p needs 720-768px, ' +
-      'and the source can be at most about 1344x768 pixels (768x1344 in portrait). ' +
-      'It must also be 1-60 fps and at most 100 MB. The server sets the maximum clip length and ' +
-      'rejects a source that is too long; never quote a length limit yourself, and if the tool ' +
-      'reports that rejection, relay that error to the user. ' +
-      'It cannot produce 4K or any size above 1440p; when the user asks for one, say so and offer 1440p. ' +
-      "Each upscale costs credits based on the source video's size and length. " +
-      'Optional detailPreference (stable or sharper), processingSpeed (stable or faster), and seed ' +
-      'tune the result; omit them unless the user asks, and none of them changes the price.',
+      'Upscale an existing video to 1080p or 1440p with FlashVSR video super-resolution, or to as much as ' +
+      '2160p (4K) with RelayVSR. This is promptless, deterministic enhancement, not a generative edit: it ' +
+      'keeps every source frame, the exact frame rate, the full aspect ratio, and the original audio, and ' +
+      'it never changes content, trims, crops, restyles, or interpolates frames. Use it when the user asks ' +
+      'to upscale, enlarge, sharpen, or increase the resolution of an uploaded or previously generated ' +
+      'video, or wants an HD, 1080p, 1440p, 2K, or 4K copy of it. Do not use it to create, restyle, extend,' +
+      ' or edit a video; when the user explicitly asks a generative model such as Seedance to re-render the' +
+      ' clip, use video_to_video. FlashVSR is the default; set model to relayvsr when the user asks for ' +
+      'RelayVSR or for 4K or 2160p, and otherwise omit model. With FlashVSR the output is at most twice the' +
+      ' source size, so 1080p needs a source whose short edge is 540-768px and 1440p needs 720-768px, and ' +
+      'the source can be at most about 1344x768 pixels (768x1344 in portrait). With RelayVSR the output is ' +
+      'at most twice the source size for a source up to 1920x1080 pixels (1080x1920 in portrait), or four ' +
+      'times for a source up to 960x540 (540x960 in portrait), so 2160p needs a source whose short edge is ' +
+      "exactly 540px or 1080px, and the output's long edge can be at most 3840px. The source must also be " +
+      '1-60 fps and at most 100 MB. The server sets the maximum clip length and rejects a source that is ' +
+      'too long; never quote a length limit yourself, and if the tool reports that rejection, relay that ' +
+      'error to the user. FlashVSR cannot produce 4K or any size above 1440p, so a 4K request always uses ' +
+      'relayvsr. Nothing here produces a size above 2160p; when the user asks for one, say so and offer ' +
+      "2160p. Each upscale costs credits based on the source video's size and length. With FlashVSR, " +
+      'optional detailPreference (stable or sharper), processingSpeed (stable or faster), and seed tune the' +
+      ' result; omit them unless the user asks, and none of them changes the price. RelayVSR refuses all ' +
+      'three.',
     parameters: {
       type: 'object',
       properties: {
@@ -40,19 +47,28 @@ export const definition: ToolDefinition = {
             'Negative values select uploaded videos: -1 is the first uploaded video, -2 the second, and so on. ' +
             'If omitted, use the latest generated video, falling back to the most recent uploaded video.',
         },
+        model: {
+          type: 'string',
+          enum: [...VIDEO_UPSCALE_MODELS],
+          description:
+            'Upscaler. flashvsr, the default, reaches 1080p or 1440p and accepts detailPreference, ' +
+            'processingSpeed, and seed. relayvsr reaches 1080p, 1440p, or 2160p and takes none of those options. ' +
+            'Set relayvsr when the user asks for RelayVSR or for 4K or 2160p; otherwise omit it.',
+        },
         targetResolution: {
           type: 'number',
-          enum: [...VIDEO_UPSCALE_TARGET_RESOLUTIONS],
+          enum: [...RELAYVSR_TARGET_RESOLUTIONS],
           description:
-            'Output resolution of the short edge in pixels: 1440 for 1440p/2K or 1080 for 1080p/Full HD. ' +
-            'The long edge follows the source aspect ratio, so portrait videos stay portrait. ' +
-            "Default: 1440, or 1080 when the source's short edge is below 720px. Set 1080 when the user asks for 1080p or Full HD.",
+            'Output resolution of the short edge in pixels: 2160 for 2160p/4K (relayvsr only), 1440 for 1440p/2K,' +
+            ' or 1080 for 1080p/Full HD. The long edge follows the source aspect ratio, so portrait videos stay ' +
+            'portrait. Default: 1440, or 1080 when the source is too small for 1440p. Set 1080 when the user asks' +
+            ' for 1080p or Full HD, and 2160 with model relayvsr when the user asks for 4K or 2160p.',
         },
         detailPreference: {
           type: 'string',
           enum: [...VIDEO_UPSCALE_DETAIL_PREFERENCES],
           description:
-            'Detail preference. stable, the default, gives the most temporally stable result. ' +
+            'FlashVSR only. Detail preference. stable, the default, gives the most temporally stable result. ' +
             'sharper renders crisper fine detail with a little more risk of shimmer between frames. ' +
             'Set sharper only when the user asks for a sharper, crisper, or more detailed upscale; otherwise omit it. ' +
             'It does not change the price.',
@@ -61,7 +77,7 @@ export const definition: ToolDefinition = {
           type: 'string',
           enum: [...VIDEO_UPSCALE_PROCESSING_SPEEDS],
           description:
-            'Processing speed. stable, the default, gives the most stable result. ' +
+            'FlashVSR only. Processing speed. stable, the default, gives the most stable result. ' +
             'faster finishes sooner with slightly less stable detail. ' +
             'Set faster only when the user asks for a quicker upscale; otherwise omit it. It does not change the price.',
         },
@@ -70,7 +86,7 @@ export const definition: ToolDefinition = {
           minimum: VIDEO_UPSCALE_RANDOM_SEED,
           maximum: VIDEO_UPSCALE_MAX_SEED,
           description:
-            "Seed for the upscaler's fine texture, 0 through 4294967295; different seeds give slightly different fine detail. " +
+            "FlashVSR only. Seed for the upscaler's fine texture, 0 through 4294967295; different seeds give slightly different fine detail. " +
             'Omit it to keep the repeatable default of 0. Use -1 for a random seed. ' +
             'Set it only when the user gives a seed or asks for a different or random variation of an upscale.',
         },

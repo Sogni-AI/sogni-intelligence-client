@@ -95,6 +95,7 @@ export const MODELS_BY_TOOL: Record<string, ModelOption[]> = {
   ],
   upscale_video: [
     { key: 'flashvsr', displayName: 'FlashVSR v1.1' },
+    { key: 'relayvsr', displayName: 'RelayVSR' },
   ],
   apply_style: QUALITY_TIER_MODELS,
   refine_result: QUALITY_TIER_MODELS,

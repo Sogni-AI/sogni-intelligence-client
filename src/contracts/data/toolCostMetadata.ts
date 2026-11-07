@@ -97,7 +97,7 @@ export const TOOL_COST_METADATA: ReadonlyArray<ToolCostMetadata> = [
     costClass: 'video.standard',
     riskLevel: 'paid',
     userVisibleCost: 'Priced by source video size and length',
-    description: 'Promptless FlashVSR 1080p/1440p video upscale that keeps every frame and the audio.',
+    description: 'Promptless FlashVSR 1080p/1440p or RelayVSR 2160p video upscale that keeps every frame and the audio.',
   },
   {
     tool: 'apply_style',
