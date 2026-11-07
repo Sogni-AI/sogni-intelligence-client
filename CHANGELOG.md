@@ -1,3 +1,10 @@
+## [4.25.4](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.25.3...v4.25.4) (2026-11-07)
+
+
+### Bug Fixes
+
+* **deps:** carry monthly capacity estimates through the SDK ([853db8f](https://github.com/Sogni-AI/sogni-intelligence-client/commit/853db8f1b04cf957092fb9e1f075011fa74caf09))
+
 ## [4.25.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.25.2...v4.25.3) (2026-11-05)
 
 
