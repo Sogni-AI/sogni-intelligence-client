@@ -1,3 +1,10 @@
+## [4.25.6](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.25.5...v4.25.6) (2026-11-08)
+
+
+### Bug Fixes
+
+* **deps:** carry GIF reference support through the SDK ([4d64d65](https://github.com/Sogni-AI/sogni-intelligence-client/commit/4d64d65574d234f0bf535041eb6e41841afbbe5f))
+
 ## [4.25.5](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.25.4...v4.25.5) (2026-11-07)
 
 
