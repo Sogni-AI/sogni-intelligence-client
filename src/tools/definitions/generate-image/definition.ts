@@ -153,7 +153,7 @@ VIDEO KEYFRAMES: When generating images intended as first+last frames for video 
           type: 'string',
           enum: ['png', 'jpg', 'jpeg', 'webp', 'gif'],
           description:
-            'Requested image file format; GIF requires GPT Image 2.6. Use edit_image when reference images guide the animation. Normalize jpeg to jpg.',
+            'Set only when the user explicitly requests a file format. Otherwise leave outputFormat unset. GIF requires GPT Image 2.6. Use edit_image when reference images guide the animation. Normalize jpeg to jpg.',
         },
         aspectRatio: {
           type: 'string',

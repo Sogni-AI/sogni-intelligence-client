@@ -173,7 +173,7 @@ ${KREA2_LORA_CATALOG_REFERENCE}`,
           type: 'string',
           enum: ['png', 'jpg', 'jpeg', 'webp', 'gif'],
           description:
-            'Requested output file format. GIF requires GPT Image 2.6 Sunburst or Flare and supports ordered reference images; masks and markup cannot combine with GIF. Hosts should normalize "jpeg" to the Sogni project format "jpg".',
+            'Set only when the user explicitly requests a file format. Otherwise leave outputFormat unset. GIF requires GPT Image 2.6 Sunburst or Flare and supports ordered reference images; masks and markup cannot combine with GIF. Hosts should normalize "jpeg" to the Sogni project format "jpg".',
         },
         personaName: {
           type: 'string',
