@@ -421,8 +421,10 @@ export function getGptImageRequestOptions(args: Record<string, unknown>, modelId
   const frameDuration = args.gptImageFrameDurationMs ?? args.gpt_image_frame_duration_ms;
   const markup = args.gptImageMarkupUrl ?? args.markup_image_url;
   const format26 = normalizeImageOutputFormat(args.outputFormat ?? args.output_format);
+  const mask = args.mask_image_url ?? args.gptImageMaskUrl;
   const has26 = [complexity, frameCount, frameDuration, markup].some(v => v !== undefined) || format26 === 'gif';
   if (has26 && !isGptImage26Model(modelId)) throw new Error('GIF, complexity and markup require GPT Image 2.6');
+  if (format26 === 'gif' && (mask !== undefined || markup !== undefined)) throw new Error('GIF output cannot combine with masks or markup');
   if (complexity !== undefined && !['low', 'medium', 'high'].includes(String(complexity))) throw new Error('Unsupported complexity');
   if (format26 !== 'gif' && (frameCount !== undefined || frameDuration !== undefined)) throw new Error('Frame options require GIF output');
   if (frameCount !== undefined && (typeof frameCount !== 'number' || !Number.isInteger(frameCount) || frameCount < 2 || frameCount > 16)) throw new Error('GIF frame count must be 2–16');
@@ -436,7 +438,6 @@ export function getGptImageRequestOptions(args: Record<string, unknown>, modelId
   };
   const background = args.gptImageBackground ?? args.gpt_image_background;
   const compression = args.gptImageOutputCompression ?? args.gpt_image_output_compression;
-  const mask = args.mask_image_url ?? args.gptImageMaskUrl;
   if (background === undefined && compression === undefined && mask === undefined) return advanced;
   if (!isGptImageModel(modelId)) throw new Error('GPT Image options require a GPT Image model');
   const format = normalizeImageOutputFormat(args.outputFormat ?? args.output_format) ?? 'png';
