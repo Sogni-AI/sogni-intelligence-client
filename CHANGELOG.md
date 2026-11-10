@@ -1,3 +1,16 @@
+# [4.26.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.25.6...v4.26.0) (2026-11-10)
+
+
+### Bug Fixes
+
+* **deps:** pin sogni-client 5.80.0 and protocol alpha.60 ([3e93c39](https://github.com/Sogni-AI/sogni-intelligence-client/commit/3e93c390e670def63ff97568aced88d026ec47d9))
+* **tools:** keep image output formats explicitly requested ([477fac4](https://github.com/Sogni-AI/sogni-intelligence-client/commit/477fac482743b6933d32eb1da44354110e4394e8))
+
+
+### Features
+
+* **tools:** support reference-guided GIF edits ([478f01e](https://github.com/Sogni-AI/sogni-intelligence-client/commit/478f01e06489adbdf88c9836f1cd12540f043377))
+
 ## [4.25.6](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.25.5...v4.25.6) (2026-11-08)
 
 
