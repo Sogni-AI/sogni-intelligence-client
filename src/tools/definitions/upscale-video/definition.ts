@@ -15,15 +15,16 @@ export const definition: ToolDefinition = {
   function: {
     name: 'upscale_video',
     description:
-      'Upscale an existing video to 1080p or 1440p with FlashVSR video super-resolution, or to as much as ' +
-      '2160p (4K) with RelayVSR. This is promptless, deterministic enhancement, not a generative edit: it ' +
+      'Upscale an existing video to 1080p, 1440p or 2160p (4K) with recommended RelayVSR, or to 1080p or ' +
+      '1440p with FlashVSR. This is promptless, deterministic enhancement, not a generative edit: it ' +
       'keeps every source frame, the exact frame rate, the full aspect ratio, and the original audio, and ' +
       'it never changes content, trims, crops, restyles, or interpolates frames. Use it when the user asks ' +
       'to upscale, enlarge, sharpen, or increase the resolution of an uploaded or previously generated ' +
       'video, or wants an HD, 1080p, 1440p, 2K, or 4K copy of it. Do not use it to create, restyle, extend,' +
       ' or edit a video; when the user explicitly asks a generative model such as Seedance to re-render the' +
-      ' clip, use video_to_video. FlashVSR is the default; set model to relayvsr when the user asks for ' +
-      'RelayVSR or for 4K or 2160p, and otherwise omit model. With FlashVSR the output is at most twice the' +
+      ' clip, use video_to_video. Explicitly set model to relayvsr for new upscales. Use flashvsr when ' +
+      'the user requests FlashVSR or specifically wants its detailPreference, processingSpeed or seed ' +
+      'controls. Omitted model retains FlashVSR for compatibility. With FlashVSR the output is at most twice the' +
       ' source size, so 1080p needs a source whose short edge is 540-768px and 1440p needs 720-768px, and ' +
       'the source can be at most about 1344x768 pixels (768x1344 in portrait). With RelayVSR the output is ' +
       'at most twice the source size for a source up to 1920x1080 pixels (1080x1920 in portrait), or four ' +
@@ -51,9 +52,10 @@ export const definition: ToolDefinition = {
           type: 'string',
           enum: [...VIDEO_UPSCALE_MODELS],
           description:
-            'Upscaler. flashvsr, the default, reaches 1080p or 1440p and accepts detailPreference, ' +
-            'processingSpeed, and seed. relayvsr reaches 1080p, 1440p, or 2160p and takes none of those options. ' +
-            'Set relayvsr when the user asks for RelayVSR or for 4K or 2160p; otherwise omit it.',
+            'Upscaler. Explicitly select relayvsr, recommended for new upscales to 1080p, 1440p or 2160p. ' +
+            'Use flashvsr when requested or for its detailPreference, processingSpeed or seed controls; ' +
+            'it reaches 1080p or 1440p. RelayVSR takes none of those options. ' +
+            'Omitted model retains FlashVSR for compatibility.',
         },
         targetResolution: {
           type: 'number',

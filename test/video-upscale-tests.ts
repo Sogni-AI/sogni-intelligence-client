@@ -148,9 +148,9 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
     String(videoToVideoDefinition.function.description).includes('use upscale_video instead'),
     true,
   );
-  expect('model registry lists FlashVSR first, then RelayVSR', MODELS_BY_TOOL.upscale_video, [
-    { key: 'flashvsr', displayName: 'FlashVSR v1.1' },
+  expect('model registry recommends RelayVSR while retaining FlashVSR', MODELS_BY_TOOL.upscale_video, [
     { key: 'relayvsr', displayName: 'RelayVSR' },
+    { key: 'flashvsr', displayName: 'FlashVSR v1.1' },
   ]);
   expect('model id matches the SDK constant', VIDEO_UPSCALE_MODEL_ID, FLASHVSR_VIDEO_UPSCALE_MODEL_ID);
   expect('RelayVSR model ids match the SDK constants', [RELAYVSR_X2_MODEL_ID, RELAYVSR_X4_MODEL_ID], [
