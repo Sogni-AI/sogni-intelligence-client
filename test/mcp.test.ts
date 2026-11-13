@@ -7,13 +7,32 @@ const image = 'https://media.example/image.webp';
 const audio = 'https://media.example/voice.wav';
 const video = 'https://media.example/video.mp4';
 
-test('contract contains twelve named, annotated tools with typed output', () => {
-  assert.equal(MCP_TOOLS.length, 12);
-  assert.equal(new Set(MCP_TOOLS.map(tool => tool.name)).size, 12);
+test('contract contains thirteen named, annotated tools with typed output', () => {
+  assert.equal(MCP_TOOLS.length, 13);
+  assert.equal(new Set(MCP_TOOLS.map(tool => tool.name)).size, 13);
   for (const tool of MCP_TOOLS) {
     assert.equal(tool.inputSchema.additionalProperties, false);
     assert.deepEqual(tool.outputSchema.required, ['kind', 'data']);
     assert.equal(typeof tool.annotations.readOnlyHint, 'boolean');
+  }
+});
+
+test('changelog reads validate their filters and, like model discovery, never route to a workflow', () => {
+  const changelog = MCP_TOOLS.find(tool => tool.name === 'list_changelog')!;
+  assert.equal(changelog.annotations.readOnlyHint, true);
+  assert.deepEqual(changelog.outputSchema.properties.kind.enum, ['changelog']);
+  const filters = { audience: 'developer', product: 'sdk-js', type: 'deprecated', since: '2026-11-01',
+    until: '2026-11-13T09:00:00-08:00', action_required: true, limit: 20, cursor: 'opaque-cursor' };
+  assert.deepEqual(validateMcpArguments('list_changelog', filters), filters);
+  assert.deepEqual(validateMcpArguments('list_changelog', {}), {});
+  assert.deepEqual(validateMcpArguments('list_changelog', { id: '2026-11-13-api-example' }), { id: '2026-11-13-api-example' });
+  for (const input of [
+    { audience: 'everyone' }, { type: 'breaking' }, { product: 'sdk-js,api' }, { since: 'last week' },
+    { until: '2026-11-13T09:00:00' }, { limit: 0 }, { limit: 101 }, { id: 'Not An Id' }, { action_required: 'true' },
+    { cursor: '' }, { account_id: 'someone-else' },
+  ]) assert.throws(() => validateMcpArguments('list_changelog', input), JSON.stringify(input));
+  for (const name of ['list_models', 'list_changelog']) {
+    assert.throws(() => routeMcpCall(name, {}), /does not route to a single generation workflow/);
   }
 });
 
