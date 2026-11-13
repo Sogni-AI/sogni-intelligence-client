@@ -1,3 +1,16 @@
+# [4.27.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.26.0...v4.27.0) (2026-11-13)
+
+
+### Bug Fixes
+
+* **deps:** bump @sogni-ai/sogni-client to 5.81.0 ([a6af8de](https://github.com/Sogni-AI/sogni-intelligence-client/commit/a6af8de5e52862b043bc82db7cc32fe80b143898))
+* **media:** keep the Seedream 5.5 tool text inside the hosted 32k budget ([644f233](https://github.com/Sogni-AI/sogni-intelligence-client/commit/644f23388ff54aff561ad295b2254658e1327198))
+
+
+### Features
+
+* **media:** add Seedream 5.5 Uncensored beside Seedream 5.0 Pro Uncensored ([27e760d](https://github.com/Sogni-AI/sogni-intelligence-client/commit/27e760db5e990d2a30d3c9db61ba01157f0b6557))
+
 # [4.26.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.25.6...v4.26.0) (2026-11-10)
 
 
