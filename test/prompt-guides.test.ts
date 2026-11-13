@@ -39,6 +39,7 @@ const IMAGE_MODES: Record<string, string[]> = {
   'z-image': ['generate'],
   'gpt-image': ['generate', 'edit'],
   seedream: ['generate', 'edit'],
+  'seedream-5.5': ['generate', 'edit'],
 };
 
 function allGuides(): ModelPromptGuide[] {
@@ -122,6 +123,8 @@ test('getModelPromptGuide resolves model ids and aliases with Sogni\'s resolvers
     ['gpt-image-2', 'i2i', 'gpt-image edit'],
     ['z-image-turbo', undefined, 'z-image generate'],
     ['seedream-5-pro-uncensored', 'edit', 'seedream edit'],
+    ['seedream-5-5-uncensored', undefined, 'seedream-5.5 generate'],
+    ['seedream-5-5-uncensored', 'edit', 'seedream-5.5 edit'],
     ['seedance2-5', 'generate', null],
     ['krea-2', 't2v', null],
     ['not-a-model', undefined, null],

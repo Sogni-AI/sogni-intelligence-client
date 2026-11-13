@@ -74,6 +74,10 @@ export const IMAGE_PROMPT_GUIDES: Pick<ModelPromptGuideRegistry, ImagePromptGuid
     generate: imageGuide('seedream', 'generate', 'Seedream 5.0 Pro Uncensored', 'seedream', ['seedream-5-pro-uncensored']),
     edit: imageGuide('seedream', 'edit', 'Seedream 5.0 Pro Uncensored', 'seedream-edit', ['seedream-5-pro-uncensored']),
   },
+  'seedream-5.5': {
+    generate: imageGuide('seedream-5.5', 'generate', 'Seedream 5.5 Uncensored', 'seedream-5-5', ['seedream-5-5-uncensored']),
+    edit: imageGuide('seedream-5.5', 'edit', 'Seedream 5.5 Uncensored', 'seedream-5-5-edit', ['seedream-5-5-uncensored']),
+  },
 };
 
 /**
@@ -103,5 +107,7 @@ export const IMAGE_PROMPT_GUIDE_KEYS: Readonly<Record<ImagePromptingType, readon
   'gpt-image-edit': ['gpt-image', 'edit'],
   seedream: ['seedream', 'generate'],
   'seedream-edit': ['seedream', 'edit'],
+  'seedream-5-5': ['seedream-5.5', 'generate'],
+  'seedream-5-5-edit': ['seedream-5.5', 'edit'],
   video: null,
 };

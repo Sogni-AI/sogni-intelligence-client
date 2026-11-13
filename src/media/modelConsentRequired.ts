@@ -2,9 +2,10 @@
  * Model consent refusal (Supernet error 4103).
  *
  * Seedance 2.5 Uncensored (`seedance-2-5-uncensored`), Seedance 2.0 Mini
- * Uncensored (`seedance-2-0-mini-uncensored`) and Seedream 5.0 Pro Uncensored
- * (`seedream-5-0-pro-uncensored`) render only after the account accepts a
- * one-time likeness and consent agreement in a Sogni app. All three share one
+ * Uncensored (`seedance-2-0-mini-uncensored`), Seedream 5.0 Pro Uncensored
+ * (`seedream-5-0-pro-uncensored`) and Seedream 5.5 Uncensored
+ * (`seedream-5-5-uncensored`) render only after the account accepts a
+ * one-time likeness and consent agreement in a Sogni app. All four share one
  * agreement (key `seedance-2-5-uncensored`). Until the account accepts it the
  * socket refuses every job for any of them with error 4103 and a
  * `consentRequired` object naming the agreement and the refused model. Retrying
@@ -20,7 +21,11 @@
  * seedanceSocketContentRefusalMessage).
  */
 import { isSeedanceMiniUncensoredVideoModelId } from '../utils/seedanceModelIds.js';
-import { isSeedreamImageModel, SEEDREAM_5_PRO_UNCENSORED_MODEL_ID } from './seedream.js';
+import {
+  isSeedreamImageModel,
+  SEEDREAM_5_5_UNCENSORED_MODEL_ID,
+  SEEDREAM_5_PRO_UNCENSORED_MODEL_ID,
+} from './seedream.js';
 
 
 export const MODEL_CONSENT_REQUIRED_ERROR = 'model_consent_required';
@@ -39,6 +44,10 @@ export const SEEDANCE_MINI_UNCENSORED_CONSENT_REQUIRED_MESSAGE =
 export const SEEDREAM_5_PRO_UNCENSORED_CONSENT_REQUIRED_MESSAGE =
   'Seedream 5.0 Pro Uncensored requires a one-time likeness and consent agreement. Review and accept it in the Sogni app, then try again.';
 
+/** The same refusal when the refused job asked for Seedream 5.5 Uncensored. */
+export const SEEDREAM_5_5_UNCENSORED_CONSENT_REQUIRED_MESSAGE =
+  'Seedream 5.5 Uncensored requires a one-time likeness and consent agreement. Review and accept it in the Sogni app, then try again.';
+
 /**
  * The agreement named by a 4103 refusal, e.g.
  * `{ key: 'seedance-2-5-uncensored', version: 2, modelId: 'seedance-2-0-mini-uncensored' }`.
@@ -55,7 +64,8 @@ export interface ModelConsentRequiredPayload {
   message:
     | typeof MODEL_CONSENT_REQUIRED_MESSAGE
     | typeof SEEDANCE_MINI_UNCENSORED_CONSENT_REQUIRED_MESSAGE
-    | typeof SEEDREAM_5_PRO_UNCENSORED_CONSENT_REQUIRED_MESSAGE;
+    | typeof SEEDREAM_5_PRO_UNCENSORED_CONSENT_REQUIRED_MESSAGE
+    | typeof SEEDREAM_5_5_UNCENSORED_CONSENT_REQUIRED_MESSAGE;
   retryPolicy: 'manual_user_confirmation';
   nextAction: 'wait_for_user';
   consentRequired?: ModelConsentRequirement;
@@ -70,20 +80,25 @@ export interface ModelConsentRequiredPayload {
 type ConsentRequiredModelId =
   | 'seedance-2-5-uncensored'
   | 'seedance-2-0-mini-uncensored'
-  | typeof SEEDREAM_5_PRO_UNCENSORED_MODEL_ID;
+  | typeof SEEDREAM_5_PRO_UNCENSORED_MODEL_ID
+  | typeof SEEDREAM_5_5_UNCENSORED_MODEL_ID;
 
 // The socket names the refused model in consentRequired.modelId; the shared
 // agreement key is the same for every model it covers. A refusal that arrives
 // as text only names the model in the socket's own sentence, which starts with
-// the model's short or full name ("Seedream 5 Pro Uncensored requires ...").
+// the model's short or full name ("Seedream 5 Pro Uncensored requires ...",
+// "Seedream 5.5 Uncensored requires ...").
 function consentRequiredModelIdFor(
   consentRequired: ModelConsentRequirement | null | undefined,
   text: string | undefined,
 ): ConsentRequiredModelId {
   if (consentRequired?.modelId) {
-    if (isSeedreamImageModel(consentRequired.modelId)) return SEEDREAM_5_PRO_UNCENSORED_MODEL_ID;
+    if (isSeedreamImageModel(consentRequired.modelId)) return consentRequired.modelId;
     return isSeedanceMiniUncensoredVideoModelId(consentRequired.modelId)
       ? 'seedance-2-0-mini-uncensored' : 'seedance-2-5-uncensored';
+  }
+  if (/\b(?:Seedream 5\.5 Uncensored|seedream-5-5-uncensored) requires\b/i.test(text ?? '')) {
+    return SEEDREAM_5_5_UNCENSORED_MODEL_ID;
   }
   if (/\b(?:Seedream 5(?:\.0)? Pro Uncensored|seedream-5-0-pro-uncensored) requires\b/i.test(text ?? '')) {
     return SEEDREAM_5_PRO_UNCENSORED_MODEL_ID;
@@ -96,15 +111,18 @@ const CONSENT_REQUIRED_MESSAGE_BY_MODEL_ID: Record<ConsentRequiredModelId, Model
   'seedance-2-5-uncensored': MODEL_CONSENT_REQUIRED_MESSAGE,
   'seedance-2-0-mini-uncensored': SEEDANCE_MINI_UNCENSORED_CONSENT_REQUIRED_MESSAGE,
   [SEEDREAM_5_PRO_UNCENSORED_MODEL_ID]: SEEDREAM_5_PRO_UNCENSORED_CONSENT_REQUIRED_MESSAGE,
+  [SEEDREAM_5_5_UNCENSORED_MODEL_ID]: SEEDREAM_5_5_UNCENSORED_CONSENT_REQUIRED_MESSAGE,
 };
 
-// Seedance keeps its existing sentence; Seedream names every model the one
-// agreement covers.
+// Seedance and Seedream 5.0 Pro keep their existing sentences; Seedream 5.5
+// names every model the one agreement covers.
 const CONSENT_COVERAGE_SENTENCE_BY_MODEL_ID: Record<ConsentRequiredModelId, string> = {
   'seedance-2-5-uncensored': 'One agreement covers both Uncensored Seedance models.',
   'seedance-2-0-mini-uncensored': 'One agreement covers both Uncensored Seedance models.',
   [SEEDREAM_5_PRO_UNCENSORED_MODEL_ID]:
     'One agreement covers Seedream 5.0 Pro Uncensored and both Uncensored Seedance models.',
+  [SEEDREAM_5_5_UNCENSORED_MODEL_ID]:
+    'One agreement covers Seedream 5.5 Uncensored, Seedream 5.0 Pro Uncensored and both Uncensored Seedance models.',
 };
 
 export function modelConsentRequiredPayload(

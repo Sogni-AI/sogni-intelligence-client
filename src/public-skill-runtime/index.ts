@@ -1136,15 +1136,21 @@ export const QUALITY_AUDIT_SKILL: SkillManifest = {
 const SEEDREAM_SKILL_CONSTRAINT =
   'Seedream 5.0 Pro Uncensored uses model seedream-5-0-pro-uncensored on generate_image and on edit_image (1-10 reference images). Use it only when the user asks for Seedream 5.0 Pro Uncensored, Seedream Uncensored, or Seedream Spicy, and never swap it in for another image model. It shares the Seedance 2.5 Uncensored likeness and consent agreement, so error 4103 means the account has not accepted it: tell the user to accept it in the Sogni app and do not retry.';
 
+// Seedream 5.5 Uncensored: the same tools, references and agreement. Every name
+// above keeps choosing 5.0 Pro; 5.5 is used only when the user names 5.5.
+const SEEDREAM_5_5_SKILL_CONSTRAINT =
+  'Seedream 5.5 Uncensored uses model seedream-5-5-uncensored on generate_image and on edit_image (1-10 reference images). Use it only when the user names Seedream 5.5 (Seedream 5.5 Uncensored or Seedream 5.5 Spicy); Seedream Uncensored or Seedream Spicy without 5.5 stays on seedream-5-0-pro-uncensored, and never swap it in for another image model. It shares the Seedance 2.5 Uncensored likeness and consent agreement, so error 4103 means the account has not accepted it: tell the user to accept it in the Sogni app and do not retry.';
+
 export const IMAGE_GENERATION_SKILL: SkillManifest = {
   id: 'image_generation',
   name: 'Image generation',
   description:
-    'Text-to-image synthesis with Sogni image models including Z-Image, Krea 2 Turbo, Dark Beast Krea 2, Chroma, Flux, Qwen image, GPT Image 2, and Seedream 5.0 Pro Uncensored. Use when the user wants a new image generated from a prompt with no source asset.',
+    'Text-to-image synthesis with Sogni image models including Z-Image, Krea 2 Turbo, Dark Beast Krea 2, Chroma, Flux, Qwen image, GPT Image 2, Seedream 5.0 Pro Uncensored, and Seedream 5.5 Uncensored. Use when the user wants a new image generated from a prompt with no source asset.',
   toolNames: ['generate_image'],
   constraints: [
     'For persona-driven requests, defer to image_editing — personas must be conditioned on reference photos, never generated from scratch.',
     SEEDREAM_SKILL_CONSTRAINT,
+    SEEDREAM_5_5_SKILL_CONSTRAINT,
   ],
 };
 
@@ -1160,6 +1166,7 @@ export const IMAGE_EDITING_SKILL: SkillManifest = {
     'refine_result acts on a prior generation in the session; do not call it before any image has been produced or uploaded.',
     'Use upscale_image for promptless, deterministic enlargement that must preserve the exact image. Do not substitute restore_photo, refine_result, or edit_image when the user only wants more pixels.',
     SEEDREAM_SKILL_CONSTRAINT,
+    SEEDREAM_5_5_SKILL_CONSTRAINT,
   ],
 };
 

@@ -27,6 +27,8 @@ export type ImagePromptingType =
   | "gpt-image-edit"
   | "seedream"
   | "seedream-edit"
+  | "seedream-5-5"
+  | "seedream-5-5-edit"
   | "video";
 
 export type ImagePromptAuthoringOperation = "generate" | "edit";
@@ -208,21 +210,31 @@ const GPT_IMAGE_GUIDE = `GPT Image 2 follows direct natural-language creative di
 - Preserve every requested constraint and proper noun exactly. Do not add labels, slogans, logos, panels, or decorative copy unless requested.
 - Use explicit relationships and layout instructions instead of diffusion-model weighting syntax, score tags, or generic quality-token piles.`;
 
-// Seedream 5.0 Pro takes natural-language art direction and, for edits, numbered
-// references to its one to ten ordered input images (Image 1, Image 2, ...).
-const SEEDREAM_GUIDE = `Seedream 5.0 Pro follows clear natural-language art direction.
+// Seedream 5.0 Pro and Seedream 5.5 take natural-language art direction and, for
+// edits, numbered references to their one to ten ordered input images (Image 1,
+// Image 2, ...). One template names each model, so 5.0 Pro's text is unchanged.
+function seedreamGuide(modelName: string): string {
+  return `${modelName} follows clear natural-language art direction.
 - Describe the subject, its action or state, and the setting first, then the style or medium, composition, lighting, palette, and materials that serve the request.
 - Name the intended artifact when the user gives one (a poster, a product photo, a comic panel, a logo) and its layout.
 - Use concise, concrete wording instead of stacked quality words or weighting syntax.
 - For visible text, provide the exact words in double quotes and say where they appear.
 - Keep the prompt positive; Seedream takes no negative prompt.`;
+}
 
-const SEEDREAM_EDIT_GUIDE = `Seedream 5.0 Pro edits and composes from one to ten ordered reference images with a natural-language instruction.
+function seedreamEditGuide(modelName: string): string {
+  return `${modelName} edits and composes from one to ten ordered reference images with a natural-language instruction.
 - State the change directly: what to add, remove, replace, restyle, or move, and what stays unchanged.
 - Refer to the inputs by number as Image 1, Image 2, and so on, and say what each contributes when several are attached ("the person in Image 1 wearing the jacket from Image 2").
 - Name subjects specifically rather than with ambiguous pronouns when the images contain more than one.
 - For visible text, provide the exact words in double quotes and say where they appear.
 - Keep the instruction concise and positive; Seedream takes no negative prompt.`;
+}
+
+const SEEDREAM_GUIDE = seedreamGuide("Seedream 5.0 Pro");
+const SEEDREAM_EDIT_GUIDE = seedreamEditGuide("Seedream 5.0 Pro");
+const SEEDREAM_5_5_GUIDE = seedreamGuide("Seedream 5.5");
+const SEEDREAM_5_5_EDIT_GUIDE = seedreamEditGuide("Seedream 5.5");
 
 const QWEN_EDIT_GUIDE = `Qwen Image Edit 2511 follows direct natural-language edit instructions and can combine up to three ordered context images.
 - Describe the requested transformation, not a fresh standalone scene caption. Name what changes and what remains fixed.
@@ -290,6 +302,8 @@ export const PROMPTING_GUIDES: Record<ImagePromptingType, string> = {
   "gpt-image-edit": GPT_IMAGE_EDIT_GUIDE,
   seedream: SEEDREAM_GUIDE,
   "seedream-edit": SEEDREAM_EDIT_GUIDE,
+  "seedream-5-5": SEEDREAM_5_5_GUIDE,
+  "seedream-5-5-edit": SEEDREAM_5_5_EDIT_GUIDE,
   video: "",
 };
 
@@ -546,6 +560,10 @@ const SEEDREAM_MODEL_NAMES = new Set([
   "seedream-5-pro-uncensored",
 ]);
 
+const SEEDREAM_5_5_MODEL_NAMES = new Set([
+  "seedream-5-5-uncensored",
+]);
+
 function normalizeImagePromptModelName(value: string): string {
   return value
     .trim()
@@ -651,6 +669,15 @@ export function resolveImagePromptAuthoringProfile(
       id: `seedream-5-0-pro-uncensored-${operation}`,
       modelTitle: "Seedream 5.0 Pro Uncensored",
       promptingType: operation === "edit" ? "seedream-edit" : "seedream",
+      operation,
+      ...(operation === "edit" ? { maxReferenceImages: 10 } : {}),
+    });
+  }
+  if (SEEDREAM_5_5_MODEL_NAMES.has(model)) {
+    return imageProfile({
+      id: `seedream-5-5-uncensored-${operation}`,
+      modelTitle: "Seedream 5.5 Uncensored",
+      promptingType: operation === "edit" ? "seedream-5-5-edit" : "seedream-5-5",
       operation,
       ...(operation === "edit" ? { maxReferenceImages: 10 } : {}),
     });

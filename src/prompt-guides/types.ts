@@ -24,7 +24,8 @@ export type ImagePromptGuideFamily =
   | 'qwen'
   | 'z-image'
   | 'gpt-image'
-  | 'seedream';
+  | 'seedream'
+  | 'seedream-5.5';
 
 export type ModelPromptGuideFamily = VideoPromptGuideFamily | ImagePromptGuideFamily;
 
