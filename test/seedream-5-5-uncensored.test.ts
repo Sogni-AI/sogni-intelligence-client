@@ -63,16 +63,18 @@ test('5.5 is its own selector on generate_image and edit_image, listed after 5.0
 });
 
 test('the 5.5 wording picks it only when 5.5 is named and leaves the existing names on 5.0 Pro', () => {
-  assert.match(SEEDREAM_5_5_UNCENSORED_MODEL_DESCRIPTION, /^"seedream-5-5-uncensored": Seedream 5\.5 Uncensored/);
-  assert.match(SEEDREAM_5_5_UNCENSORED_MODEL_DESCRIPTION, /Choose it only when the user names Seedream 5\.5/);
-  assert.match(SEEDREAM_5_5_UNCENSORED_MODEL_DESCRIPTION, /does not name 5\.5 uses "seedream-5-0-pro-uncensored"/);
-  assert.match(SEEDREAM_5_5_UNCENSORED_MODEL_DESCRIPTION, /921,600-4,624,220 total pixels/);
-  assert.match(SEEDREAM_5_5_UNCENSORED_MODEL_DESCRIPTION, /1-10 reference images/);
-  assert.match(SEEDREAM_5_5_UNCENSORED_MODEL_DESCRIPTION, /error 4103/);
-  // Every size it quotes is a native 5.5 size; no 4K claim; no markup multiple.
-  for (const size of SEEDREAM_5_5_UNCENSORED_MODEL_DESCRIPTION.match(/\b\d{3,4}x\d{3,4}\b/g) ?? []) {
-    assert.ok((SEEDREAM_5_5_IMAGE_SIZES as readonly string[]).includes(size), size);
+  assert.equal(
+    SEEDREAM_5_5_UNCENSORED_MODEL_DESCRIPTION,
+    '"seedream-5-5-uncensored": Seedream 5.5 Uncensored, as "seedream-5-0-pro-uncensored" but up to 4,624,220 pixels. Use it only when the user names Seedream 5.5; Seedream Uncensored without 5.5 stays on 5.0 Pro.',
+  );
+  // It follows the 5.0 Pro text on both tools, so "as seedream-5-0-pro-uncensored"
+  // carries the shared rules (references, no seed or steps, the agreement and 4103).
+  for (const definition of [generateImageDefinition, editImageDefinition]) {
+    const { description } = definition.function.parameters.properties.model as { description: string };
+    assert.ok(description.indexOf(SEEDREAM_5_PRO_UNCENSORED_MODEL_DESCRIPTION) < description.indexOf(SEEDREAM_5_5_UNCENSORED_MODEL_DESCRIPTION));
   }
+  // Short enough for sogni-api's hosted 32,768-token requests (test/unit/hosted-request-overhead).
+  assert.ok(SEEDREAM_5_5_UNCENSORED_MODEL_DESCRIPTION.length <= 230);
   assert.doesNotMatch(SEEDREAM_5_5_UNCENSORED_MODEL_DESCRIPTION, /\b4K\b|8\.29|\d(?:\.\d+)?x\b|%|markup/i);
   for (const skill of [IMAGE_GENERATION_SKILL, IMAGE_EDITING_SKILL]) {
     assert.ok(skill.constraints?.some(line => line.includes(MODEL_ID) && line.includes('4103')), skill.id);

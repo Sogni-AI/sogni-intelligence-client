@@ -47,9 +47,13 @@ export const SEEDREAM_5_PRO_UNCENSORED_MODEL_DESCRIPTION =
 
 // Seedream 5.5 Uncensored (seedream-5-5-uncensored): ByteDance Seedream 5.5 on
 // the same uncensored account and agreement. Every name that chose 5.0 Pro
-// before still does; 5.5 is chosen only when the user names 5.5.
+// before still does; 5.5 is chosen only when the user names 5.5. The text
+// follows the 5.0 Pro description on both image tools, so it states only what
+// differs: sogni-api's hosted requests at a 32,768-token context with a 512-token
+// output keep every tool description, and a longer 5.5 text (about 260
+// characters or more on each tool) no longer fits (test/unit/hosted-request-overhead).
 export const SEEDREAM_5_5_UNCENSORED_MODEL_DESCRIPTION =
-  '"seedream-5-5-uncensored": Seedream 5.5 Uncensored — the uncensored variant of ByteDance\'s Seedream 5.5 image model (third-party vendor model, requires Premium Spark). It generates from text and edits or composes from 1-10 reference images. Choose it only when the user names Seedream 5.5 (including "Seedream 5.5 Uncensored" or "Seedream 5.5 Spicy"); a request for Seedream Uncensored, Seedream Spicy, or uncensored Seedream output that does not name 5.5 uses "seedream-5-0-pro-uncensored". Never swap it in for another image model otherwise. Sizes: 921,600-4,624,220 total pixels with an aspect ratio up to 16:1, such as 1024x1024, 1424x800, 800x1424, 1536x1536 (the default), 2048x1152, 1152x2048, 2048x2048, 2816x1584, 1584x2816, or 3136x1344. It takes no seed, steps, guidance, LoRAs, or negative prompt. Each account must accept the one-time likeness and consent agreement it shares with Seedance 2.5 Uncensored and Seedream 5.0 Pro Uncensored in the Sogni app before its first render; until then the job fails with error 4103, so tell the user to accept it in the Sogni app instead of retrying.';
+  '"seedream-5-5-uncensored": Seedream 5.5 Uncensored, as "seedream-5-0-pro-uncensored" but up to 4,624,220 pixels. Use it only when the user names Seedream 5.5; Seedream Uncensored without 5.5 stays on 5.0 Pro.';
 
 export const SEEDANCE_TOOL_AUDIO_REFERENCE_GUIDANCE = `For Seedance audio-reference prompts, preserve exact spoken dialogue when the user supplied it, and assign @Image1/@Audio1 roles. If the user asks for speech without words, write short lines that fit the speaker and moment, in double quotes. Treat lip-sync, voice cloning, and real-human reference behavior as provider-sensitive rather than guaranteed.`;
 
