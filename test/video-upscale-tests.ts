@@ -454,9 +454,14 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
     RELAYVSR_X2_MODEL_ID,
   );
   expect(
-    'an unknown selector is refused',
-    errorMessage(() => resolveVideoUpscaleRequest({ sourceWidth: 1280, sourceHeight: 720, model: 'seedvr' })),
-    'Choose flashvsr or relayvsr for video upscaling.',
+    'an unknown selector runs as FlashVSR, as in 4.28.0',
+    resolveVideoUpscaleRequest({ sourceWidth: 1280, sourceHeight: 720, model: 'seedvr' }),
+    { modelId: VIDEO_UPSCALE_MODEL_ID, ...resolveVideoUpscaleOutput({ sourceWidth: 1280, sourceHeight: 720 }) },
+  );
+  expect(
+    'an unknown selector keeps the FlashVSR 2160 refusal',
+    errorMessage(() => resolveVideoUpscaleRequest({ sourceWidth: 1280, sourceHeight: 720, targetResolution: 2160, model: 'RelayVSR' })),
+    'Choose 1080p or 1440p for video upscaling.',
   );
 
   // --- hosted argument validation ---------------------------------------------
@@ -484,9 +489,29 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
       warnings: [],
     });
   }
-  expect('an unknown model is refused even though enum checks skip model', hosted({ model: 'seedvr' }).errors, [
-    'Argument "model" must be one of "flashvsr", "relayvsr"',
-  ]);
+  // A model other than flashvsr or relayvsr gets 4.28.0's answer, from before upscale_video had a model argument.
+  const hostedWith = (args: Record<string, unknown>, options: { stripUnknownProperties?: boolean }) =>
+    validateAndNormalizeHostedToolArguments([upscaleVideoDefinition], 'upscale_video', args, options);
+  const flash2160 = 'Argument "targetResolution" must be one of 1080, 1440';
+  const stripped = 'Stripped unknown argument "model"';
+  for (const [label, args, options, answer] of [
+    ['unknown model is kept', { model: 'seedvr', targetResolution: 1440 }, {},
+      { ok: true, errors: [], cleaned: { model: 'seedvr', targetResolution: 1440 }, warnings: [] }],
+    ['unknown model keeps FlashVSR options', { model: 'seedvr', detailPreference: 'sharper', seed: 7 }, {},
+      { ok: true, errors: [], cleaned: { model: 'seedvr', detailPreference: 'sharper', seed: 7 }, warnings: [] }],
+    ['unknown model keeps the 2160 refusal', { model: 'seedvr', targetResolution: 2160 }, {},
+      { ok: false, errors: [flash2160], cleaned: { model: 'seedvr', targetResolution: 2160 }, warnings: [] }],
+    ['unknown model is stripped with a warning', { model: 'seedvr', targetResolution: 1440 }, { stripUnknownProperties: true },
+      { ok: true, errors: [], cleaned: { targetResolution: 1440 }, warnings: [stripped] }],
+    ['unknown model is stripped at 2160 too', { model: 'seedvr', targetResolution: 2160 }, { stripUnknownProperties: true },
+      { ok: false, errors: [flash2160], cleaned: { targetResolution: 2160 }, warnings: [stripped] }],
+    ['a non-string model is stripped', { model: 123, targetResolution: 1440 }, { stripUnknownProperties: true },
+      { ok: true, errors: [], cleaned: { targetResolution: 1440 }, warnings: [stripped] }],
+    ['a null model is dropped silently', { model: null, targetResolution: 1440 }, { stripUnknownProperties: true },
+      { ok: true, errors: [], cleaned: { targetResolution: 1440 }, warnings: [] }],
+  ] as const) {
+    expect(`4.28.0 answer: ${label}`, hostedWith({ ...args }, options), answer);
+  }
   expect('relayvsr refuses each FlashVSR option', hosted({
     model: 'relayvsr', detailPreference: 'stable', processingSpeed: 'stable', seed: 0,
   }).errors, [

@@ -12,7 +12,6 @@ import {
 } from '../tools/shared/modelRegistry.js';
 import { checkToolArgumentPromptLimits } from './promptLimits.js';
 import {
-  VIDEO_UPSCALE_MODELS,
   VIDEO_UPSCALE_TARGET_RESOLUTIONS,
   isVideoUpscaleModelSelector,
 } from '../media/videoUpscale.js';
@@ -234,16 +233,12 @@ interface SchemaValidationContext {
 const FLASHVSR_ONLY_ARGUMENTS = ['detailPreference', 'processingSpeed', 'seed'] as const;
 
 /**
- * upscale_video's cross-argument rules. `model` is checked here because enum
- * validation skips it by default, and 2160 stays refused without relayvsr with
- * the same message the 1080/1440 enum gives.
+ * upscale_video's cross-argument rules. Anything but model relayvsr is FlashVSR,
+ * as in 4.28.0, so 2160 stays refused there with the same message the 1080/1440
+ * enum gives. Only relayvsr refuses FlashVSR's options.
  */
 function upscaleVideoArgumentErrors(args: Record<string, unknown>): string[] {
-  const model = args.model ?? undefined;
-  if (model !== undefined && !isVideoUpscaleModelSelector(model)) {
-    return [`Argument "model" must be one of ${formatEnum([...VIDEO_UPSCALE_MODELS])}`];
-  }
-  if (model !== 'relayvsr') {
+  if (args.model !== 'relayvsr') {
     return args.targetResolution === 2160
       ? [`Argument "targetResolution" must be one of ${formatEnum([...VIDEO_UPSCALE_TARGET_RESOLUTIONS])}`]
       : [];
@@ -554,9 +549,23 @@ export function validateAndNormalizeHostedToolArguments(
     );
   }
 
+  // upscale_video had no model argument in 4.28.0. A model value other than flashvsr
+  // or relayvsr is validated as it was then: kept, or stripped with the same warning.
+  let toolSchema = schema;
+  if (
+    toolName === 'upscale_video'
+    && Object.prototype.hasOwnProperty.call(args, 'model')
+    && !isVideoUpscaleModelSelector(args.model)
+    && schema.properties?.model
+  ) {
+    const properties = { ...schema.properties };
+    delete properties.model;
+    toolSchema = { ...schema, properties };
+  }
+
   const normalizedSchema: HostedToolSchema = {
-    ...schema,
-    type: schema.type ?? 'object',
+    ...toolSchema,
+    type: toolSchema.type ?? 'object',
   };
   const cleaned = validateValueAgainstSchema('', args, normalizedSchema, context).value;
   const cleanedRecord = isRecord(cleaned) ? cleaned : args;

@@ -278,8 +278,9 @@ export function resolveRelayVsrRequest(input: {
 
 /**
  * Resolve an upscale_video `model` selector and target into the model id and
- * output to request. An omitted selector is FlashVSR, with the same limits and
- * messages as resolveVideoUpscaleOutput.
+ * output to request. Only `relayvsr` selects RelayVSR. Any other selector, or
+ * none, is FlashVSR, as in 4.28.0 when upscale_video had no model argument, with
+ * the same limits and messages as resolveVideoUpscaleOutput.
  */
 export function resolveVideoUpscaleRequest(input: {
   sourceWidth: number;
@@ -289,9 +290,6 @@ export function resolveVideoUpscaleRequest(input: {
 }): VideoUpscaleRequest {
   const { model, ...source } = input;
   if (model === 'relayvsr') return resolveRelayVsrRequest(source);
-  if (model !== undefined && model !== null && model !== 'flashvsr') {
-    throw new VideoUpscaleRequestError('Choose flashvsr or relayvsr for video upscaling.');
-  }
   return { modelId: VIDEO_UPSCALE_MODEL_ID, ...resolveVideoUpscaleOutput(source) };
 }
 
