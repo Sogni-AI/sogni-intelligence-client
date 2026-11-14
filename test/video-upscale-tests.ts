@@ -206,6 +206,11 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
     'planner',
   );
   expect('public video-editing skill exposes the tool', VIDEO_EDITING_SKILL.toolNames.includes('upscale_video'), true);
+  const skillUpscaleLine = VIDEO_EDITING_SKILL.constraints?.find(line => line.startsWith('Use upscale_video')) ?? '';
+  expect('public video-editing skill gives the tool definition\'s model guidance', [
+    'Explicitly set model to relayvsr for new upscales.',
+    'Omitted model retains FlashVSR for compatibility.',
+  ].every(sentence => skillUpscaleLine.includes(sentence) && String(upscaleVideoDefinition.function.description).includes(sentence)), true);
 
   // --- output geometry -------------------------------------------------------
   expect(
