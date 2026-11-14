@@ -93,9 +93,10 @@ export const MODELS_BY_TOOL: Record<string, ModelOption[]> = {
   upscale_image: [
     { key: 'rtx-vsr', displayName: 'NVIDIA RTX Video Super Resolution' },
   ],
+  // FlashVSR first: it stays the default for callers that do not name a model.
   upscale_video: [
-    { key: 'relayvsr', displayName: 'RelayVSR' },
     { key: 'flashvsr', displayName: 'FlashVSR v1.1' },
+    { key: 'relayvsr', displayName: 'RelayVSR' },
   ],
   apply_style: QUALITY_TIER_MODELS,
   refine_result: QUALITY_TIER_MODELS,
