@@ -711,7 +711,10 @@ export function validateAndNormalizeHostedToolArguments(
   }
 
   if (toolName === 'upscale_video') {
-    context.errors.push(...upscaleVideoArgumentErrors(cleanedRecord));
+    // A host's older manifest (1080/1440 enum) already refused 2160; keep that answer unrepeated.
+    for (const error of upscaleVideoArgumentErrors(cleanedRecord)) {
+      if (!context.errors.includes(error)) context.errors.push(error);
+    }
   }
 
   // Per-model prompt size limits (the Supernet refuses these with 4102). The

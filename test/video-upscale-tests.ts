@@ -47,6 +47,7 @@ import {
   validateAndNormalizeHostedToolArguments,
 } from '../src/contracts/index.js';
 import { VIDEO_EDITING_SKILL } from '../src/public-skill-runtime/index.js';
+import { getHostedToolDefinition } from '../src/openai-tools/index.js';
 import { validateProjectConfig } from '../src/utils/helpers.js';
 
 let testsPassed = 0;
@@ -466,6 +467,18 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
   expect('2160 with flashvsr gives the 1080/1440 refusal', hosted({ model: 'flashvsr', targetResolution: 2160 }).errors, [
     'Argument "targetResolution" must be one of 1080, 1440',
   ]);
+  // Hosts that validate against the protocol-sourced manifest get 4.28.0's FlashVSR answer at 2160 too.
+  const protocolUpscaleVideo = getHostedToolDefinition('upscale_video');
+  const hostedFromProtocol = (args: Record<string, unknown>) =>
+    validateAndNormalizeHostedToolArguments(protocolUpscaleVideo ? [protocolUpscaleVideo] : [], 'upscale_video', args);
+  for (const args of [{ targetResolution: 2160 }, { model: 'flashvsr', targetResolution: 2160 }]) {
+    expect(`protocol manifest: ${JSON.stringify(args)} keeps the 4.28.0 refusal`, hostedFromProtocol(args), {
+      ok: false,
+      errors: ['Argument "targetResolution" must be one of 1080, 1440'],
+      cleaned: args,
+      warnings: [],
+    });
+  }
   expect('an unknown model is refused even though enum checks skip model', hosted({ model: 'seedvr' }).errors, [
     'Argument "model" must be one of "flashvsr", "relayvsr"',
   ]);
