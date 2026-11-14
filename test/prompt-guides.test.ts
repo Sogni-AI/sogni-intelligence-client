@@ -199,3 +199,18 @@ test('guides are found by model id and mode only, never by reading prompt text',
     }
   }
 });
+
+test('MiniMax H3 Prism resolves to the Ref2VA guide, and no guide names it', () => {
+  for (const model of ['minimax-h3-r2v-prism', 'minimax-h3-prism-int8_r2v']) {
+    const guide = getModelPromptGuide(model);
+    assert.equal(guide ? `${guide.family} ${guide.mode}` : null, 'minimax-h3 r2v', model);
+  }
+  // The guides are read without the session's filter state, so they never advertise the
+  // filter-off-only model.
+  for (const guide of allGuides()) {
+    for (const audience of ['agent', 'shaper'] as const) {
+      const text = renderModelPromptGuide(guide, { audience }).toLowerCase();
+      assert.ok(!text.includes('prism'), `${guide.family} ${guide.mode} ${audience}`);
+    }
+  }
+});

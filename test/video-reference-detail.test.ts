@@ -3,7 +3,7 @@ import test from 'node:test';
 import sharp from 'sharp';
 import { SogniClientWrapper } from '../src/client/SogniClientWrapper.js';
 import type { VideoProjectConfig } from '../src/types/index.js';
-import { getVideoDimensionRules, isMiniMaxH3VideoModel } from '../src/utils/helpers.js';
+import { getVideoDimensionRules, isLooseReferenceVideoModel, isMiniMaxH3VideoModel } from '../src/utils/helpers.js';
 
 const client = new SogniClientWrapper({ username: 'test', password: 'test', autoConnect: false });
 const prepare = (client as unknown as {
@@ -99,6 +99,19 @@ test('MiniMax H3 Balanced ids are sized on the H3 grid', async () => {
   const prepared = await prepare(config('minimax-h3-fl2va-fp8_i2v_balanced', source));
   assert.equal(prepared.width, 672);
   assert.equal(prepared.height, 384);
+});
+
+test('MiniMax H3 Prism is an H3 reference-to-video model: H3 grid, references never define the canvas', async () => {
+  const portrait = await still(768, 1344);
+  for (const modelId of ['minimax-h3-prism-int8_r2v', 'minimax-h3-r2v-prism']) {
+    assert.equal(isMiniMaxH3VideoModel(modelId), true, modelId);
+    assert.equal(isLooseReferenceVideoModel(modelId), true, modelId);
+    assert.deepEqual(getVideoDimensionRules(modelId), getVideoDimensionRules('minimax-h3-ref2va-fp8_r2v_balanced'), modelId);
+    const prepared = await prepare(config(modelId, portrait));
+    assert.equal(prepared.width, 672, modelId);
+    assert.equal(prepared.height, 384, modelId);
+    assert.strictEqual(prepared.referenceImage, portrait, modelId);
+  }
 });
 
 async function size(image: unknown) {

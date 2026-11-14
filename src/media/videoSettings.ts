@@ -1246,6 +1246,28 @@ export function isMinimaxH3TwoStageModelId(modelId: string | null | undefined): 
 }
 
 /**
+ * MiniMax H3 Prism: an optional reference-to-video model for mature themes
+ * (Comfy worker id `minimax-h3-prism-int8_r2v`, tool selector
+ * `minimax-h3-r2v-prism`). It runs Balanced R2V's graph with a fixed recipe in
+ * the worker (8 Euler steps), renders the 768p class only, takes Balanced R2V's
+ * references and keyframes, and is served only with the Sensitive Content
+ * Filter off: offer or route to it only for a filter-off session whose user
+ * picked it or asked for it.
+ */
+export const MINIMAX_H3_PRISM_MODEL_ID = "minimax-h3-prism-int8_r2v";
+export const MINIMAX_H3_PRISM_SELECTOR = "minimax-h3-r2v-prism";
+
+const NORMALIZED_MINIMAX_H3_PRISM_MODEL_IDS: ReadonlySet<string> = new Set(
+  [MINIMAX_H3_PRISM_MODEL_ID, MINIMAX_H3_PRISM_SELECTOR].map(normalizeMinimaxH3ModelSpelling),
+);
+
+/** True for the MiniMax H3 Prism selector or socket id (any `_`/`-` spelling). */
+export function isMinimaxH3PrismModelId(modelId: string | null | undefined): boolean {
+  return typeof modelId === "string"
+    && NORMALIZED_MINIMAX_H3_PRISM_MODEL_IDS.has(normalizeMinimaxH3ModelSpelling(modelId));
+}
+
+/**
  * The size a two-stage clip is delivered at for a given canvas: exactly twice
  * the width and height (1344x768 -> 2688x1536, 960x544 -> 1920x1088,
  * 672x384 -> 1344x768).

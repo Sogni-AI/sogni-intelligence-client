@@ -1,5 +1,7 @@
 import {
   MINIMAX_H3_AUDIO_GUIDE_MODEL_IDS,
+  MINIMAX_H3_PRISM_MODEL_ID,
+  MINIMAX_H3_PRISM_SELECTOR,
   MINIMAX_H3_TWO_STAGE_MODEL_IDS,
 } from '../media/videoSettings.js';
 import {
@@ -105,6 +107,10 @@ const MINIMAX_H3_MODEL_IDS = normalizedSet([
   ...['t2v', 'i2v', 'flf2v', 'r2v'].map(workflow => `minimax-h3-${workflow}-balanced`),
   ...['t2v', 'i2v', 'flf2v'].map(workflow => `minimax-h3-fl2va-fp8_${workflow}_balanced`),
   'minimax-h3-ref2va-fp8_r2v_balanced',
+  // MiniMax H3 Prism, the filter-off-only reference-to-video model on
+  // Balanced's R2V graph: sized on the H3 grid like Balanced.
+  MINIMAX_H3_PRISM_SELECTOR,
+  MINIMAX_H3_PRISM_MODEL_ID,
   // FastH3 Reference (FastH3 Omni); its two-stage spellings come with
   // MINIMAX_H3_TWO_STAGE_MODEL_IDS.
   'minimax-h3-fasth3-r2v-turbo',
@@ -135,6 +141,8 @@ const LOOSE_REFERENCE_VIDEO_MODEL_IDS = normalizedSet([
   'minimax-h3-ref2va-fp8_r2v_balanced_2stage',
   'minimax-h3-fastvideo-omni-int8_r2v_turbo',
   'minimax-h3-fastvideo-omni-int8_r2v_turbo_2stage',
+  MINIMAX_H3_PRISM_SELECTOR,
+  MINIMAX_H3_PRISM_MODEL_ID,
   'happyhorse-1.1-r2v',
 ]);
 

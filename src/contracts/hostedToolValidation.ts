@@ -1,4 +1,4 @@
-import { minimaxH3AudioGuideMode } from '../media/videoSettings.js';
+import { MINIMAX_H3_PRISM_SELECTOR, minimaxH3AudioGuideMode } from '../media/videoSettings.js';
 import {
   MINIMAX_H3_MAX_KEYFRAMES,
   checkMinimaxH3Keyframes,
@@ -621,7 +621,8 @@ export function validateAndNormalizeHostedToolArguments(
     // video, the planner prompts give Standard, Balanced and Turbo one Ref2VA
     // contract, and the tool description tells callers every H3 R2V call takes
     // it. Refusing it on Balanced as "only supported by MiniMax H3 R2V models"
-    // turned away callers who had followed that description.
+    // turned away callers who had followed that description. MiniMax H3 Prism
+    // runs Balanced's R2V graph and takes the policy on the same terms.
     const isH3R2v = model === 'minimax-h3-r2v'
       || model === 'minimax-h3-r2v-turbo'
       || model === 'minimax-h3-r2v-2stage'
@@ -629,7 +630,8 @@ export function validateAndNormalizeHostedToolArguments(
       || model === 'minimax-h3-fasth3-r2v-turbo-2stage';
     const acceptsSourceAudioPolicy = isH3R2v
       || model === 'minimax-h3-r2v-balanced'
-      || model === 'minimax-h3-r2v-balanced-2stage';
+      || model === 'minimax-h3-r2v-balanced-2stage'
+      || model === MINIMAX_H3_PRISM_SELECTOR;
     const hasSourceMedia =
       (Array.isArray(cleanedRecord.referenceVideoIndices) && cleanedRecord.referenceVideoIndices.length > 0)
       || (Array.isArray(cleanedRecord.referenceAudioIndices) && cleanedRecord.referenceAudioIndices.length > 0);

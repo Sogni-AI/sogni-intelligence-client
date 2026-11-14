@@ -482,6 +482,18 @@ Directly reuse <Audio 1> unchanged.`;
     h3TwoStageSourceAudio('minimax-h3-r2v-balanced-2stage', 'reuse_exact'),
     true,
   );
+  // MiniMax H3 Prism runs Balanced's R2V graph, so it takes the policy on Balanced's terms. Like
+  // Balanced it is a patch-layer selector, absent from this raw enum, so these check the policy
+  // rule alone.
+  const prismSourceAudioErrors = (sourceAudioPolicy?: string) =>
+    validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
+      prompt: h3ExactAudioPrompt,
+      videoModel: 'minimax-h3-r2v-prism',
+      referenceVideoIndices: [-1],
+      ...(sourceAudioPolicy === undefined ? {} : { sourceAudioPolicy }),
+    }).errors.filter(error => error.includes('sourceAudioPolicy'));
+  expect('generate_video does not require sourceAudioPolicy on MiniMax H3 Prism, like Balanced', prismSourceAudioErrors(), []);
+  expect('generate_video accepts typed exact source-audio reuse on MiniMax H3 Prism', prismSourceAudioErrors('reuse_exact'), []);
   expect(
     'generate_video holds a Balanced call that names a policy to the same prompt contract as Standard',
     validateAndNormalizeHostedToolArguments([generateVideoDefinition], 'generate_video', {
@@ -894,6 +906,15 @@ function runMinimaxH3KeyframeToolTests(): void {
       supportsMinimaxH3Keyframes('video_to_video', 'minimax-h3-i2v'),
     ],
     [true, true, false, false, true, false, false, false],
+  );
+  expect(
+    'MiniMax H3 Prism pins keyframes as reference to video on generate_video only',
+    [
+      supportsMinimaxH3Keyframes('generate_video', 'minimax-h3-r2v-prism'),
+      minimaxH3KeyframeWorkflow('minimax-h3-prism-int8_r2v'),
+      supportsMinimaxH3Keyframes('animate_photo', 'minimax-h3-r2v-prism'),
+    ],
+    [true, 'r2v', false],
   );
   expect(
     'minimaxH3KeyframeWorkflow reads selectors and socket ids; t2v and the family alias pin nothing',
