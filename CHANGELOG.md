@@ -1,3 +1,10 @@
+# [4.28.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.27.0...v4.28.0) (2026-11-14)
+
+
+### Features
+
+* **mcp:** include the changelog tool in the hosted tool contract ([3ee747a](https://github.com/Sogni-AI/sogni-intelligence-client/commit/3ee747a3eeb8015b94e1884ff474a39e8f5084c9))
+
 # [4.27.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.26.0...v4.27.0) (2026-11-13)
 
 
