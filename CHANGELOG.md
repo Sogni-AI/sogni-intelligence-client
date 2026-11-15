@@ -1,3 +1,10 @@
+# [4.30.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.29.0...v4.30.0) (2026-11-15)
+
+
+### Features
+
+* **media:** accept 1920x1088 sources for RelayVSR 2x ([9817efb](https://github.com/Sogni-AI/sogni-intelligence-client/commit/9817efb5bdf200681c19959334a969ac1a44cb2e))
+
 # [4.29.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.28.0...v4.29.0) (2026-11-15)
 
 
