@@ -1,3 +1,10 @@
+## [4.30.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.30.1...v4.30.2) (2026-11-15)
+
+
+### Bug Fixes
+
+* **deps:** take sogni-client 5.84.2 for the image upload body guard ([b0b03a4](https://github.com/Sogni-AI/sogni-intelligence-client/commit/b0b03a41408e1dc507974fcdb47685c4b21f06ea))
+
 ## [4.30.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.30.0...v4.30.1) (2026-11-15)
 
 
