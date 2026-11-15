@@ -1085,6 +1085,7 @@ export const MINIMAX_H3_TWO_STAGE_MODEL_IDS: readonly string[] = Object.freeze([
   "minimax-h3-fasth3-a2v-turbo-2stage",
   "minimax-h3-r2v-2stage",
   "minimax-h3-r2v-balanced-2stage",
+  "minimax-h3-r2v-prism-2stage",
   "minimax-h3-fasth3-r2v-turbo-2stage",
   "minimax-h3-fastvideo-int8_t2v_turbo_2stage",
   "minimax-h3-fastvideo-int8_i2v_turbo_2stage",
@@ -1094,6 +1095,7 @@ export const MINIMAX_H3_TWO_STAGE_MODEL_IDS: readonly string[] = Object.freeze([
   "minimax-h3-fastvideo-int8_a2v_turbo_2stage",
   "minimax-h3-ref2va-fp8_r2v_2stage",
   "minimax-h3-ref2va-fp8_r2v_balanced_2stage",
+  "minimax-h3-prism-int8_r2v_2stage",
   "minimax-h3-fastvideo-omni-int8_r2v_turbo_2stage",
 ]);
 
@@ -1249,16 +1251,18 @@ export function isMinimaxH3TwoStageModelId(modelId: string | null | undefined): 
  * MiniMax H3 Prism: an optional reference-to-video model for mature themes
  * (Comfy worker id `minimax-h3-prism-int8_r2v`, tool selector
  * `minimax-h3-r2v-prism`). It runs Balanced R2V's graph with a fixed recipe in
- * the worker (8 Euler steps), renders the 768p class only, takes Balanced R2V's
+ * the worker (8 Euler steps), takes Balanced R2V's optional two-stage sizes,
  * references and keyframes, and is served only with the Sensitive Content
  * Filter off: offer or route to it only for a filter-off session whose user
  * picked it or asked for it.
  */
 export const MINIMAX_H3_PRISM_MODEL_ID = "minimax-h3-prism-int8_r2v";
 export const MINIMAX_H3_PRISM_SELECTOR = "minimax-h3-r2v-prism";
+export const MINIMAX_H3_PRISM_TWO_STAGE_MODEL_ID = "minimax-h3-prism-int8_r2v_2stage";
+export const MINIMAX_H3_PRISM_TWO_STAGE_SELECTOR = "minimax-h3-r2v-prism-2stage";
 
 const NORMALIZED_MINIMAX_H3_PRISM_MODEL_IDS: ReadonlySet<string> = new Set(
-  [MINIMAX_H3_PRISM_MODEL_ID, MINIMAX_H3_PRISM_SELECTOR].map(normalizeMinimaxH3ModelSpelling),
+  [MINIMAX_H3_PRISM_MODEL_ID, MINIMAX_H3_PRISM_SELECTOR, MINIMAX_H3_PRISM_TWO_STAGE_MODEL_ID, MINIMAX_H3_PRISM_TWO_STAGE_SELECTOR].map(normalizeMinimaxH3ModelSpelling),
 );
 
 /** True for the MiniMax H3 Prism selector or socket id (any `_`/`-` spelling). */

@@ -1,4 +1,4 @@
-import { MINIMAX_H3_PRISM_SELECTOR, minimaxH3AudioGuideMode } from '../media/videoSettings.js';
+import { isMinimaxH3PrismModelId, minimaxH3AudioGuideMode } from '../media/videoSettings.js';
 import {
   MINIMAX_H3_MAX_KEYFRAMES,
   checkMinimaxH3Keyframes,
@@ -631,7 +631,7 @@ export function validateAndNormalizeHostedToolArguments(
     const acceptsSourceAudioPolicy = isH3R2v
       || model === 'minimax-h3-r2v-balanced'
       || model === 'minimax-h3-r2v-balanced-2stage'
-      || model === MINIMAX_H3_PRISM_SELECTOR;
+      || (typeof model === 'string' && isMinimaxH3PrismModelId(model));
     const hasSourceMedia =
       (Array.isArray(cleanedRecord.referenceVideoIndices) && cleanedRecord.referenceVideoIndices.length > 0)
       || (Array.isArray(cleanedRecord.referenceAudioIndices) && cleanedRecord.referenceAudioIndices.length > 0);

@@ -103,7 +103,7 @@ test('MiniMax H3 Balanced ids are sized on the H3 grid', async () => {
 
 test('MiniMax H3 Prism is an H3 reference-to-video model: H3 grid, references never define the canvas', async () => {
   const portrait = await still(768, 1344);
-  for (const modelId of ['minimax-h3-prism-int8_r2v', 'minimax-h3-r2v-prism']) {
+  for (const modelId of ['minimax-h3-prism-int8_r2v', 'minimax-h3-r2v-prism', 'minimax-h3-prism-int8_r2v_2stage', 'minimax-h3-r2v-prism-2stage']) {
     assert.equal(isMiniMaxH3VideoModel(modelId), true, modelId);
     assert.equal(isLooseReferenceVideoModel(modelId), true, modelId);
     assert.deepEqual(getVideoDimensionRules(modelId), getVideoDimensionRules('minimax-h3-ref2va-fp8_r2v_balanced'), modelId);
