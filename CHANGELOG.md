@@ -1,3 +1,21 @@
+# [4.29.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.28.0...v4.29.0) (2026-11-15)
+
+
+### Bug Fixes
+
+* **video:** give the video-editing skill the tool's RelayVSR guidance ([e5ccb63](https://github.com/Sogni-AI/sogni-intelligence-client/commit/e5ccb63b21222bd54c7062f57ec92032c94063e1))
+* **video:** keep 4.28.0's FlashVSR 2160 refusal on every manifest ([28da820](https://github.com/Sogni-AI/sogni-intelligence-client/commit/28da82074df041774bc0c256ac9ac434a051b8c3))
+* **video:** keep FlashVSR first in the upscale_video model registry ([0e65593](https://github.com/Sogni-AI/sogni-intelligence-client/commit/0e65593a940977260e498c9b6ab0f36a200d7ccd))
+* **video:** recommend explicit RelayVSR upscales ([1fa15ed](https://github.com/Sogni-AI/sogni-intelligence-client/commit/1fa15ed6328cd275cfbfa0f57d0b3cb84e65ca29))
+* **video:** run an unknown upscale_video model as FlashVSR, as in 4.28.0 ([b1f52d7](https://github.com/Sogni-AI/sogni-intelligence-client/commit/b1f52d772383b7ce32ce82c20b727cc2b94f794b))
+
+
+### Features
+
+* **video:** recognize the MiniMax H3 Prism reference-to-video model ([07b6cd5](https://github.com/Sogni-AI/sogni-intelligence-client/commit/07b6cd50e3248ecfabf580749ea486a87fb9f51d))
+* **video:** resolve the relayvsr upscale_video selector ([f150e99](https://github.com/Sogni-AI/sogni-intelligence-client/commit/f150e993fca4869bdb88e767f1faa7ec9104b813))
+* **video:** widen RelayVSR X4 sources and restore the long-edge refusal ([1539e4c](https://github.com/Sogni-AI/sogni-intelligence-client/commit/1539e4c838dcd53d7be120f692bd9e330bb4ad77))
+
 # [4.28.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.27.0...v4.28.0) (2026-11-14)
 
 
