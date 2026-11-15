@@ -27,9 +27,9 @@ export const definition: ToolDefinition = {
       'controls. Omitted model retains FlashVSR for compatibility. With FlashVSR the output is at most twice the' +
       ' source size, so 1080p needs a source whose short edge is 540-768px and 1440p needs 720-768px, and ' +
       'the source can be at most about 1344x768 pixels (768x1344 in portrait). With RelayVSR the output is ' +
-      'at most twice the source size for a source up to 1920x1080 pixels (1080x1920 in portrait), or four ' +
+      'at most twice the source size for a source up to 1920x1088 pixels (1088x1920 in portrait), or four ' +
       'times for a source up to 1344x768 (768x1344 in portrait), so 2160p needs a source whose short edge is ' +
-      "540-768px or exactly 1080px, and the output's long edge can be at most 3840px. The source must also be " +
+      "540-768px or 1080-1088px, and the output's long edge can be at most 3840px. The source must also be " +
       '1-60 fps and at most 100 MB. The server sets the maximum clip length and rejects a source that is ' +
       'too long; never quote a length limit yourself, and if the tool reports that rejection, relay that ' +
       'error to the user. FlashVSR cannot produce 4K or any size above 1440p, so a 4K request always uses ' +

@@ -64,9 +64,12 @@ export const VIDEO_UPSCALE_MAX_OUTPUT = Object.freeze({
   pixels: 2560 * 1440,
 });
 
-/** RelayVSR source limits per fixed scale; portrait mirrors them. */
+/**
+ * RelayVSR source limits per fixed scale; portrait mirrors them. X2's 1088 short
+ * edge admits 1920×1088 renders (two-stage 1080p MiniMax H3, LTX 2.5 1080p).
+ */
 export const RELAYVSR_SOURCE_LIMITS = Object.freeze({
-  x2: Object.freeze({ scale: 2, maxShortEdge: 1080, maxLongEdge: 1920 }),
+  x2: Object.freeze({ scale: 2, maxShortEdge: 1088, maxLongEdge: 1920 }),
   x4: Object.freeze({ scale: 4, maxShortEdge: 768, maxLongEdge: 1344 }),
 });
 

@@ -424,7 +424,29 @@ export function runVideoUpscaleTests(): { passed: number; failed: number } {
   expect(
     'a source past the X2 limit is refused',
     errorMessage(() => relay(1921, 1080, 2160)),
-    'This video is 1921×1080; RelayVSR accepts sources up to 1920×1080 pixels, or 1080×1920 in portrait.',
+    'This video is 1921×1080; RelayVSR accepts sources up to 1920×1088 pixels, or 1088×1920 in portrait.',
+  );
+  expect('a 1920×1088 two-stage render reaches 2160p on X2', relay(1920, 1088, 2160), {
+    modelId: RELAYVSR_X2_MODEL_ID, resolution: 2160, width: 3812, height: 2160,
+  });
+  expect('a 1920×1088 render reaches 1440p on X2', relay(1920, 1088, 1440), {
+    modelId: RELAYVSR_X2_MODEL_ID, resolution: 1440, width: 2542, height: 1440,
+  });
+  expect('a 1920×1088 render defaults to 1440p', relay(1920, 1088), {
+    modelId: RELAYVSR_X2_MODEL_ID, resolution: 1440, width: 2542, height: 1440,
+  });
+  expect('a portrait 1088×1920 render reaches 2160p on X2', relay(1088, 1920, 2160), {
+    modelId: RELAYVSR_X2_MODEL_ID, resolution: 2160, width: 2160, height: 3812,
+  });
+  expect(
+    'a source past the 1088 short edge is refused',
+    errorMessage(() => relay(1920, 1090, 2160)),
+    'This video is 1920×1090; RelayVSR accepts sources up to 1920×1088 pixels, or 1088×1920 in portrait.',
+  );
+  expect(
+    'a portrait source past the 1088 short edge is refused',
+    errorMessage(() => relay(1090, 1920, 2160)),
+    'This video is 1090×1920; RelayVSR accepts sources up to 1920×1088 pixels, or 1088×1920 in portrait.',
   );
   expect(
     'a resolution off the list is refused',
