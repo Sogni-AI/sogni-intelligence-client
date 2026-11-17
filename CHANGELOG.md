@@ -1,3 +1,15 @@
+# [4.31.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.30.2...v4.31.0) (2026-11-17)
+
+
+### Bug Fixes
+
+* **deps:** take sogni-client 5.85.0 for MiniMax H3 Prism two-stage output ([8289a29](https://github.com/Sogni-AI/sogni-intelligence-client/commit/8289a298e396e7672da62ba00a24344a829c6502))
+
+
+### Features
+
+* **media:** recognize optional Prism two-stage output ([e38a19c](https://github.com/Sogni-AI/sogni-intelligence-client/commit/e38a19c0537f01395d1d7ca641391f131b243bf2))
+
 ## [4.30.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.30.1...v4.30.2) (2026-11-15)
 
 
