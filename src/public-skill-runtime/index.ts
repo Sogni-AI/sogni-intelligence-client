@@ -1178,7 +1178,7 @@ export const VIDEO_GENERATION_SKILL: SkillManifest = {
   toolNames: ['generate_video'],
   constraints: [
     'For My Personas video requests on MiniMax H3 reference-to-video, Seedance or Wan 3, pass the resolved persona reference images straight to generate_video as references, each clip with its own, and bind each persona to its images with the model\'s tokens. On other video models, default to image_editing first to produce a conditioned scene image before animation; use direct video only when the user explicitly asks to animate an existing persona image/reference or no source image is available for a voice-only request.',
-    'Seedance 2.5 Uncensored uses selector seedance2-5-uncensored (Sogni model id seedance-2-5-uncensored): the same modes, 480p/720p/1080p, 4-30 seconds at 24 fps, reference limits, MOV and last-frame options as seedance2-5. Use it only when the user asks for Seedance 2.5 Uncensored, Seedance Uncensored, or Seedance Spicy, and never swap it for seedance2-5. Each account must accept a one-time likeness and consent agreement in the Sogni app first; error 4103 means it has not, so tell the user to accept it there and do not retry.',
+    'Seedance 2.5 Uncensored uses selector seedance2-5-uncensored (Sogni model id seedance-2-5-uncensored): the same modes, 480p/720p/1080p/4K, 4-30 seconds at 24 fps, reference limits, MOV and last-frame options as seedance2-5. Use it only when the user asks for Seedance 2.5 Uncensored, Seedance Uncensored, or Seedance Spicy, and never swap it for seedance2-5. Each account must accept a one-time likeness and consent agreement in the Sogni app first; error 4103 means it has not, so tell the user to accept it there and do not retry.',
     'Every regular Seedance model (seedance2-5, seedance2, seedance2-mini) takes photos and clips of real people once the account has accepted that same one-time likeness agreement, and never requires it otherwise. When one of them refuses an input because it may contain a real person, first offer the agreement (the user accepts it once in the Sogni app at the link the refusal names, e.g. https://app.sogni.ai/account/model-consents/seedance-2-5) and, after the user says they accepted it, retry the same request on the same model at its regular price; then offer the Uncensored model the refusal suggests, then MiniMax H3. When the context says the user has an active Sogni Unlimited plan, offer MiniMax H3 first instead (it is included with Unlimited), then the agreement and the same-model retry, then the Uncensored model.',
     'Seedance 2.0 Mini Uncensored uses selector seedance2-mini-uncensored (Sogni model id seedance-2-0-mini-uncensored): the same modes, 480p/720p, 4-15 seconds at 24 fps and reference limits as seedance2-mini. Use it only when the user asks for Seedance 2.0 Mini Uncensored, Seedance Mini Uncensored, or Seedance Mini Spicy, and never swap it for seedance2-mini or seedance2-5-uncensored. It shares the Seedance 2.5 Uncensored likeness and consent agreement, so error 4103 means the account has not accepted it: tell the user to accept it in the Sogni app and do not retry.',
     'Wan 3.0 Enhanced uses exact Sogni model id wan3.0-spicy-video (MuleRouter provider id w3.0-video): 2-30 seconds at 30 fps, 480p/720p/1080p, native audio, prompt expansion, adaptive/fixed ratios, and up to 10 image/5 video/5 audio references. First/last-frame mode and loose-reference mode are mutually exclusive. It has no document/web context, watermark, negative prompt, source-video edit, or extend mode.',
@@ -2196,7 +2196,7 @@ export const VIDEO_MODEL_REGISTRY = Object.freeze({
     maxFrames: 361,
     supportsNativeAudio: true
   },
-  // Seedance 2.5: 480p/720p/1080p and 4-30s instead of 4-15s,
+  // Seedance 2.5: 480p/720p/1080p/4K and 4-30s instead of 4-15s,
   // so maxFrames is 30 * 24 + 1 rather than 15 * 24 + 1.
   [SEEDANCE_WORKFLOW_MODELS.t2v25]: {
     workflow: 't2v',
@@ -2204,7 +2204,7 @@ export const VIDEO_MODEL_REGISTRY = Object.freeze({
     defaultWidth: 1280,
     defaultHeight: 720,
     minDimension: 1,
-    maxDimension: 2206,
+    maxDimension: 4398,
     dimensionMultiple: 1,
     fps: 24,
     frameStep: 1,
@@ -2219,7 +2219,7 @@ export const VIDEO_MODEL_REGISTRY = Object.freeze({
     defaultWidth: 1280,
     defaultHeight: 720,
     minDimension: 1,
-    maxDimension: 2206,
+    maxDimension: 4398,
     dimensionMultiple: 1,
     fps: 24,
     frameStep: 1,

@@ -36,7 +36,7 @@ import {
   soundToVideoDefinition,
   videoToVideoDefinition,
 } from '../src/tools/index.js';
-import { getVideoModelConfig } from '../src/media/index.js';
+import { calculateVideoDimensions, getVideoModelConfig } from '../src/media/index.js';
 import { textIndicatesModelConsentRequired } from '../src/media/modelConsentRequired.js';
 
 const UNCENSORED_ID = 'seedance-2-5-uncensored';
@@ -81,10 +81,13 @@ test('Seedance 2.5 Uncensored keeps its own id with the Seedance 2.5 limits', ()
   assert.equal(config.model, UNCENSORED_ID);
   assert.equal(config.maxFrames, getVideoModelConfig('seedance2-5').maxFrames);
   assert.equal(config.maxDimension, getVideoModelConfig('seedance2-5').maxDimension);
+  assert.equal(config.maxDimension, 4398);
 
   const builtin = getBuiltinVideoModelConfig(UNCENSORED_ID);
   assert.ok(builtin);
   assert.equal(builtin.maxFrames, 721);
+  assert.equal(builtin.maxDimension, 4398);
+  assert.equal(getBuiltinVideoModelConfig('seedance-2-5')?.maxDimension, 4398);
 
   assert.deepEqual(getSeedanceReferenceLimits(UNCENSORED_ID), getSeedanceReferenceLimits('seedance-2-5'));
   assert.deepEqual(getSeedanceReferenceLimits('seedance2-5-uncensored'), { images: 30, videos: 10, audios: 10, assets: 50 });
@@ -97,6 +100,15 @@ test('Seedance 2.5 Uncensored keeps its own id with the Seedance 2.5 limits', ()
   };
   assert.doesNotThrow(() => validateProjectConfig(project));
   assert.throws(() => validateProjectConfig({ ...project, duration: 31 }), /between 4 and 30 seconds/);
+});
+
+test('explicit 4K Seedance 2.5 dimensions preserve landscape, portrait and ultrawide shapes', () => {
+  for (const model of ['seedance2-5', 'seedance2-5-uncensored'] as const) {
+    assert.deepEqual(calculateVideoDimensions(1280, 720, 2160, model), { width: 3840, height: 2160 });
+    assert.deepEqual(calculateVideoDimensions(720, 1280, 2160, model), { width: 2160, height: 3840 });
+    assert.deepEqual(calculateVideoDimensions(21, 9, 2160, model), { width: 4398, height: 1885 });
+    assert.deepEqual(calculateVideoDimensions(1280, 720, 720, model), { width: 1280, height: 720 });
+  }
 });
 
 test('the Seedance storyboard adapter keeps the uncensored selector at 1080p and up to 30s', () => {

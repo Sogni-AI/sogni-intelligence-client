@@ -1,3 +1,7 @@
+## Unreleased
+
+- Allow explicit 4K Seedance 2.5 and Uncensored video generation across all existing modes; preserve default resolution and storyboard settings.
+
 ## [4.30.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.30.1...v4.30.2) (2026-11-15)
 
 
