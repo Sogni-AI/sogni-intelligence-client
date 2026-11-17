@@ -14,6 +14,8 @@ const cases: Array<[string, Partial<VideoCostEstimateParams>]> = [
   ['reference counts and duration', { referenceImageCount: 2, referenceVideoCount: 1, referenceVideoDurationSeconds: 8.5 }],
   ['source dimensions', { sourceWidth: 1280, sourceHeight: 720 }],
   ['MiniMax H3 keyframe count', { keyframeCount: 8 }],
+  ['1080p draft final', { seedanceDraftJobId: 'kept', seedanceDraftFinalResolution: '1080p' }],
+  ['4K draft final', { seedanceDraftJobId: 'kept', seedanceDraftFinalResolution: '4k' }],
 ];
 
 for (const [name, context] of cases) {
@@ -68,6 +70,15 @@ test('wrapper and installed SDK reproduce both production quote shapes', async (
   ]) {
     assert.equal((await wrapper.estimateVideoCost({ ...params, ...input })).usd, '26.5356');
     assert.equal(new URL(requests.at(-1)!, 'https://socket.example').searchParams.get('hasVideoInput'), '1');
+  }
+  for (const seedanceDraftFinalResolution of [undefined, '1080p', '4k'] as const) {
+    await wrapper.estimateVideoCost({
+      ...params, seedanceDraftJobId: 'kept',
+      ...(seedanceDraftFinalResolution === undefined ? {} : { seedanceDraftFinalResolution }),
+    });
+    const query = new URL(requests.at(-1)!, 'https://socket.example').searchParams;
+    assert.equal(query.get('seedanceDraftJobId'), 'kept');
+    assert.equal(query.get('seedanceDraftFinalResolution'), seedanceDraftFinalResolution ?? null);
   }
 });
 
