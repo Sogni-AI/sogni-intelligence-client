@@ -1,3 +1,17 @@
+# [4.32.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.31.0...v4.32.0) (2026-11-17)
+
+
+### Bug Fixes
+
+* **deps:** take sogni-client 5.86.0 and protocol alpha.64 for Seedance 4K ([f720479](https://github.com/Sogni-AI/sogni-intelligence-client/commit/f720479009f466c77e6096354d77189d0ee2e900))
+* **video:** preserve the existing generic seedance 4k choice ([4937d73](https://github.com/Sogni-AI/sogni-intelligence-client/commit/4937d7360a5a032c8e2e59b1cab34e4bc1f6e30f))
+* **video:** retain seedance defaults within the hosted tool budget ([966f36a](https://github.com/Sogni-AI/sogni-intelligence-client/commit/966f36aa15eec0232ba3644495d89e223f31eaae))
+
+
+### Features
+
+* **video:** support explicit seedance 2.5 4k output ([91dc214](https://github.com/Sogni-AI/sogni-intelligence-client/commit/91dc2141b49d4a719b2ea0ed76cf2ba6b42d10ea))
+
 ## Unreleased
 
 - Allow explicit 4K Seedance 2.5 and Uncensored video generation across all existing modes; preserve default resolution and storyboard settings.
