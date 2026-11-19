@@ -1,3 +1,10 @@
+## [4.32.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.32.0...v4.32.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* **video:** keep the requested seedance band when a frame sets the canvas ([f645a6e](https://github.com/Sogni-AI/sogni-intelligence-client/commit/f645a6e67dfb2e148406c46a1167132a84c56a73))
+
 # [4.32.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.31.0...v4.32.0) (2026-11-17)
 
 
