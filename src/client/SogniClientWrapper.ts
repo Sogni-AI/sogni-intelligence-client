@@ -1153,6 +1153,22 @@ export class SogniClientWrapper extends EventEmitter {
       height = normalizedDims.height;
     }
 
+    // Seedance reads only a ratio and a resolution band (by area) from the
+    // canvas. Fitting the frame inside the requested box shrank the box whenever
+    // the shapes differed: a portrait still at 1080p became 608x1080, which the
+    // network bills and renders as 480p, and a 16:9 still in an 848x480 box became
+    // 848x477, below the 480px the SDK accepted. The box takes the frame's shape
+    // at the requested area instead, so the requested band holds.
+    if (baseBuffer && width && height && isSeedanceVideoModel(config.modelId)) {
+      const meta = await this.getImageMetadata(baseBuffer);
+      if (meta?.width && meta?.height) {
+        const area = width * height;
+        const aspect = meta.width / meta.height;
+        width = Math.round(Math.sqrt(area * aspect));
+        height = Math.round(Math.sqrt(area / aspect));
+      }
+    }
+
     if (baseBuffer && width && height) {
       const baseFit: 'inside' | 'cover' =
         baseKey === 'referenceImageEnd' && !!config.referenceImage ? 'cover' : 'inside';
