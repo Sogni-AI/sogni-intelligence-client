@@ -1,3 +1,10 @@
+## [4.32.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.32.1...v4.32.2) (2026-11-20)
+
+
+### Bug Fixes
+
+* **video:** honor session reference video routing ([783b04d](https://github.com/Sogni-AI/sogni-intelligence-client/commit/783b04d565b859a480e833eadc1d1fde1f187b22))
+
 ## [4.32.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.32.0...v4.32.1) (2026-11-19)
 
 
