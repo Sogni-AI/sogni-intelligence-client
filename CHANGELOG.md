@@ -1,3 +1,10 @@
+# [4.33.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.32.2...v4.33.0) (2026-11-20)
+
+
+### Features
+
+* **media:** persona sheets use a four-panel layout made for video models ([aea6c4b](https://github.com/Sogni-AI/sogni-intelligence-client/commit/aea6c4b133426f52fdf237a78d671ae31d0018dd))
+
 ## [4.32.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.32.1...v4.32.2) (2026-11-20)
 
 
