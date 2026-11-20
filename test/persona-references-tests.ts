@@ -192,6 +192,14 @@ export function runPersonaReferencesTests(): { passed: number; failed: number } 
     [personaSheetPrompt({ appearance: 'Silver hair' }, 0).includes('Appearance: Silver hair.'), personaSheetPrompt({}, 0).includes('likeness')],
     [true, false]);
   expect('long briefs stay bounded', personaSheetPrompt({ description: 'x'.repeat(5000) }, 1).length < 2000, true);
+  // The layout video models were A/B-tested on (2026-11-19): one large face, then
+  // front, side and back full body, on medium grey, with no lettering to copy.
+  // Rewording it means re-testing it, so the test names the tested phrases, for a
+  // description, one photo and two photos alike.
+  const layout = ['medium-grey', 'Panel 1 is a large close-up of their head and face', 'from the front, from the side in profile and from the back', 'No text, labels'];
+  expect('every sheet keeps the tested video-reference layout',
+    [0, 1, 2].map((photos) => layout.every((part) => personaSheetPrompt({}, photos).includes(part)) && !personaSheetPrompt({}, photos).includes('smiling')),
+    [true, true, true]);
 
   console.log(`\npersonaReferences: ${testsPassed} passed, ${testsFailed} failed`);
   return { passed: testsPassed, failed: testsFailed };
