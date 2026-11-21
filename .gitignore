@@ -18,6 +18,7 @@ src/tools/shared/_catalogs.generated.ts
 .env
 .env.local
 .env.*.local
+*.encr
 
 # IDE and editor files
 .vscode/
