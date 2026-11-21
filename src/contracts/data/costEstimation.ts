@@ -49,6 +49,9 @@ export const COST_CLASS_NUMERIC_WEIGHTS: Readonly<Record<ToolCostClass, number>>
   'audio.speech': 1,
   'compose.standard': 1,
   'compose.ffmpeg': 1,
+  // A facade has no fixed native tier. Retain the unknown-tool baseline;
+  // its routed workflow's live quote, not this weight, determines pricing.
+  'workflow.variable': 1,
 };
 
 /**
