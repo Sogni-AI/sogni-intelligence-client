@@ -34,8 +34,7 @@ export type ToolCostClass =
   | 'audio.standard'
   | 'audio.speech'
   | 'compose.standard'
-  | 'compose.ffmpeg'
-  | 'workflow.variable';
+  | 'compose.ffmpeg';
 
 export type ToolRiskLevel = 'safe' | 'paid' | 'destructive';
 
@@ -61,85 +60,6 @@ export interface ToolCostMetadata {
  * (ask_clarifying_question, finalize_response) are 'safe'.
  */
 export const TOOL_COST_METADATA: ReadonlyArray<ToolCostMetadata> = [
-  // MCP facades can select or resume different native cost classes.
-  {
-    tool: 'generate_audio',
-    costClass: 'workflow.variable',
-    riskLevel: 'paid',
-    userVisibleCost: 'Music per-second or speech per-take pricing',
-    description: 'Route audio generation to music or speech workflows.',
-  },
-  {
-    tool: 'transform_media',
-    costClass: 'workflow.variable',
-    riskLevel: 'paid',
-    userVisibleCost: 'Varies by selected media operation',
-    description: 'Run image, video, or ffmpeg composition workflows.',
-  },
-  {
-    tool: 'run_creative_agent',
-    costClass: 'workflow.variable',
-    riskLevel: 'paid',
-    userVisibleCost: 'LLM tokens plus selected generation workflows',
-    description: 'Start a hosted creative run from a brief.',
-  },
-  {
-    tool: 'approve_cost',
-    costClass: 'workflow.variable',
-    riskLevel: 'paid',
-    userVisibleCost: 'Confirmed workflow or run pricing',
-    description: 'Confirm or decline pending work; confirmation resumes execution.',
-  },
-  {
-    tool: 'list_models',
-    costClass: 'free',
-    riskLevel: 'safe',
-    userVisibleCost: 'Free',
-    description: 'Read the model catalog and supported parameters.',
-  },
-  {
-    tool: 'quote',
-    costClass: 'free',
-    riskLevel: 'safe',
-    userVisibleCost: 'Free',
-    description: 'Estimate a generation or transform call without starting it.',
-  },
-  {
-    tool: 'get_balance',
-    costClass: 'free',
-    riskLevel: 'safe',
-    userVisibleCost: 'Free',
-    description: 'Read account balances and subscription status.',
-  },
-  {
-    tool: 'get_job',
-    costClass: 'free',
-    riskLevel: 'safe',
-    userVisibleCost: 'Free',
-    description: 'Read a workflow or run snapshot and output links.',
-  },
-  {
-    tool: 'create_upload',
-    costClass: 'free',
-    riskLevel: 'safe',
-    userVisibleCost: 'Free',
-    description: 'Prepare reference-media upload URLs without starting generation.',
-  },
-  {
-    tool: 'cancel_job',
-    costClass: 'free',
-    riskLevel: 'destructive',
-    userVisibleCost: 'No additional charge; completed work is unchanged',
-    description: 'Cancel a workflow or run without starting new work.',
-  },
-  {
-    tool: 'list_changelog',
-    costClass: 'free',
-    riskLevel: 'safe',
-    userVisibleCost: 'Free',
-    description: 'Read platform changelog entries.',
-  },
-
   // Image generation/editing
   {
     tool: 'generate_image',
