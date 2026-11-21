@@ -17,6 +17,7 @@ import type { AssetType, KnownAssetModelId } from './types.js';
 import { isSeedanceVideoModelId } from '../../utils/seedanceModelIds.js';
 import { resolveRegisteredVideoModelFamily } from '../../utils/videoModelIds.js';
 import { resolveRegisteredImageReferenceModelId } from '../../utils/imageReferenceModelIds.js';
+import { createGptImageModelRefScanRegex } from '../../utils/lookbehindFree.js';
 
 export interface ParsedModelRef {
   /** 1-indexed unless the format is explicitly 0-indexed. */
@@ -28,7 +29,12 @@ export interface ParsedModelRef {
 export interface ModelRefFormat {
   format(index: number, type: AssetType): string;
   parse(token: string): ParsedModelRef | null;
-  /** Regex matching reference-like tokens this format owns for validation. */
+  /**
+   * Regex matching reference-like tokens this format owns for validation.
+   * Where the engine cannot compile lookbehind (Safari before 16.4), the GPT
+   * Image format's regex is a RegExp subclass whose `source` is the token
+   * pattern alone; copy it with `new re.constructor(re.source, re.flags)`.
+   */
   scanRegex: RegExp;
 }
 
@@ -117,7 +123,7 @@ const GPT_IMAGE_2_FORMAT: ModelRefFormat = {
     const t: AssetType = kind === 'Video' ? 'video' : kind === 'Audio' ? 'audio' : 'image';
     return { index: idx, type: t };
   },
-  scanRegex: /(?<!@)(?<!\b[Gg][Pp][Tt]\s)(?:\[(?:Image|Video|Audio)\s+\d+\]|\b(?:Image|Video|Audio)\s+\d+\b)/g,
+  scanRegex: createGptImageModelRefScanRegex(),
 };
 
 /**
@@ -205,7 +211,9 @@ const MODEL_REF_FORMATS: Record<KnownAssetModelId, ModelRefFormat> = {
 };
 
 function cloneGlobalRegex(regex: RegExp): RegExp {
-  return new RegExp(regex.source, regex.flags.includes('g') ? regex.flags : `${regex.flags}g`);
+  // Copy through the regex's own constructor so the GPT Image fallback subclass keeps its exec().
+  const RegExpClass = regex.constructor as RegExpConstructor;
+  return new RegExpClass(regex, regex.flags.includes('g') ? regex.flags : `${regex.flags}g`);
 }
 
 function normalizeModelRefId(modelId: string): string {
