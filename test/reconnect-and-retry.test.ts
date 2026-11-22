@@ -8,6 +8,7 @@
  * it twice.
  */
 import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
 import test from 'node:test';
 import { ApiError, Project, SogniClient } from '@sogni-ai/sogni-client';
 import { ClientEvent, SogniClientWrapper, SogniProjectError, SogniTimeoutError, SogniValidationError } from '../src';
@@ -58,6 +59,31 @@ function wrapperWith(config: Record<string, unknown>) {
   client.on('error', (error) => errors.push(error));
   return { client, errors };
 }
+
+test('a takeover observer sees 4015 before models arrive and after connect', async (t) => {
+  const transport = new EventEmitter();
+  const listeners = { on() {}, off() {} };
+  let notifications = 0;
+  const sdk = {
+    apiClient: transport, chat: listeners, dispose() { transport.removeAllListeners(); },
+    projects: { ...listeners, async waitForModels() {
+      transport.emit('disconnected', { code: 4015 });
+      assert.equal(notifications, 1);
+    } },
+  };
+  t.mock.method(SogniClient, 'createInstance', async () => sdk);
+  const { client } = wrapperWith({ onConnectionTakeover: () => notifications++ });
+  try {
+    await client.connect();
+    transport.emit('disconnected', { code: 1000 });
+    transport.emit('connecting', {});
+    assert.equal(notifications, 1);
+    transport.emit('disconnected', { code: 4015 });
+    assert.equal(notifications, 2);
+  } finally {
+    await client.dispose();
+  }
+});
 
 test('connect retries stop after maxReconnectAttempts and dispose every failed client', async () => {
   const sdk = stubSdk(networkError);

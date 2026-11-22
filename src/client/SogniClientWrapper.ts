@@ -127,6 +127,7 @@ interface InternalConfig {
   multiInstance?: boolean;
   allowInsecureTLS?: boolean;
   autoConnect: boolean;
+  onConnectionTakeover?: () => void;
   reconnect: boolean;
   reconnectInterval: number;
   maxReconnectInterval: number;
@@ -180,6 +181,7 @@ export class SogniClientWrapper extends EventEmitter {
       multiInstance: config.multiInstance,
       allowInsecureTLS: config.allowInsecureTLS,
       autoConnect: config.autoConnect !== false,
+      onConnectionTakeover: config.onConnectionTakeover,
       reconnect: config.reconnect !== false,
       reconnectInterval: config.reconnectInterval || 5000,
       maxReconnectInterval: config.maxReconnectInterval || 300000,
@@ -253,6 +255,12 @@ export class SogniClientWrapper extends EventEmitter {
 
       // Create client instance with auth type
       this.client = await SogniClient.createInstance(clientConfig);
+      const onTakeover = this.config.onConnectionTakeover;
+      if (onTakeover) {
+        this.client.apiClient.on('disconnected', ({ code }) => {
+          if (code === 4015) onTakeover();
+        });
+      }
 
       // Authentication depends on authType
       if (this.config.authType === 'cookies') {
