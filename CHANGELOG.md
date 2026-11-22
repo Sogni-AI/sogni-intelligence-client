@@ -1,3 +1,10 @@
+## [4.33.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.33.0...v4.33.1) (2026-11-22)
+
+
+### Bug Fixes
+
+* **client:** notify callers when another connection takes their app ID ([bdfe690](https://github.com/Sogni-AI/sogni-intelligence-client/commit/bdfe690d16aaabdab6da260afab5b88fd0918b48))
+
 # [4.33.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.32.2...v4.33.0) (2026-11-20)
 
 
