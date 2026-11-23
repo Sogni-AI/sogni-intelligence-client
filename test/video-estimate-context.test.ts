@@ -116,3 +116,46 @@ test('a MiniMax H3 keyframe count reaches the socket estimate query through the 
   });
   assert.equal(new URL(requests.at(-1)!, 'https://socket.example').searchParams.get('keyframeCount'), '8');
 });
+
+test('MiniMax H3 estimates accept clips through 362 frames at 24fps and refuse longer ones', async () => {
+  const require = createRequire(import.meta.url);
+  const ProjectsApi = require(join(dirname(require.resolve('@sogni-ai/sogni-client')), 'Projects/index.js')).default;
+  const requests: string[] = [];
+  const socket = Object.assign(new EventEmitter(), {
+    get: async (path: string) => {
+      requests.push(path);
+      return { quote: { project: { costInToken: '60.33', costInSpark: '60.33', costInUSD: '0.30165', costInSogni: '0' } } };
+    },
+  });
+  const client = Object.assign(new EventEmitter(), { socket, logger: { info() {}, warn() {}, error() {}, debug() {} } });
+  const wrapper = new SogniClientWrapper({ username: 'test-user', password: 'test-pass', autoConnect: false });
+  (wrapper as any).client = { projects: new ProjectsApi({ client, eip712: {} }) };
+  (wrapper as any).connectionState = { isConnected: true };
+  const params = { modelId: 'minimax-h3-fastvideo-int8_i2v_turbo', width: 1344, height: 768, steps: 4, tokenType: 'spark' as const };
+
+  assert.equal((await wrapper.estimateVideoCost({ ...params, frames: 362, fps: 24 })).spark, '60.33');
+  assert.match(requests.at(-1)!, /\/minimax-h3-fastvideo-int8_i2v_turbo\/1344\/768\/362\/24\/4\/1/);
+  await wrapper.estimateVideoCost({ ...params, duration: 362 / 24 });
+  await wrapper.estimateVideoCost({ ...params, duration: 1 });
+  assert.equal(requests.length, 3);
+  for (const duration of [15.1, 0.5]) {
+    await assert.rejects(
+      wrapper.estimateVideoCost({ ...params, duration }),
+      /Duration must be between 1 and 15\.083 seconds/,
+    );
+  }
+  assert.equal(requests.length, 3);
+});
+
+test('models without their own duration bounds keep the 1-10 second estimate range', async () => {
+  const wrapper = new SogniClientWrapper({ username: 'test-user', password: 'test-pass', autoConnect: false });
+  let calls = 0;
+  (wrapper as any).client = { projects: { estimateVideoCost: async () => { calls += 1; return { token: '1', usd: '0.005', spark: '1', sogni: '1' }; } } };
+  (wrapper as any).connectionState = { isConnected: true };
+  await wrapper.estimateVideoCost({ modelId: 'unlisted-video-model', width: 1280, height: 720, duration: 10, tokenType: 'spark' });
+  await assert.rejects(
+    wrapper.estimateVideoCost({ modelId: 'unlisted-video-model', width: 1280, height: 720, duration: 11, tokenType: 'spark' }),
+    /Duration must be between 1 and 10 seconds/,
+  );
+  assert.equal(calls, 1);
+});
