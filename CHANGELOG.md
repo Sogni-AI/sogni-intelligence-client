@@ -1,3 +1,17 @@
+## [4.33.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.33.2...v4.33.3) (2026-11-23)
+
+
+### Bug Fixes
+
+* **chatRun:** pause for confirmation on tools without cost metadata ([9c71f51](https://github.com/Sogni-AI/sogni-intelligence-client/commit/9c71f51bb0137708b51441e79e8662e188da9a3c))
+* **client:** integrate updated text processing ([be462d8](https://github.com/Sogni-AI/sogni-intelligence-client/commit/be462d831fff294de560c2267931a019084e8a1e))
+* **contracts:** check MiniMax H3 audio prompt markers in linear time ([5e7adba](https://github.com/Sogni-AI/sogni-intelligence-client/commit/5e7adba345367da1e6904a9726f97917f1c485fe))
+* **deps:** update the client SDK to 5.86.2 ([475288d](https://github.com/Sogni-AI/sogni-intelligence-client/commit/475288d8d45673a440a6a9db77a070ed7b3df1ba))
+* **media:** match GPT Image 2.5 requests in linear time ([e3011b4](https://github.com/Sogni-AI/sogni-intelligence-client/commit/e3011b486e4707e66964fe128c888cd0dfc4783f))
+* **public-skill-runtime:** strip tool-message blocks in linear time ([5c5fd6e](https://github.com/Sogni-AI/sogni-intelligence-client/commit/5c5fd6e8be549f463e8ce7ded18bdb54874e4a7b))
+* **tools:** strip think and tool_call blocks in linear time ([197e3e3](https://github.com/Sogni-AI/sogni-intelligence-client/commit/197e3e3444d1ebe53469dbf35dc0e53a729bd97a))
+* **workflows:** strip sanitizer blocks and delimiter tags in linear time ([878f2df](https://github.com/Sogni-AI/sogni-intelligence-client/commit/878f2df4ce90c92637171b16d22ea31cbb04a0c8))
+
 ## [4.33.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.33.1...v4.33.2) (2026-11-23)
 
 
