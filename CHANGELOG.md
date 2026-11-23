@@ -1,3 +1,10 @@
+## [4.33.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.33.1...v4.33.2) (2026-11-23)
+
+
+### Bug Fixes
+
+* **video:** quote MiniMax H3 clips up to 15 seconds ([c0afee6](https://github.com/Sogni-AI/sogni-intelligence-client/commit/c0afee668c6aff870094f91a709a5a3a7065716f))
+
 ## [4.33.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.33.0...v4.33.1) (2026-11-22)
 
 
