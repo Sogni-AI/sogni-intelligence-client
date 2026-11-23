@@ -55,17 +55,18 @@ test('every defined tool has cost metadata', async () => {
   assert.deepEqual(missing, [], 'Defined tools need cost metadata');
 });
 
-test('a tool without cost metadata pauses only when the caller lists it', () => {
-  const name = 'caller_defined_tool';
-  assert.equal(getToolCostMetadata(name), undefined);
-  assert.equal(isCostApprovalGatedTool(name), false);
-  assert.equal(isCostApprovalGatedTool(name, {}), false);
-  assert.equal(isCostApprovalGatedTool(name, {
-    knownCreativeToolNames: new Set(['generate_image']),
-  }), false);
-  assert.equal(isCostApprovalGatedTool(name, {
-    knownCreativeToolNames: new Set([name]),
-  }), true);
+test('a tool without cost metadata pauses, listed by the caller or not', () => {
+  for (const name of ['caller_defined_tool', 'check_billing_status', 'generate_image_v2', '']) {
+    assert.equal(getToolCostMetadata(name), undefined, name);
+    assert.equal(isCostApprovalGatedTool(name), true, name);
+    assert.equal(isCostApprovalGatedTool(name, {}), true, name);
+    assert.equal(isCostApprovalGatedTool(name, {
+      knownCreativeToolNames: new Set(['generate_image']),
+    }), true, name);
+    assert.equal(isCostApprovalGatedTool(name, {
+      knownCreativeToolNames: new Set([name]),
+    }), true, name);
+  }
 });
 
 test('existing cost classes retain their confirmation behavior', () => {
