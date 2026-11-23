@@ -85,6 +85,7 @@ import {
   isHappyHorseVideoModel,
   isLtxVideoModel,
   isLooseReferenceVideoModel,
+  isMiniMaxH3VideoModel,
   isSeedance25VideoModel,
   isSeedanceVideoModel,
   isWanVideoModel,
@@ -92,6 +93,8 @@ import {
 import { isRegisteredWan3VideoModelId } from '../utils/videoModelIds.js';
 
 const LTX2_FRAME_STEP = 8;
+const MINIMAX_H3_FPS = 24;
+const MINIMAX_H3_MAX_FRAMES = 362;
 
 function freezeAttributionDefaults(
   attribution: SogniAttributionConfig | undefined,
@@ -705,8 +708,9 @@ export class SogniClientWrapper extends EventEmitter {
 
     const { min: minDuration, max: maxDuration } = this.getVideoDurationBounds(params.modelId);
     if (duration < minDuration || duration > maxDuration) {
+      // H3's 362/24s ceiling prints as 15.083; integer bounds print unchanged.
       throw new SogniValidationError(
-        `Duration must be between ${minDuration} and ${maxDuration} seconds`
+        `Duration must be between ${minDuration} and ${Number(maxDuration.toFixed(3))} seconds`
       );
     }
 
@@ -1651,6 +1655,11 @@ export class SogniClientWrapper extends EventEmitter {
     }
     if (this.isLtx2Model(modelId)) {
       return { min: 1, max: 20 };
+    }
+    if (isMiniMaxH3VideoModel(modelId)) {
+      // H3 renders up to 362 frames at a fixed 24fps (15.083s); the server
+      // snaps shorter requests up to its 124-frame minimum.
+      return { min: 1, max: MINIMAX_H3_MAX_FRAMES / MINIMAX_H3_FPS };
     }
     return { min: 1, max: 10 };
   }
