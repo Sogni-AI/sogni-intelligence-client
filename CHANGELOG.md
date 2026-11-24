@@ -1,3 +1,10 @@
+# [4.34.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.33.3...v4.34.0) (2026-11-24)
+
+
+### Features
+
+* **video:** expose Seedance 2.5 Flash capabilities ([492321c](https://github.com/Sogni-AI/sogni-intelligence-client/commit/492321c61263517503dde38473eaee266c73ebaf))
+
 ## [4.33.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.33.2...v4.33.3) (2026-11-23)
 
 
