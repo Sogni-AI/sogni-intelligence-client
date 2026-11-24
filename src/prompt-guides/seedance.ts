@@ -168,24 +168,25 @@ const SEEDANCE_MODE_TITLES: Readonly<Record<SeedanceMode, string>> = {
 };
 
 function seedanceGuides(
-  family: 'seedance-2.0' | 'seedance-2.5',
+  family: 'seedance-2.0' | 'seedance-2.5' | 'seedance-2.5-flash',
   models: readonly string[],
   notes: readonly string[],
 ): Record<SeedanceMode, ModelPromptGuide> {
-  const modelTitle = family === 'seedance-2.5' ? 'Seedance 2.5' : 'Seedance 2.0';
+  const modelTitle = family === 'seedance-2.5-flash' ? 'Seedance 2.5 Flash' : family === 'seedance-2.5' ? 'Seedance 2.5' : 'Seedance 2.0';
   const guide = (mode: SeedanceMode): ModelPromptGuide => modelPromptGuide({
     family,
     mode,
     title: `${modelTitle} ${SEEDANCE_MODE_TITLES[mode]}`,
     models,
     referenceGrammar: mode === 't2v' || mode === 'v2v' ? SEEDANCE_REFERENCE_GRAMMAR_GUIDANCE : null,
-    rules: family === 'seedance-2.5' ? [...SEEDANCE_RULES[mode], SEEDANCE_25_CAPABILITY_GUIDANCE] : SEEDANCE_RULES[mode],
+    rules: family === 'seedance-2.5-flash' ? [...SEEDANCE_RULES[mode], 'Render 4–30 seconds at 480p or 720p. Tag up to 10 images, 5 videos and 5 audio clips, 20 references total. Reference videos and audio each have a combined 30-second limit.'] : family === 'seedance-2.5' ? [...SEEDANCE_RULES[mode], SEEDANCE_25_CAPABILITY_GUIDANCE] : SEEDANCE_RULES[mode],
     notes,
   });
   return { t2v: guide('t2v'), i2v: guide('i2v'), l2v: guide('l2v'), flf: guide('flf'), v2v: guide('v2v') };
 }
 
-export const SEEDANCE_PROMPT_GUIDES: Pick<ModelPromptGuideRegistry, 'seedance-2.0' | 'seedance-2.5'> = {
+export const SEEDANCE_PROMPT_GUIDES: Pick<ModelPromptGuideRegistry, 'seedance-2.0' | 'seedance-2.5' | 'seedance-2.5-flash'> = {
   'seedance-2.0': seedanceGuides('seedance-2.0', ['seedance2', 'seedance2-mini', 'seedance2-mini-uncensored'], SEEDANCE_20_NOTES),
   'seedance-2.5': seedanceGuides('seedance-2.5', ['seedance2-5', 'seedance2-5-uncensored'], SEEDANCE_25_NOTES),
+  'seedance-2.5-flash': seedanceGuides('seedance-2.5-flash', ['seedance2-5-flash'], []),
 };

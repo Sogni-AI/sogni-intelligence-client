@@ -15,6 +15,7 @@ import { IMAGE_PROMPT_GUIDE_KEYS } from '../src/prompt-guides/image.js';
 const VIDEO_MODES: Record<string, string[]> = {
   'seedance-2.0': ['t2v', 'i2v', 'l2v', 'flf', 'v2v'],
   'seedance-2.5': ['t2v', 'i2v', 'l2v', 'flf', 'v2v'],
+  'seedance-2.5-flash': ['t2v', 'i2v', 'l2v', 'flf', 'v2v'],
   'ltx-2.5': ['t2v', 'i2v', 'l2v', 'flf', 'a2v', 'ia2v', 'v2v'],
   'ltx-2.3': ['t2v', 'i2v', 'flf', 'a2v', 'ia2v', 'v2v'],
   'wan-2.2': ['t2v', 'i2v', 'l2v', 'flf', 's2v', 'animate-move', 'animate-replace'],

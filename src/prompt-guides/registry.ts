@@ -5,7 +5,7 @@ import {
   resolveImageModelAlias,
   resolveVideoModelAlias,
 } from '../public-skill-runtime/index.js';
-import { isSeedance25VideoModelId } from '../utils/seedanceModelIds.js';
+import { isSeedance25VideoModelId, resolveSeedanceVideoModelId } from '../utils/seedanceModelIds.js';
 import {
   isRegisteredLooseReferenceVideoModelId,
   resolveRegisteredVideoModelFamily,
@@ -46,6 +46,7 @@ const VIDEO_MODE_SYNONYMS: Readonly<Partial<Record<string, ModelPromptGuideMode>
 function videoGuideFamily(modelId: string): VideoPromptGuideFamily | null {
   switch (resolveRegisteredVideoModelFamily(modelId)) {
     case 'seedance':
+      if (resolveSeedanceVideoModelId(modelId) === 'seedance-2-5-flash') return 'seedance-2.5-flash';
       return isSeedance25VideoModelId(modelId) ? 'seedance-2.5' : 'seedance-2.0';
     case 'ltx25':
       return 'ltx-2.5';

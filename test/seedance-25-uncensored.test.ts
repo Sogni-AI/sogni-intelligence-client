@@ -44,7 +44,7 @@ const SOCKET_MESSAGE =
   'Seedance 2.5 Uncensored requires a one-time likeness and consent agreement. Review and accept it in the Sogni app, then try again.';
 const CONSENT = { key: UNCENSORED_ID, version: 1, modelId: UNCENSORED_ID };
 
-test('every Seedance 2.5 tool enum lists seedance2-5-uncensored right after seedance2-5', () => {
+test('every Seedance 2.5 tool enum lists standard, Flash and Uncensored separately', () => {
   for (const definition of [
     generateVideoDefinition,
     soundToVideoDefinition,
@@ -55,7 +55,7 @@ test('every Seedance 2.5 tool enum lists seedance2-5-uncensored right after seed
     const values = definition.function.parameters.properties.videoModel.enum as string[];
     const index = values.indexOf('seedance2-5');
     assert.ok(index >= 0, definition.function.name);
-    assert.equal(values[index + 1], 'seedance2-5-uncensored', definition.function.name);
+    assert.deepEqual(values.slice(index, index + 3), ['seedance2-5', 'seedance2-5-flash', 'seedance2-5-uncensored'], definition.function.name);
   }
   const animateValues = animatePhotoDefinition.function.parameters.properties.videoModel.enum as string[];
   assert.equal(animateValues.includes('seedance2-5-uncensored'), false);

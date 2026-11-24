@@ -1570,11 +1570,12 @@ function compactSceneVideoPrompt(project: StoryboardProject, scene: SceneSpec, r
 
 function publicSeedanceVideoModelFromInput(
   input: PublicStoryboardAdapterCompileInput,
-): 'seedance2-mini' | 'seedance2-mini-uncensored' | 'seedance2' | 'seedance2-5' | 'seedance2-5-uncensored' {
+): 'seedance2-mini' | 'seedance2-mini-uncensored' | 'seedance2' | 'seedance2-5' | 'seedance2-5-flash' | 'seedance2-5-uncensored' {
   const requestedModelId = String(input.options?.requestedModelId ?? '').trim().toLowerCase();
   if (!requestedModelId || requestedModelId === 'seedance') return 'seedance2-5';
   const resolved = resolveVideoModelAlias(requestedModelId, 't2v');
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25) return 'seedance2-5';
+  if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25Flash) return 'seedance2-5-flash';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored) return 'seedance2-5-uncensored';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2vMini) return 'seedance2-mini';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2vMiniUncensored) return 'seedance2-mini-uncensored';
@@ -1594,7 +1595,7 @@ const PUBLIC_SEEDANCE_ADAPTER: PublicStoryboardAdapter = {
         prompt: compileStoryboardImagePromptFromProject(storyboard),
         args: {
           videoModel,
-          ...(isSeedance25VideoModelId(videoModel) ? { targetResolution: 1080 } : {}),
+          ...(isSeedance25VideoModelId(videoModel) ? { targetResolution: videoModel === 'seedance2-5-flash' ? 720 : 1080 } : {}),
           aspectRatio: storyboard.targetVideoAspectRatio,
           skipPromptProcessing: true,
           expandPrompt: false,
@@ -1611,7 +1612,7 @@ const PUBLIC_SEEDANCE_ADAPTER: PublicStoryboardAdapter = {
         prompt: compileSeedanceSceneClipPromptFromProject(storyboard, scene, referenceTag),
         args: {
           videoModel,
-          ...(isSeedance25VideoModelId(videoModel) ? { targetResolution: 1080 } : {}),
+          ...(isSeedance25VideoModelId(videoModel) ? { targetResolution: videoModel === 'seedance2-5-flash' ? 720 : 1080 } : {}),
           duration,
           aspectRatio: storyboard.targetVideoAspectRatio,
           skipPromptProcessing: true,
@@ -1995,6 +1996,7 @@ export const SEEDANCE_WORKFLOW_MODELS = Object.freeze({
   // Seedance 2.5 is a single canonical model id across every workflow it
   // supports (t2v, i2v, flf2v, r2v, ia2v, v2v), like the 2.0 family.
   t2v25: SEEDANCE_VIDEO_MODEL_IDS.v25,
+  t2v25Flash: SEEDANCE_VIDEO_MODEL_IDS.v25Flash,
   // Seedance 2.5 Uncensored: the same workflows and limits as Seedance 2.5
   // under its own id, which must never be rewritten to seedance-2-5.
   t2v25Uncensored: SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored
@@ -2251,6 +2253,20 @@ export const VIDEO_MODEL_REGISTRY = Object.freeze({
     maxFrames: 721,
     supportsNativeAudio: true
   },
+  [SEEDANCE_WORKFLOW_MODELS.t2v25Flash]: {
+    workflow: 't2v',
+    family: 'seedance2',
+    defaultWidth: 1280,
+    defaultHeight: 720,
+    minDimension: 1,
+    maxDimension: 1470,
+    dimensionMultiple: 1,
+    fps: 24,
+    frameStep: 1,
+    minFrames: 97,
+    maxFrames: 721,
+    supportsNativeAudio: true
+  },
   // Seedance 2.5 Uncensored shares the Seedance 2.5 contract.
   [SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored]: {
     workflow: 't2v',
@@ -2410,9 +2426,13 @@ export const VIDEO_MODEL_ALIASES: Readonly<Record<string, string>> = Object.free
   'seedance2-ia2v': SEEDANCE_WORKFLOW_MODELS.ia2v,
   'seedance2-v2v': SEEDANCE_WORKFLOW_MODELS.v2v,
   'seedance2-5': SEEDANCE_WORKFLOW_MODELS.t2v25,
+  'seedance2-5-flash': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
   'seedance2-5-t2v': SEEDANCE_WORKFLOW_MODELS.t2v25,
+  'seedance2-5-flash-t2v': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
   'seedance2-5-ia2v': SEEDANCE_WORKFLOW_MODELS.t2v25,
+  'seedance2-5-flash-ia2v': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
   'seedance2-5-v2v': SEEDANCE_WORKFLOW_MODELS.t2v25,
+  'seedance2-5-flash-v2v': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
   // Seedance 2.5 Uncensored, including its friendly names. Each resolves to
   // seedance-2-5-uncensored, never to seedance-2-5.
   'seedance2-5-uncensored': SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored,
@@ -4088,6 +4108,7 @@ export interface StoryboardVideoHostedWorkflowBuildOptions {
     | 'seedance2-mini'
     | 'seedance2-mini-uncensored'
     | 'seedance2-5'
+    | 'seedance2-5-flash'
     | 'seedance2-5-uncensored'
     | string;
   videoDurationSec?: number;
