@@ -528,6 +528,13 @@ Directly reuse <Audio 1> unchanged.`;
     }).ok,
     false,
   );
+  for (const tool of [generateVideoDefinition, animatePhotoDefinition, soundToVideoDefinition]) {
+    const name = tool.function.name;
+    const args = { prompt: 'Animate the scene.', videoModel: 'wan3.0-video' };
+    const baseline = validateAndNormalizeHostedToolArguments([tool], name, args);
+    const legacy = validateAndNormalizeHostedToolArguments([tool], name, { ...args, watermark: true });
+    expect(name + ' ignores the retired Wan watermark in strict mode', legacy, baseline);
+  }
   for (const videoModel of [
     'minimax-h3-r2v-2stage',
     'minimax-h3-r2v-balanced-2stage',

@@ -602,7 +602,13 @@ export function validateAndNormalizeHostedToolArguments(
     ...toolSchema,
     type: toolSchema.type ?? 'object',
   };
-  const cleaned = validateValueAgainstSchema('', args, normalizedSchema, context).value;
+  // Older clients can send this retired Wan option to any of the three video tools.
+  let input = args;
+  if ('watermark' in args && (toolName === 'generate_video' || toolName === 'animate_photo' || toolName === 'sound_to_video')) {
+    input = { ...args };
+    delete input.watermark;
+  }
+  const cleaned = validateValueAgainstSchema('', input, normalizedSchema, context).value;
   const cleanedRecord = isRecord(cleaned) ? cleaned : args;
 
   // Positional arrays: loraStrengths[i] belongs to loras[i], so a length
