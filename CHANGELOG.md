@@ -1,3 +1,15 @@
+# [4.35.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.34.0...v4.35.0) (2026-11-25)
+
+
+### Bug Fixes
+
+* **deps:** pin SDK 5.89.0 and protocol alpha.66 for the train ([e78c0b4](https://github.com/Sogni-AI/sogni-intelligence-client/commit/e78c0b4be0e9e40e4752659eda2c3499e9d750ec))
+
+
+### Features
+
+* **video:** retire HappyHorse from creative tool options ([11ef57d](https://github.com/Sogni-AI/sogni-intelligence-client/commit/11ef57d5e9a69c4cef6b0eafcf0845239211a8ad))
+
 # [4.34.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.33.3...v4.34.0) (2026-11-24)
 
 
