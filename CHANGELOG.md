@@ -1,3 +1,17 @@
+# [4.36.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.35.0...v4.36.0) (2026-11-25)
+
+
+### Bug Fixes
+
+* **deps:** pin SDK 5.90.0 and protocol alpha.67 for Flash Uncensored ([fe1fbf5](https://github.com/Sogni-AI/sogni-intelligence-client/commit/fe1fbf54de88b4daec017ab7b220b5bbeb279d7a))
+* **tools:** ignore the retired wan watermark argument ([21f4627](https://github.com/Sogni-AI/sogni-intelligence-client/commit/21f46274024d551d78da1cf31d03154458ebcca9))
+
+
+### Features
+
+* **video:** add the optional seedance flash variant ([d5e7d5e](https://github.com/Sogni-AI/sogni-intelligence-client/commit/d5e7d5ee0a8d993b8a3cb0a091f999d94554ccf1))
+* **video:** add the optional seedance flash variant ([6e6d508](https://github.com/Sogni-AI/sogni-intelligence-client/commit/6e6d5082dfbd63d207fe7ea9cde482092c684af2))
+
 # [4.35.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.34.0...v4.35.0) (2026-11-25)
 
 
