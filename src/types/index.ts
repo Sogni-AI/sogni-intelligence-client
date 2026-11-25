@@ -394,7 +394,7 @@ export interface ProjectResult {
  */
 export interface VideoCostEstimateParams
   extends Omit<Parameters<SogniClient['projects']['estimateVideoCost']>[0], 'model' | 'duration' | 'fps' | 'numberOfMedia' | 'tokenType'> {
-  /** Ask for the payable Premium Spark quote for this account. */
+  /** Ask for the payable project quote for this account and billing mode. */
   includeAccountPrice?: boolean;
 
   /** Model ID to use */
@@ -437,6 +437,7 @@ export interface VideoCostEstimateParams
 export interface AudioCostEstimateParams
   extends Pick<Parameters<SogniClient["projects"]["estimateAudioCost"]>[0],
     "network" | "billingMode" | "priorityMode"> {
+  characters?: number;
   includeAccountPrice?: boolean;
   /** Model ID to use */
   modelId: string;
@@ -458,7 +459,7 @@ export interface AudioCostEstimateParams
  * Cost estimate response
  */
 export interface CostEstimate {
-  accountPrice?: { token: string; spark: string; sogni: string; usd: string; discountBps: number };
+  accountPrice?: { token: string; spark: string; sogni: string; usd: string; discountBps: number; billingMethod?: 'premium_spark' | 'subscription' | 'spark' | 'sogni' };
   /** Cost in selected token type */
   token: string;
 
