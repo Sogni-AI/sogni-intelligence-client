@@ -1577,7 +1577,7 @@ function publicSeedanceVideoModelFromInput(
   const resolved = resolveVideoModelAlias(requestedModelId, 't2v');
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25) return 'seedance2-5';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25Flash) return 'seedance2-5-flash';
-  if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensoredUncensored) return 'seedance2-5-flash-uncensored';
+  if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored) return 'seedance2-5-flash-uncensored';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored) return 'seedance2-5-uncensored';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2vMini) return 'seedance2-mini';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2vMiniUncensored) return 'seedance2-mini-uncensored';
@@ -1999,7 +1999,7 @@ export const SEEDANCE_WORKFLOW_MODELS = Object.freeze({
   // supports (t2v, i2v, flf2v, r2v, ia2v, v2v), like the 2.0 family.
   t2v25: SEEDANCE_VIDEO_MODEL_IDS.v25,
   t2v25Flash: SEEDANCE_VIDEO_MODEL_IDS.v25Flash,
-  t2v25FlashUncensoredUncensored: SEEDANCE_VIDEO_MODEL_IDS.v25FlashUncensored,
+  t2v25FlashUncensored: SEEDANCE_VIDEO_MODEL_IDS.v25FlashUncensored,
   // Seedance 2.5 Uncensored: the same workflows and limits as Seedance 2.5
   // under its own id, which must never be rewritten to seedance-2-5.
   t2v25Uncensored: SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored
@@ -2270,7 +2270,7 @@ export const VIDEO_MODEL_REGISTRY = Object.freeze({
     maxFrames: 721,
     supportsNativeAudio: true
   },
-  [SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensoredUncensored]: {
+  [SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored]: {
     workflow: 't2v',
     family: 'seedance2',
     defaultWidth: 1280,
@@ -2444,16 +2444,16 @@ export const VIDEO_MODEL_ALIASES: Readonly<Record<string, string>> = Object.free
   'seedance2-v2v': SEEDANCE_WORKFLOW_MODELS.v2v,
   'seedance2-5': SEEDANCE_WORKFLOW_MODELS.t2v25,
   'seedance2-5-flash': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
-  'seedance2-5-flash-uncensored': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensoredUncensored,
+  'seedance2-5-flash-uncensored': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored,
   'seedance2-5-t2v': SEEDANCE_WORKFLOW_MODELS.t2v25,
   'seedance2-5-flash-t2v': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
-  'seedance2-5-flash-uncensored-t2v': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensoredUncensored,
+  'seedance2-5-flash-uncensored-t2v': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored,
   'seedance2-5-ia2v': SEEDANCE_WORKFLOW_MODELS.t2v25,
   'seedance2-5-flash-ia2v': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
-  'seedance2-5-flash-uncensored-ia2v': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensoredUncensored,
+  'seedance2-5-flash-uncensored-ia2v': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored,
   'seedance2-5-v2v': SEEDANCE_WORKFLOW_MODELS.t2v25,
   'seedance2-5-flash-v2v': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
-  'seedance2-5-flash-uncensored-v2v': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensoredUncensored,
+  'seedance2-5-flash-uncensored-v2v': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored,
   // Seedance 2.5 Uncensored, including its friendly names. Each resolves to
   // seedance-2-5-uncensored, never to seedance-2-5.
   'seedance2-5-uncensored': SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored,
