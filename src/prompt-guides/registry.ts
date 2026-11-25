@@ -44,7 +44,7 @@ const VIDEO_MODE_SYNONYMS: Readonly<Partial<Record<string, ModelPromptGuideMode>
 function videoGuideFamily(modelId: string): VideoPromptGuideFamily | null {
   switch (resolveRegisteredVideoModelFamily(modelId)) {
     case 'seedance':
-      if (resolveSeedanceVideoModelId(modelId) === 'seedance-2-5-flash') return 'seedance-2.5-flash';
+      if (['seedance-2-5-flash', 'seedance-2-5-flash-uncensored'].includes(resolveSeedanceVideoModelId(modelId) ?? '')) return 'seedance-2.5-flash';
       return isSeedance25VideoModelId(modelId) ? 'seedance-2.5' : 'seedance-2.0';
     case 'ltx25':
       return 'ltx-2.5';

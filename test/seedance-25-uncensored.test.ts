@@ -55,7 +55,7 @@ test('every Seedance 2.5 tool enum lists standard, Flash and Uncensored separate
     const values = definition.function.parameters.properties.videoModel.enum as string[];
     const index = values.indexOf('seedance2-5');
     assert.ok(index >= 0, definition.function.name);
-    assert.deepEqual(values.slice(index, index + 3), ['seedance2-5', 'seedance2-5-flash', 'seedance2-5-uncensored'], definition.function.name);
+    assert.deepEqual(values.slice(index, index + 4), ['seedance2-5', 'seedance2-5-flash', 'seedance2-5-flash-uncensored', 'seedance2-5-uncensored'], definition.function.name);
   }
   const animateValues = animatePhotoDefinition.function.parameters.properties.videoModel.enum as string[];
   assert.equal(animateValues.includes('seedance2-5-uncensored'), false);
@@ -100,6 +100,12 @@ test('Seedance 2.5 Uncensored keeps its own id with the Seedance 2.5 limits', ()
   };
   assert.doesNotThrow(() => validateProjectConfig(project));
   assert.throws(() => validateProjectConfig({ ...project, duration: 31 }), /between 4 and 30 seconds/);
+});
+
+test('Flash Uncensored keeps its own selector, Flash canvas and reference limits', () => {
+  assert.equal(getVideoModelConfig('seedance2-5-flash-uncensored').model, 'seedance-2-5-flash-uncensored');
+  assert.equal(getBuiltinVideoModelConfig('seedance-2-5-flash-uncensored')?.maxDimension, 1470);
+  assert.deepEqual(getSeedanceReferenceLimits('seedance2-5-flash-uncensored'), { images: 10, videos: 5, audios: 5, assets: 20 });
 });
 
 test('explicit 4K Seedance 2.5 dimensions preserve landscape, portrait and ultrawide shapes', () => {

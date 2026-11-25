@@ -1217,6 +1217,7 @@ export const VIDEO_GENERATION_SKILL: SkillManifest = {
   toolNames: ['generate_video'],
   constraints: [
     'For My Personas video requests on MiniMax H3 reference-to-video, Seedance or Wan 3, pass the resolved persona reference images straight to generate_video as references, each clip with its own, and bind each persona to its images with the model\'s tokens. On other video models, default to image_editing first to produce a conditioned scene image before animation; use direct video only when the user explicitly asks to animate an existing persona image/reference or no source image is available for a voice-only request.',
+    'Use seedance2-5-flash-uncensored (seedance-2-5-flash-uncensored) only when the user selects Seedance 2.5 Flash Uncensored. It shares Flash modes and limits and requires the shared likeness agreement.',
     'Seedance 2.5 Uncensored uses selector seedance2-5-uncensored (Sogni model id seedance-2-5-uncensored): the same modes, 480p/720p/1080p/4K, 4-30 seconds at 24 fps, reference limits, MOV and last-frame options as seedance2-5. Use it only when the user asks for Seedance 2.5 Uncensored, Seedance Uncensored, or Seedance Spicy, and never swap it for seedance2-5. Each account must accept a one-time likeness and consent agreement in the Sogni app first; error 4103 means it has not, so tell the user to accept it there and do not retry.',
     'Every regular Seedance model (seedance2-5, seedance2, seedance2-mini) takes photos and clips of real people once the account has accepted that same one-time likeness agreement, and never requires it otherwise. When one of them refuses an input because it may contain a real person, first offer the agreement (the user accepts it once in the Sogni app at the link the refusal names, e.g. https://app.sogni.ai/account/model-consents/seedance-2-5) and, after the user says they accepted it, retry the same request on the same model at its regular price; then offer the Uncensored model the refusal suggests, then MiniMax H3. When the context says the user has an active Sogni Unlimited plan, offer MiniMax H3 first instead (it is included with Unlimited), then the agreement and the same-model retry, then the Uncensored model.',
     'Seedance 2.0 Mini Uncensored uses selector seedance2-mini-uncensored (Sogni model id seedance-2-0-mini-uncensored): the same modes, 480p/720p, 4-15 seconds at 24 fps and reference limits as seedance2-mini. Use it only when the user asks for Seedance 2.0 Mini Uncensored, Seedance Mini Uncensored, or Seedance Mini Spicy, and never swap it for seedance2-mini or seedance2-5-uncensored. It shares the Seedance 2.5 Uncensored likeness and consent agreement, so error 4103 means the account has not accepted it: tell the user to accept it in the Sogni app and do not retry.',
@@ -1570,12 +1571,13 @@ function compactSceneVideoPrompt(project: StoryboardProject, scene: SceneSpec, r
 
 function publicSeedanceVideoModelFromInput(
   input: PublicStoryboardAdapterCompileInput,
-): 'seedance2-mini' | 'seedance2-mini-uncensored' | 'seedance2' | 'seedance2-5' | 'seedance2-5-flash' | 'seedance2-5-uncensored' {
+): 'seedance2-mini' | 'seedance2-mini-uncensored' | 'seedance2' | 'seedance2-5' | 'seedance2-5-flash' | 'seedance2-5-flash-uncensored' | 'seedance2-5-uncensored' {
   const requestedModelId = String(input.options?.requestedModelId ?? '').trim().toLowerCase();
   if (!requestedModelId || requestedModelId === 'seedance') return 'seedance2-5';
   const resolved = resolveVideoModelAlias(requestedModelId, 't2v');
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25) return 'seedance2-5';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25Flash) return 'seedance2-5-flash';
+  if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored) return 'seedance2-5-flash-uncensored';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored) return 'seedance2-5-uncensored';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2vMini) return 'seedance2-mini';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2vMiniUncensored) return 'seedance2-mini-uncensored';
@@ -1595,7 +1597,7 @@ const PUBLIC_SEEDANCE_ADAPTER: PublicStoryboardAdapter = {
         prompt: compileStoryboardImagePromptFromProject(storyboard),
         args: {
           videoModel,
-          ...(isSeedance25VideoModelId(videoModel) ? { targetResolution: videoModel === 'seedance2-5-flash' ? 720 : 1080 } : {}),
+          ...(isSeedance25VideoModelId(videoModel) ? { targetResolution: (videoModel === 'seedance2-5-flash' || videoModel === 'seedance2-5-flash-uncensored') ? 720 : 1080 } : {}),
           aspectRatio: storyboard.targetVideoAspectRatio,
           skipPromptProcessing: true,
           expandPrompt: false,
@@ -1612,7 +1614,7 @@ const PUBLIC_SEEDANCE_ADAPTER: PublicStoryboardAdapter = {
         prompt: compileSeedanceSceneClipPromptFromProject(storyboard, scene, referenceTag),
         args: {
           videoModel,
-          ...(isSeedance25VideoModelId(videoModel) ? { targetResolution: videoModel === 'seedance2-5-flash' ? 720 : 1080 } : {}),
+          ...(isSeedance25VideoModelId(videoModel) ? { targetResolution: (videoModel === 'seedance2-5-flash' || videoModel === 'seedance2-5-flash-uncensored') ? 720 : 1080 } : {}),
           duration,
           aspectRatio: storyboard.targetVideoAspectRatio,
           skipPromptProcessing: true,
@@ -1997,6 +1999,7 @@ export const SEEDANCE_WORKFLOW_MODELS = Object.freeze({
   // supports (t2v, i2v, flf2v, r2v, ia2v, v2v), like the 2.0 family.
   t2v25: SEEDANCE_VIDEO_MODEL_IDS.v25,
   t2v25Flash: SEEDANCE_VIDEO_MODEL_IDS.v25Flash,
+  t2v25FlashUncensored: SEEDANCE_VIDEO_MODEL_IDS.v25FlashUncensored,
   // Seedance 2.5 Uncensored: the same workflows and limits as Seedance 2.5
   // under its own id, which must never be rewritten to seedance-2-5.
   t2v25Uncensored: SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored
@@ -2267,6 +2270,20 @@ export const VIDEO_MODEL_REGISTRY = Object.freeze({
     maxFrames: 721,
     supportsNativeAudio: true
   },
+  [SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored]: {
+    workflow: 't2v',
+    family: 'seedance2',
+    defaultWidth: 1280,
+    defaultHeight: 720,
+    minDimension: 1,
+    maxDimension: 1470,
+    dimensionMultiple: 1,
+    fps: 24,
+    frameStep: 1,
+    minFrames: 97,
+    maxFrames: 721,
+    supportsNativeAudio: true
+  },
   // Seedance 2.5 Uncensored shares the Seedance 2.5 contract.
   [SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored]: {
     workflow: 't2v',
@@ -2427,12 +2444,16 @@ export const VIDEO_MODEL_ALIASES: Readonly<Record<string, string>> = Object.free
   'seedance2-v2v': SEEDANCE_WORKFLOW_MODELS.v2v,
   'seedance2-5': SEEDANCE_WORKFLOW_MODELS.t2v25,
   'seedance2-5-flash': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
+  'seedance2-5-flash-uncensored': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored,
   'seedance2-5-t2v': SEEDANCE_WORKFLOW_MODELS.t2v25,
   'seedance2-5-flash-t2v': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
+  'seedance2-5-flash-uncensored-t2v': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored,
   'seedance2-5-ia2v': SEEDANCE_WORKFLOW_MODELS.t2v25,
   'seedance2-5-flash-ia2v': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
+  'seedance2-5-flash-uncensored-ia2v': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored,
   'seedance2-5-v2v': SEEDANCE_WORKFLOW_MODELS.t2v25,
   'seedance2-5-flash-v2v': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
+  'seedance2-5-flash-uncensored-v2v': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored,
   // Seedance 2.5 Uncensored, including its friendly names. Each resolves to
   // seedance-2-5-uncensored, never to seedance-2-5.
   'seedance2-5-uncensored': SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored,
@@ -4109,6 +4130,7 @@ export interface StoryboardVideoHostedWorkflowBuildOptions {
     | 'seedance2-mini-uncensored'
     | 'seedance2-5'
     | 'seedance2-5-flash'
+    | 'seedance2-5-flash-uncensored'
     | 'seedance2-5-uncensored'
     | string;
   videoDurationSec?: number;
