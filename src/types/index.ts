@@ -298,6 +298,8 @@ export type SogniClientConfig = TokenAuthConfig | CookieAuthConfig | ApiKeyAuthC
  * Base project configuration with additional options
  */
 interface BaseProjectConfig {
+  /** Refuse admission above this exact project quote in Spark. */
+  maxProjectSpark?: string;
   /** Model ID to use for generation */
   modelId: string;
 
@@ -392,6 +394,9 @@ export interface ProjectResult {
  */
 export interface VideoCostEstimateParams
   extends Omit<Parameters<SogniClient['projects']['estimateVideoCost']>[0], 'model' | 'duration' | 'fps' | 'numberOfMedia' | 'tokenType'> {
+  /** Ask for the payable Premium Spark quote for this account. */
+  includeAccountPrice?: boolean;
+
   /** Model ID to use */
   modelId: string;
 
@@ -432,6 +437,7 @@ export interface VideoCostEstimateParams
 export interface AudioCostEstimateParams
   extends Pick<Parameters<SogniClient["projects"]["estimateAudioCost"]>[0],
     "network" | "billingMode" | "priorityMode"> {
+  includeAccountPrice?: boolean;
   /** Model ID to use */
   modelId: string;
 
@@ -452,6 +458,7 @@ export interface AudioCostEstimateParams
  * Cost estimate response
  */
 export interface CostEstimate {
+  accountPrice?: { token: string; spark: string; sogni: string; usd: string; discountBps: number };
   /** Cost in selected token type */
   token: string;
 

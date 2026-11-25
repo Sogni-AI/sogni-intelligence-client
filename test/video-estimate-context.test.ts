@@ -7,6 +7,7 @@ import { SogniClientWrapper } from '../src/client/SogniClientWrapper.js';
 import type { VideoCostEstimateParams } from '../src/types/index.js';
 
 const cases: Array<[string, Partial<VideoCostEstimateParams>]> = [
+  ['account price opt-in', { includeAccountPrice: true }],
   ['explicit video input', { hasVideoInput: true }],
   ['local video reference', { referenceVideo: Buffer.from('video-reference') }],
   ['hosted video references', { referenceVideoUrls: ['https://example.com/reference.mp4'] }],

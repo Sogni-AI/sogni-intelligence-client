@@ -759,6 +759,7 @@ export class SogniClientWrapper extends EventEmitter {
       duration: params.duration,
       steps: params.steps,
       numberOfMedia,
+      ...(params.includeAccountPrice ? { includeAccountPrice: true } : {}),
       ...(params.network !== undefined ? { network: params.network } : {}),
       ...(params.billingMode !== undefined ? { billingMode: params.billingMode } : {}),
       ...(params.priorityMode !== undefined ? { priorityMode: params.priorityMode } : {}),
