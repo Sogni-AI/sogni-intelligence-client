@@ -465,7 +465,7 @@ export function promptLengthAdvisory(
 
 /** Tool-schema guidance for video `prompt` fields (the LLM writes these directly). */
 export const VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE =
-  'PROMPT LENGTH LIMITS (an over-limit request is refused, never cut): MiniMax H3 at most 7,000 characters; HappyHorse at most 5,000 (each Chinese character counts as 2); Wan 3 at most 20,000; Wan 2.2 at most 4,096 tokens (about 3,000 English words) for the prompt and for negativePrompt. Seedance keeps the most detail under 1,000 English words or 500 Chinese characters. Stay well under these; condense wording instead of dropping required content.';
+  'PROMPT LENGTH LIMITS (an over-limit request is refused, never cut): MiniMax H3 at most 7,000 characters; Wan 3 at most 20,000; Wan 2.2 at most 4,096 tokens (about 3,000 English words) for the prompt and for negativePrompt. Seedance keeps the most detail under 1,000 English words or 500 Chinese characters. Stay well under these; condense wording instead of dropping required content.';
 
 /** Tool-schema guidance for music `prompt` and `lyrics` fields. */
 export const MUSIC_TEXT_LENGTH_LIMITS_GUIDANCE =

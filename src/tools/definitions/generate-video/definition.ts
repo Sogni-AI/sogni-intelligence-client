@@ -17,7 +17,6 @@ import {
   SEEDANCE_MINI_UNCENSORED_MODEL_DESCRIPTION,
   SEEDANCE_EXPAND_PROMPT_DESCRIPTION,
   SEEDANCE_TOOL_MULTIMODAL_REFERENCE_GUIDANCE,
-  HAPPYHORSE_GENERATE_VIDEO_MODEL_DESCRIPTION,
   MINIMAX_H3_KEYFRAME_AT_SECONDS_DESCRIPTION,
   MINIMAX_H3_KEYFRAME_IMAGE_INDEX_DESCRIPTION,
   MINIMAX_H3_KEYFRAMES_GENERATE_VIDEO_DESCRIPTION,
@@ -104,7 +103,7 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
         duration: {
           type: "number",
           description:
-            "Video duration in seconds. Default: 5. Per-model range: LTX 2.3 and LTX 2.5 = 2-20s; Wan 3 = 2-30s; Seedance 2.0 and Mini = 4-15s; Seedance 2.5 = 4-30s; HappyHorse 1.1 = 3-15s. Use when the user explicitly requests a specific length. MiniMax H3 is quantized to a 17-frame grid at a fixed 24 fps and renders 124-362 frames, so an H3 clip runs 5.17-15.08 seconds and a requested length outside that window snaps to the nearest valid H3 length.",
+            "Video duration in seconds. Default: 5. Per-model range: LTX 2.3 and LTX 2.5 = 2-20s; Wan 3 = 2-30s; Seedance 2.0 and Mini = 4-15s; Seedance 2.5 = 4-30s. Use when the user explicitly requests a specific length. MiniMax H3 is quantized to a 17-frame grid at a fixed 24 fps and renders 124-362 frames, so an H3 clip runs 5.17-15.08 seconds and a requested length outside that window snaps to the nearest valid H3 length.",
           minimum: 2,
           maximum: 30,
         },
@@ -131,7 +130,7 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
         negativePrompt: {
           type: "string",
           description:
-            "Advanced LTX/WAN only. Use this field only when the user explicitly asks to set a separate negative prompt. MiniMax H3 has no negative-prompt input; put requested exclusions in prompt. Do not set for MiniMax H3, Seedance, or HappyHorse.\n\nWan 3 has no negativePrompt request field; do not set this for wan3.0-video.",
+            "Advanced LTX/WAN only. Use this field only when the user explicitly asks to set a separate negative prompt. MiniMax H3 has no negative-prompt input; put requested exclusions in prompt. Do not set for MiniMax H3 or Seedance.\n\nWan 3 has no negativePrompt request field; do not set this for wan3.0-video.",
         },
         outputFormat: {
           "type": "string",
@@ -161,9 +160,6 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
             "minimax-h3-t2v-turbo",
             "minimax-h3-fasth3-t2v-turbo",
             "minimax-h3-fasth3-t2v-turbo-2stage",
-            "happyhorse-1.1-t2v",
-            "happyhorse-1.1-i2v",
-            "happyhorse-1.1-r2v",
             "minimax-h3-r2v",
             "minimax-h3-r2v-turbo",
             "minimax-h3-r2v-2stage",
@@ -182,13 +178,12 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
             ' H3 SOURCE AUDIO: every H3 R2V call with reference video or audio requires sourceAudioPolicy. A specific/original/trending song is immutable: use reuse_exact, author audio reuse plus fully_copy with explicit choreography times, never substitute/recompose/remix or add a copyright-avoidance mutation, and stream-copy/remux the source signal into the final deliverable. H3 reference videos must themselves be exactly 24fps; normalize other rates without changing duration/audio timing before submission. Use reference_only only when the user explicitly wants newly generated audio guided by the source; use replace only when they explicitly authorize different audio. Ref2VA remains loose visual conditioning and cannot promise edit-level beat synchronization. ' +
             SEEDANCE_TOOL_MULTIMODAL_REFERENCE_GUIDANCE +
             ' ' +
-            HAPPYHORSE_GENERATE_VIDEO_MODEL_DESCRIPTION +
-            ' "wan3.0-video" is Alibaba Wan 3: one canonical premium-vendor model for text, first/last frames, loose multimodal references, audio-driven generation, and document/web context. It renders 2-30s at fixed 30 fps with optional native audio, prompt expansion control, optional watermark, 480p/720p/1080p, and adaptive/16:9/4:3/1:1/3:4/9:16 ratios. It accepts up to 10 images, 5 videos, 5 audios, one file, or one webpage. "wan3.0-spicy-video" is MuleRouter w3.0-video with the same duration, audio, prompt expansion, resolution, ratio, and media-reference limits, but without document/web context or watermark. For both, frame-anchor and loose-reference modes are mutually exclusive; do not send negativePrompt, and treat video references as loose conditioning rather than source-video edit or extension.',
+            ' "wan3.0-video" is regular Wan 3: one canonical premium-vendor model for text, first/last frames, loose multimodal references, audio-driven generation, and document/web context. It renders 2-30s at fixed 30 fps with optional native audio, prompt expansion control, optional watermark, 480p/720p/1080p, and adaptive/16:9/4:3/1:1/3:4/9:16 ratios. It accepts up to 10 images, 5 videos, 5 audios, one file, or one webpage. "wan3.0-spicy-video" is MuleRouter w3.0-video with the same duration, audio, prompt expansion, resolution, ratio, and media-reference limits, but without document/web context or watermark. For both, frame-anchor and loose-reference modes are mutually exclusive; do not send negativePrompt, and treat video references as loose conditioning rather than source-video edit or extension.',
         },
         generateAudio: {
           type: "boolean",
           description:
-            "Whether the returned video should include generated/native audio. Omit to include audio by default; set false only when the user explicitly asks for silent output or no audio. Supported by LTX, MiniMax H3, and Seedance; not supported by WAN or HappyHorse.\n\nWan 3 supports this toggle; omit it for audio-on by default or set false only for an explicitly silent result.",
+            "Whether the returned video should include generated/native audio. Omit to include audio by default; set false only when the user explicitly asks for silent output or no audio. Supported by LTX, MiniMax H3, and Seedance; not supported by WAN 2.2.\n\nWan 3 supports this toggle; omit it for audio-on by default or set false only for an explicitly silent result.",
         },
         sourceAudioPolicy: {
           type: "string",
@@ -248,7 +243,7 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
         targetResolution: {
           type: "number",
           description:
-            'Short-side video resolution target in pixels. Use when the user asks for a bare named resolution such as "480p", "720p", "1080p", "2160p", or "4K" without exact pixels or an output orientation. This is resolution only, not a Seedance quality tier: Seedance quality is selected by videoModel ("seedance2" vs "seedance2-mini" vs "seedance2-5"). Seedance 2.0 full supports 4K; Seedance Mini and Mini Uncensored support 480p/720p; Seedance 2.5 and Uncensored support 480p/720p/1080p/4K (targetResolution=2160). Wan 3 supports exactly 480p, 720p, and 1080p. HappyHorse supports only 720p and 1080p. Never set 4K for Wan 3 or HappyHorse. MiniMax H3 renders inside a 1344x768 pixel budget on a 32px grid, so use 768 for the regular H3 selectors and never 1080p or 4K. The two-stage H3 selector "minimax-h3-fasth3-t2v-turbo-2stage" delivers twice the canvas, so there targetResolution names the delivered short-edge class: 1080 (544px canvas short edge: 960x544 delivered at 1920x1088), 1440 for 2K (the 1344x768 canvas delivered at 2688x1536), or 720 (384px canvas: 672x384 delivered at 1344x768); omit it for 2K. Never set 4K for H3. Do not set targetResolution from Default Media Quality Fast/HQ/Pro. If omitted for Seedance, Wan 3, HappyHorse, or MiniMax H3, the host uses the selected model default. This preserves/inherits the current video shape instead of forcing landscape. Do NOT set width, height, or exact-pixel aspectRatio for bare named resolution requests. If the user says "720p portrait", "720p landscape", "4K portrait", or "4K landscape", use exact width/height/aspectRatio instead.',
+            'Short-side video resolution target in pixels. Use when the user asks for a bare named resolution such as "480p", "720p", "1080p", "2160p", or "4K" without exact pixels or an output orientation. This is resolution only, not a Seedance quality tier: Seedance quality is selected by videoModel ("seedance2" vs "seedance2-mini" vs "seedance2-5"). Seedance 2.0 full supports 4K; Seedance Mini and Mini Uncensored support 480p/720p; Seedance 2.5 and Uncensored support 480p/720p/1080p/4K (targetResolution=2160). Wan 3 supports exactly 480p, 720p, and 1080p. Never set 4K for Wan 3. MiniMax H3 renders inside a 1344x768 pixel budget on a 32px grid, so use 768 for the regular H3 selectors and never 1080p or 4K. The two-stage H3 selector "minimax-h3-fasth3-t2v-turbo-2stage" delivers twice the canvas, so there targetResolution names the delivered short-edge class: 1080 (544px canvas short edge: 960x544 delivered at 1920x1088), 1440 for 2K (the 1344x768 canvas delivered at 2688x1536), or 720 (384px canvas: 672x384 delivered at 1344x768); omit it for 2K. Never set 4K for H3. Do not set targetResolution from Default Media Quality Fast/HQ/Pro. If omitted for Seedance, Wan 3, or MiniMax H3, the host uses the selected model default. This preserves/inherits the current video shape instead of forcing landscape. Do NOT set width, height, or exact-pixel aspectRatio for bare named resolution requests. If the user says "720p portrait", "720p landscape", "4K portrait", or "4K landscape", use exact width/height/aspectRatio instead.',
         },
         numberOfVariations: {
           type: "number",

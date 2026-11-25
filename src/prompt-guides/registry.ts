@@ -10,7 +10,6 @@ import {
   isRegisteredLooseReferenceVideoModelId,
   resolveRegisteredVideoModelFamily,
 } from '../utils/videoModelIds.js';
-import { HAPPYHORSE_PROMPT_GUIDES } from './happyhorse.js';
 import { IMAGE_PROMPT_GUIDE_KEYS, IMAGE_PROMPT_GUIDES } from './image.js';
 import { LTX_PROMPT_GUIDES } from './ltx.js';
 import { MINIMAX_PROMPT_GUIDES } from './minimax.js';
@@ -35,7 +34,6 @@ export const MODEL_PROMPT_GUIDES: ModelPromptGuideRegistry = Object.freeze({
   ...LTX_PROMPT_GUIDES,
   ...WAN_PROMPT_GUIDES,
   ...WAN3_PROMPT_GUIDES,
-  ...HAPPYHORSE_PROMPT_GUIDES,
   ...MINIMAX_PROMPT_GUIDES,
   ...IMAGE_PROMPT_GUIDES,
 });
@@ -57,8 +55,6 @@ function videoGuideFamily(modelId: string): VideoPromptGuideFamily | null {
       return 'wan-2.2';
     case 'wan3':
       return 'wan-3';
-    case 'happyhorse-1.1':
-      return 'happyhorse-1.1';
     case 'minimax-h3':
       return 'minimax-h3';
     default:

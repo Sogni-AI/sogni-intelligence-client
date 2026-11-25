@@ -7,7 +7,6 @@ export type VideoPromptGuideFamily =
   | 'ltx-2.3'
   | 'wan-2.2'
   | 'wan-3'
-  | 'happyhorse-1.1'
   | 'minimax-h3';
 
 /** Image model families with their own prompt rules, named after their prompting guide. */

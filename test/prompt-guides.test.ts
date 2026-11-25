@@ -20,7 +20,6 @@ const VIDEO_MODES: Record<string, string[]> = {
   'ltx-2.3': ['t2v', 'i2v', 'flf', 'a2v', 'ia2v', 'v2v'],
   'wan-2.2': ['t2v', 'i2v', 'l2v', 'flf', 's2v', 'animate-move', 'animate-replace'],
   'wan-3': ['t2v', 'i2v', 'flf', 'r2v', 'a2v'],
-  'happyhorse-1.1': ['t2v', 'i2v', 'r2v'],
   'minimax-h3': ['t2v', 'extend', 'i2v', 'l2v', 'flf', 'i2v-keyframes', 'r2v', 'ia2v', 'flfa2v', 'a2v', 'a2v-keyframes'],
 };
 
@@ -104,9 +103,6 @@ test('getModelPromptGuide resolves model ids and aliases with Sogni\'s resolvers
     ['wan22-animate-move', undefined, 'wan-2.2 animate-move'],
     ['wan3', undefined, 'wan-3 t2v'],
     ['wan3-enhanced', 'r2v', 'wan-3 r2v'],
-    ['happyhorse-1.1', undefined, 'happyhorse-1.1 t2v'],
-    ['happyhorse-1.1-i2v', undefined, 'happyhorse-1.1 i2v'],
-    ['happyhorse-1.1-r2v', undefined, 'happyhorse-1.1 r2v'],
     ['minimax-h3', undefined, 'minimax-h3 t2v'],
     ['minimax-h3', 'extend', 'minimax-h3 extend'],
     ['minimax-h3-i2v-balanced', undefined, 'minimax-h3 i2v'],
