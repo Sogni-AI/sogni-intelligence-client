@@ -42,6 +42,7 @@ export type VideoModelId =
   | "seedance2-mini-uncensored"
   | "seedance2-5"
   | "seedance2-5-flash"
+  | "seedance2-5-flash-uncensored"
   | "seedance2-5-uncensored"
   | "happyhorse-1.1-t2v"
   | "happyhorse-1.1-i2v"
@@ -995,6 +996,15 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
   },
   "seedance2-5-flash": {
     model: "seedance-2-5-flash",
+    fps: 24,
+    dimensionDivisor: 1,
+    minDimension: 1,
+    maxDimension: 1470,
+    minFrames: 97,
+    maxFrames: 721,
+  },
+  "seedance2-5-flash-uncensored": {
+    model: "seedance-2-5-flash-uncensored",
     fps: 24,
     dimensionDivisor: 1,
     minDimension: 1,

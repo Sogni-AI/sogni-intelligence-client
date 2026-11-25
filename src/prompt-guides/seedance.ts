@@ -188,5 +188,5 @@ function seedanceGuides(
 export const SEEDANCE_PROMPT_GUIDES: Pick<ModelPromptGuideRegistry, 'seedance-2.0' | 'seedance-2.5' | 'seedance-2.5-flash'> = {
   'seedance-2.0': seedanceGuides('seedance-2.0', ['seedance2', 'seedance2-mini', 'seedance2-mini-uncensored'], SEEDANCE_20_NOTES),
   'seedance-2.5': seedanceGuides('seedance-2.5', ['seedance2-5', 'seedance2-5-uncensored'], SEEDANCE_25_NOTES),
-  'seedance-2.5-flash': seedanceGuides('seedance-2.5-flash', ['seedance2-5-flash'], []),
+  'seedance-2.5-flash': seedanceGuides('seedance-2.5-flash', ['seedance2-5-flash', 'seedance2-5-flash-uncensored'], []),
 };
