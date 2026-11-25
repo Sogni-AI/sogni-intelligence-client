@@ -49,7 +49,7 @@ const MINIMAX_H3_AUDIO_GUIDE_SELECTORS = [
 ] as const;
 
 const WAN3_VIDEO_MODEL_GUIDANCE =
-  '"wan3.0-video" is Alibaba Wan 3 and "wan3.0-spicy-video" is MuleRouter w3.0-video. Both support 2-30s at 30 fps, optional native audio, prompt expansion, 480p/720p/1080p, adaptive/fixed ratios, and up to 10 image/5 video/5 audio references. Enhanced has no document/web context or watermark. Frame anchors cannot be mixed with loose references. Do not send negativePrompt; video references are loose conditioning, not edit or extend modes.';
+  '"wan3.0-video" is Alibaba Wan 3 and "wan3.0-spicy-video" is MuleRouter w3.0-video. Both support 2-30s at 30 fps, optional native audio, prompt expansion, 480p/720p/1080p, adaptive/fixed ratios, and up to 10 image/5 video/5 audio references. Enhanced has no document/web context. Frame anchors cannot be mixed with loose references. Do not send negativePrompt; video references are loose conditioning, not edit or extend modes.';
 
 export const definition: ToolDefinition = {
   type: "function",
@@ -149,10 +149,6 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
           type: "string",
           enum: ["adaptive", "16:9", "4:3", "1:1", "3:4", "9:16"],
           description: 'Wan 3 only. Output ratio; "adaptive" derives it from the input.',
-        },
-        watermark: {
-          type: "boolean",
-          description: "Alibaba wan3.0-video only. Add the visible watermark. Defaults to false.",
         },
         referenceFileUrl: {
           type: "string",

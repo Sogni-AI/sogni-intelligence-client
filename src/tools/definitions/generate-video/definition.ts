@@ -113,10 +113,6 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
           description:
             'Wan 3 only. Output ratio. Use "adaptive" to derive the shape from input/context media. Omit for automatic behavior.',
         },
-        watermark: {
-          type: "boolean",
-          description: "Alibaba wan3.0-video only. Add the visible watermark. Defaults to false.",
-        },
         referenceFileUrl: {
           type: "string",
           description:
@@ -178,7 +174,7 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
             ' H3 SOURCE AUDIO: every H3 R2V call with reference video or audio requires sourceAudioPolicy. A specific/original/trending song is immutable: use reuse_exact, author audio reuse plus fully_copy with explicit choreography times, never substitute/recompose/remix or add a copyright-avoidance mutation, and stream-copy/remux the source signal into the final deliverable. H3 reference videos must themselves be exactly 24fps; normalize other rates without changing duration/audio timing before submission. Use reference_only only when the user explicitly wants newly generated audio guided by the source; use replace only when they explicitly authorize different audio. Ref2VA remains loose visual conditioning and cannot promise edit-level beat synchronization. ' +
             SEEDANCE_TOOL_MULTIMODAL_REFERENCE_GUIDANCE +
             ' ' +
-            ' "wan3.0-video" is regular Wan 3: one canonical premium-vendor model for text, first/last frames, loose multimodal references, audio-driven generation, and document/web context. It renders 2-30s at fixed 30 fps with optional native audio, prompt expansion control, optional watermark, 480p/720p/1080p, and adaptive/16:9/4:3/1:1/3:4/9:16 ratios. It accepts up to 10 images, 5 videos, 5 audios, one file, or one webpage. "wan3.0-spicy-video" is MuleRouter w3.0-video with the same duration, audio, prompt expansion, resolution, ratio, and media-reference limits, but without document/web context or watermark. For both, frame-anchor and loose-reference modes are mutually exclusive; do not send negativePrompt, and treat video references as loose conditioning rather than source-video edit or extension.',
+            ' "wan3.0-video" is regular Wan 3: one canonical premium-vendor model for text, first/last frames, loose multimodal references, audio-driven generation, and document/web context. It renders 2-30s at fixed 30 fps with optional native audio, prompt expansion control, 480p/720p/1080p, and adaptive/16:9/4:3/1:1/3:4/9:16 ratios. It accepts up to 10 images, 5 videos, 5 audios, one file, or one webpage. "wan3.0-spicy-video" is MuleRouter w3.0-video with the same duration, audio, prompt expansion, resolution, ratio, and media-reference limits, but without document/web context. For both, frame-anchor and loose-reference modes are mutually exclusive; do not send negativePrompt, and treat video references as loose conditioning rather than source-video edit or extension.',
         },
         generateAudio: {
           type: "boolean",
