@@ -136,3 +136,87 @@ test('ordinary replay content and numeric metadata remain intact', () => {
   const record = { ...emptyRunRecord(), run_id: EXAMPLE_KEY, user_request: 'Draw a pink sloth.', runtime_config: { tokens: 300, temperature: 0.7 }, total_cost: { totalUsd: 0.02 } };
   assert.deepEqual(redactRunRecord(record), { ...record, redacted: true });
 });
+
+test('expanded credential key names and string session tokens are filtered while preserving non-secret keys', () => {
+  const marker = 'DUMMY-CREDENTIAL-VALUE-0123456789abcdef';
+  const payload = {
+    authToken: marker,
+    sessionToken: marker,
+    csrfToken: marker,
+    securityToken: marker,
+    clientToken: marker,
+    apiToken: marker,
+    accessKey: marker,
+    accessKeyId: marker,
+    secretKey: marker,
+    secretAccessKey: marker,
+    awsAccessKeyId: marker,
+    jwt: marker,
+    jwe: marker,
+    pwd: marker,
+    passwd: marker,
+    passphrase: marker,
+    user_jwt: marker,
+    db_passwd: marker,
+    session: marker,
+    nestedSession: {
+      session: { id: 'run-ref-1', sessionCookie: marker },
+    },
+    preserved: {
+      tokens: 300,
+      prompt_tokens: 120,
+      completion_tokens: 180,
+      tokenType: 'spark',
+      token_type: 'auto',
+      key: 'ordinary/object.png',
+      modelKey: 'flux-schnell',
+      idempotencyKey: 'idem-123',
+    },
+  };
+  const redacted = redactPayload(payload) as Record<string, any>;
+  assert.ok(!JSON.stringify(redacted).includes(marker));
+  assert.equal(redacted.session, '[REDACTED]');
+  assert.deepEqual(redacted.nestedSession, {
+    session: { id: 'run-ref-1', sessionCookie: '[REDACTED]' },
+  });
+  assert.deepEqual(redacted.preserved, payload.preserved);
+  assert.deepEqual(redactPayload(redacted), redacted);
+});
+
+test('signed URL query parameters, percent-encoded labels, cookies, and Basic credentials are filtered', () => {
+  const marker = 'MARKER9876543210XYZabcdef';
+  const basicToken = Buffer.from(`account:${marker}`).toString('base64');
+  const apiKeyOnlyBasic = Buffer.from(`${marker}:`).toString('base64');
+
+  for (const sample of [
+    `https://s3.example.test/f.png?X-Amz-Algorithm=AWS4&X-Amz-Security-Token=${marker}&X-Amz-Signature=${marker}`,
+    `https://s3.example.test/f.png?AWSAccessKeyId=${marker}&Expires=123`,
+    `https://storage.example.test/f.png?X-Goog-Credential=${marker}&X-Goog-Signature=${marker}&X-Goog-Security-Token=${marker}`,
+    `https%3A%2F%2Fs3.example.test%2Ff.png%3FX-Amz-Security-Token%3D${marker}%26X-Amz-Signature%3D${marker}`,
+    `https://x.example.test/?api%5Fkey=${marker}&page=1`,
+    `password%3D${marker}`,
+    `session_token%3A${marker}`,
+    `{"Authorization":"Bearer ${marker}"}`,
+    `{"cookie":"session=${marker}"}`,
+    `Cookie: session=${marker}; theme=dark`,
+    `Set-Cookie: sid=${marker}; HttpOnly; Secure`,
+    `curl -H "Cookie: a=1; sid=${marker}" https://x.example.test`,
+    `credentials: Basic ${basicToken}`,
+    `header Basic ${apiKeyOnlyBasic}`,
+  ]) {
+    const out = redactStringValue(sample);
+    assert.ok(!out.includes(marker), `expected marker filtered in: ${sample} -> ${out}`);
+    assert.ok(!out.includes(basicToken), `expected base64 filtered in: ${sample} -> ${out}`);
+    assert.ok(!out.includes(apiKeyOnlyBasic), `expected key-only base64 filtered in: ${sample} -> ${out}`);
+    assert.equal(redactStringValue(out), out, `expected idempotent output for: ${sample}`);
+  }
+
+  // Creative prose with "Basic" or "cookie" must remain untouched.
+  for (const prose of [
+    'Basic portrait with soft studio lighting',
+    'Basic lighting and composition notes',
+    'the cookie is warm on a ceramic plate',
+  ]) {
+    assert.equal(redactStringValue(prose), prose);
+  }
+});

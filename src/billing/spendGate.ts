@@ -246,8 +246,32 @@ const SPEND_GATE_DECISIONS: ReadonlySet<SpendGateDecision> = new Set<SpendGateDe
   'cancelled',
 ]);
 
+const MAX_BOUNDED_SPEND_UNITS = Number.MAX_SAFE_INTEGER;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isNonNegativeBoundedUnits(value: unknown): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isFinite(value) &&
+    value >= 0 &&
+    value <= MAX_BOUNDED_SPEND_UNITS
+  );
+}
+
+function hasBoundedBreakdownSum(entries: readonly unknown[]): boolean {
+  let sum = 0;
+  for (const entry of entries) {
+    if (isRecord(entry) && typeof entry.units === 'number' && Number.isFinite(entry.units) && entry.units >= 0) {
+      sum += entry.units;
+      if (!Number.isFinite(sum) || sum > MAX_BOUNDED_SPEND_UNITS) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 export function isSpendGateState(value: unknown): value is SpendGateState {
@@ -269,7 +293,7 @@ export function isSpendGateDecision(value: unknown): value is SpendGateDecision 
 export function isSpendGateCostBreakdownEntry(value: unknown): value is SpendGateCostBreakdownEntry {
   if (!isRecord(value)) return false;
   if (typeof value.model !== 'string') return false;
-  if (typeof value.units !== 'number' || !Number.isFinite(value.units)) return false;
+  if (!isNonNegativeBoundedUnits(value.units)) return false;
   if (!isSpendGateTokenType(value.tokenType)) return false;
   return true;
 }
@@ -280,10 +304,7 @@ export function isSpendGatePendingToolCallRef(
   if (!isRecord(value)) return false;
   if (typeof value.toolCallId !== 'string') return false;
   if (typeof value.toolName !== 'string') return false;
-  if (
-    value.estimateUnits !== undefined
-    && (typeof value.estimateUnits !== 'number' || !Number.isFinite(value.estimateUnits))
-  ) {
+  if (value.estimateUnits !== undefined && !isNonNegativeBoundedUnits(value.estimateUnits)) {
     return false;
   }
   return true;
@@ -300,15 +321,16 @@ export function isSpendGatePendingWorkflowPlanRef(
 
 export function isSpendGateEstimate(value: unknown): value is SpendGateEstimate {
   if (!isRecord(value)) return false;
-  if (typeof value.capacityUnits !== 'number' || !Number.isFinite(value.capacityUnits)) return false;
-  if (!Array.isArray(value.breakdown) || !value.breakdown.every(isSpendGateCostBreakdownEntry)) {
+  if (!isNonNegativeBoundedUnits(value.capacityUnits)) return false;
+  if (
+    !Array.isArray(value.breakdown) ||
+    !value.breakdown.every(isSpendGateCostBreakdownEntry) ||
+    !hasBoundedBreakdownSum(value.breakdown)
+  ) {
     return false;
   }
   if (!isSpendGateTokenType(value.tokenType)) return false;
-  if (
-    value.maxAcceptableUnits !== undefined &&
-    (typeof value.maxAcceptableUnits !== 'number' || !Number.isFinite(value.maxAcceptableUnits))
-  ) {
+  if (value.maxAcceptableUnits !== undefined && !isNonNegativeBoundedUnits(value.maxAcceptableUnits)) {
     return false;
   }
   return true;
@@ -319,15 +341,17 @@ export function isSpendGateRequest(value: unknown): value is SpendGateRequest {
   if (!isSpendGateScope(value.scope)) return false;
   if (value.toolCallId !== undefined && typeof value.toolCallId !== 'string') return false;
   if (value.workflowRunId !== undefined && typeof value.workflowRunId !== 'string') return false;
-  if (typeof value.estimateCapacityUnits !== 'number' || !Number.isFinite(value.estimateCapacityUnits)) {
+  if (!isNonNegativeBoundedUnits(value.estimateCapacityUnits)) {
     return false;
   }
   if (!Array.isArray(value.estimateCostBreakdown)) return false;
-  if (!value.estimateCostBreakdown.every(isSpendGateCostBreakdownEntry)) return false;
   if (
-    value.maxAcceptableUnits !== undefined &&
-    (typeof value.maxAcceptableUnits !== 'number' || !Number.isFinite(value.maxAcceptableUnits))
+    !value.estimateCostBreakdown.every(isSpendGateCostBreakdownEntry) ||
+    !hasBoundedBreakdownSum(value.estimateCostBreakdown)
   ) {
+    return false;
+  }
+  if (value.maxAcceptableUnits !== undefined && !isNonNegativeBoundedUnits(value.maxAcceptableUnits)) {
     return false;
   }
   if (value.reason !== undefined && typeof value.reason !== 'string') return false;
@@ -396,8 +420,8 @@ function validateBreakdownEntryInternal(
     pushError(errors, `${basePath}/model`, 'must be a string');
   }
   const units = (value as { units?: unknown }).units;
-  if (typeof units !== 'number' || !Number.isFinite(units)) {
-    pushError(errors, `${basePath}/units`, 'must be a finite number');
+  if (!isNonNegativeBoundedUnits(units)) {
+    pushError(errors, `${basePath}/units`, 'must be a non-negative bounded number');
   }
   if (!isSpendGateTokenType((value as { tokenType?: unknown }).tokenType)) {
     pushError(errors, `${basePath}/tokenType`, 'must be a valid SpendGateTokenType');
@@ -414,8 +438,8 @@ function validateEstimateInternal(
     return;
   }
   const cap = (value as { capacityUnits?: unknown }).capacityUnits;
-  if (typeof cap !== 'number' || !Number.isFinite(cap)) {
-    pushError(errors, `${basePath}/capacityUnits`, 'must be a finite number');
+  if (!isNonNegativeBoundedUnits(cap)) {
+    pushError(errors, `${basePath}/capacityUnits`, 'must be a non-negative bounded number');
   }
   const breakdown = (value as { breakdown?: unknown }).breakdown;
   if (!Array.isArray(breakdown)) {
@@ -424,13 +448,16 @@ function validateEstimateInternal(
     breakdown.forEach((entry, idx) =>
       validateBreakdownEntryInternal(entry, `${basePath}/breakdown/${idx}`, errors),
     );
+    if (!hasBoundedBreakdownSum(breakdown)) {
+      pushError(errors, `${basePath}/breakdown`, 'sum of breakdown units exceeds safe finite range');
+    }
   }
   if (!isSpendGateTokenType((value as { tokenType?: unknown }).tokenType)) {
     pushError(errors, `${basePath}/tokenType`, 'must be a valid SpendGateTokenType');
   }
   const maxAcc = (value as { maxAcceptableUnits?: unknown }).maxAcceptableUnits;
-  if (maxAcc !== undefined && (typeof maxAcc !== 'number' || !Number.isFinite(maxAcc))) {
-    pushError(errors, `${basePath}/maxAcceptableUnits`, 'must be a finite number when present');
+  if (maxAcc !== undefined && !isNonNegativeBoundedUnits(maxAcc)) {
+    pushError(errors, `${basePath}/maxAcceptableUnits`, 'must be a non-negative bounded number when present');
   }
 }
 
@@ -456,8 +483,8 @@ export function validateSpendGateRequest(value: unknown): SpendGateValidationRes
     pushError(errors, '/workflowRunId', 'must be a string when present');
   }
   const est = (value as { estimateCapacityUnits?: unknown }).estimateCapacityUnits;
-  if (typeof est !== 'number' || !Number.isFinite(est)) {
-    pushError(errors, '/estimateCapacityUnits', 'must be a finite number');
+  if (!isNonNegativeBoundedUnits(est)) {
+    pushError(errors, '/estimateCapacityUnits', 'must be a non-negative bounded number');
   }
   const breakdown = (value as { estimateCostBreakdown?: unknown }).estimateCostBreakdown;
   if (!Array.isArray(breakdown)) {
@@ -466,10 +493,13 @@ export function validateSpendGateRequest(value: unknown): SpendGateValidationRes
     breakdown.forEach((entry, idx) =>
       validateBreakdownEntryInternal(entry, `/estimateCostBreakdown/${idx}`, errors),
     );
+    if (!hasBoundedBreakdownSum(breakdown)) {
+      pushError(errors, '/estimateCostBreakdown', 'sum of breakdown units exceeds safe finite range');
+    }
   }
   const maxAcc = (value as { maxAcceptableUnits?: unknown }).maxAcceptableUnits;
-  if (maxAcc !== undefined && (typeof maxAcc !== 'number' || !Number.isFinite(maxAcc))) {
-    pushError(errors, '/maxAcceptableUnits', 'must be a finite number when present');
+  if (maxAcc !== undefined && !isNonNegativeBoundedUnits(maxAcc)) {
+    pushError(errors, '/maxAcceptableUnits', 'must be a non-negative bounded number when present');
   }
   const reason = (value as { reason?: unknown }).reason;
   if (reason !== undefined && typeof reason !== 'string') {
@@ -525,11 +555,12 @@ export function validateSpendGate(value: unknown): SpendGateValidationResult {
           pushError(errors, `/pendingToolCalls/${idx}/toolName`, 'must be a string');
         }
         const estimateUnits = (ref as { estimateUnits?: unknown }).estimateUnits;
-        if (
-          estimateUnits !== undefined
-          && (typeof estimateUnits !== 'number' || !Number.isFinite(estimateUnits))
-        ) {
-          pushError(errors, `/pendingToolCalls/${idx}/estimateUnits`, 'must be a finite number when present');
+        if (estimateUnits !== undefined && !isNonNegativeBoundedUnits(estimateUnits)) {
+          pushError(
+            errors,
+            `/pendingToolCalls/${idx}/estimateUnits`,
+            'must be a non-negative bounded number when present',
+          );
         }
       });
     }
