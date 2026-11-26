@@ -146,20 +146,28 @@ export function routeMcpCall(name: string, raw: unknown): McpRoutedCall {
     if (refs.some(ref => ref.type !== 'audio') || refs.filter(ref => ref.type === 'audio').length > 1) throw new Error('Speech accepts one voice sample');
   } else if (name === 'transform_media') {
     toolName = input.operation as string;
-    const imageOperation = ['upscale_image', 'remove_background', 'restore_photo'].includes(toolName);
-    const sourceType = imageOperation ? 'image' : 'video';
-    const sources = refs.filter(ref => ref.type === sourceType);
-    if (!sources.length) throw new Error(`This operation requires ${sourceType} references`);
-    if (toolName !== 'stitch_video' && sources.length > 1) throw new Error('This operation accepts one source');
-    if (toolName === 'upscale_image' || toolName === 'remove_background') put('sourceImageIndex', 0);
-    if (toolName === 'upscale_video') put('sourceVideoIndex', 0);
-    if (toolName === 'extend_video') put('videoIndex', 0);
-    if (toolName === 'stitch_video') {
-      put('videoIndices', sources.map((_, index) => index));
-      if (refs.some(ref => ref.type === 'audio')) put('audioIndex', 0);
+    if (toolName === 'transcribe_audio') {
+      const sttSources = refs.filter(ref => ref.type === 'audio' || ref.type === 'video');
+      if (sttSources.length !== 1 || refs.some(ref => ref.type === 'image')) {
+        throw new Error('transcribe_audio requires exactly one audio or video reference');
+      }
+      put('audioSourceIndex', -1);
+    } else {
+      const imageOperation = ['upscale_image', 'remove_background', 'restore_photo'].includes(toolName);
+      const sourceType = imageOperation ? 'image' : 'video';
+      const sources = refs.filter(ref => ref.type === sourceType);
+      if (!sources.length) throw new Error(`This operation requires ${sourceType} references`);
+      if (toolName !== 'stitch_video' && sources.length > 1) throw new Error('This operation accepts one source');
+      if (toolName === 'upscale_image' || toolName === 'remove_background') put('sourceImageIndex', 0);
+      if (toolName === 'upscale_video' || toolName === 'add_subtitles') put('sourceVideoIndex', 0);
+      if (toolName === 'extend_video') put('videoIndex', 0);
+      if (toolName === 'stitch_video') {
+        put('videoIndices', sources.map((_, index) => index));
+        if (refs.some(ref => ref.type === 'audio')) put('audioIndex', 0);
+      }
+      if (refs.some(ref => ref.type !== sourceType && !(toolName === 'stitch_video' && ref.type === 'audio'))
+        || refs.filter(ref => ref.type === 'audio').length > 1) throw new Error('Unsupported references for this operation');
     }
-    if (refs.some(ref => ref.type !== sourceType && !(toolName === 'stitch_video' && ref.type === 'audio'))
-      || refs.filter(ref => ref.type === 'audio').length > 1) throw new Error('Unsupported references for this operation');
   } else {
     throw new Error('This tool does not route to a single generation workflow');
   }

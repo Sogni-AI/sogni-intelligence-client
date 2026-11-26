@@ -21,6 +21,7 @@ import {
   SogniValidationError,
 } from './errors.js';
 import { isGptImageModel } from '../media/gptImage.js';
+import { isTranscriptionModel, TRANSCRIPTION_MODELS, getTranscriptionEngine } from '../media/transcriptionSettings.js';
 import { isSeedreamImageModel, SEEDREAM_MAX_REFERENCE_IMAGES } from '../media/seedream.js';
 import {
   RELAYVSR_MAX_OUTPUT,
@@ -623,12 +624,19 @@ export function validateProjectConfig(config: ProjectConfig): void {
   }
 
   if (isAudioProjectConfig(config)) {
-    if (config.outputFormat && !['mp3', 'flac', 'wav'].includes(config.outputFormat)) {
-      throw new SogniValidationError('Audio output format must be one of: "mp3", "flac", "wav"');
+    const isStt = isTranscriptionModel(config.modelId);
+    if (config.outputFormat && !['mp3', 'flac', 'wav', 'json'].includes(config.outputFormat)) {
+      throw new SogniValidationError('Audio output format must be one of: "mp3", "flac", "wav", "json"');
     }
 
     if (config.duration !== undefined) {
-      if (typeof config.duration !== 'number' || config.duration < 10 || config.duration > 600) {
+      if (isStt) {
+        const sttEngine = getTranscriptionEngine(config.modelId);
+        const maxDuration = sttEngine ? TRANSCRIPTION_MODELS[sttEngine].maxDurationSec : 7200;
+        if (typeof config.duration !== 'number' || config.duration <= 0 || config.duration > maxDuration) {
+          throw new SogniValidationError(`Transcription audio duration must be between 1 and ${maxDuration} seconds`);
+        }
+      } else if (typeof config.duration !== 'number' || config.duration < 10 || config.duration > 600) {
         throw new SogniValidationError('Audio duration must be between 10 and 600 seconds');
       }
     }

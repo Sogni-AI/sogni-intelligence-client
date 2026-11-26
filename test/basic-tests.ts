@@ -144,6 +144,7 @@ import { runWan3VideoTests } from './wan3-video-tests';
 import { runWorkflowExecutorTests } from './workflow-executor-tests';
 import { runCostApprovalTests } from './cost-approval-tests';
 import { runSpeechSettingsTests } from './speech-settings-tests';
+import { runTranscriptionSettingsTests } from './transcription-settings-tests';
 import { runVideoUpscaleTests } from './video-upscale-tests';
 import { runPersonaReferenceVideoTests } from './persona-reference-video-tests';
 import { runPersonaReferencesTests } from './persona-references-tests';
@@ -4056,16 +4057,17 @@ async function runTests() {
       !SogniTools.generateImage ||
       !SogniTools.generateVideo ||
       !SogniTools.generateMusic ||
-      !SogniTools.generateSpeech
+      !SogniTools.generateSpeech ||
+      !SogniTools.transcribeAudio
     ) {
       throw new Error('Missing one or more built-in Sogni tool definitions');
     }
 
     const all = SogniTools.all;
-    if (!Array.isArray(all) || all.length !== 30) {
-      throw new Error(`SogniTools.all expected 30 tools, got ${all.length}`);
+    if (!Array.isArray(all) || all.length !== 31) {
+      throw new Error(`SogniTools.all expected 31 tools, got ${all.length}`);
     }
-    for (const name of ['image_to_3d', 'remove_background', 'segment_image']) {
+    for (const name of ['image_to_3d', 'remove_background', 'segment_image', 'transcribe_audio']) {
       if (!all.some((tool) => tool.function.name === name)) {
         throw new Error(`SogniTools.all must include the ${name} contract`);
       }
@@ -6410,10 +6412,15 @@ async function runTests() {
   testsPassed += costApprovalResults.passed;
   testsFailed += costApprovalResults.failed;
 
-  // Qwen3-TTS speech contract — per-checkpoint required and forbidden inputs
+  // Qwen3-TTS + Fish Drama 3 speech contract — per-checkpoint required and forbidden inputs
   const speechResults = runSpeechSettingsTests();
   testsPassed += speechResults.passed;
   testsFailed += speechResults.failed;
+
+  // Parakeet + Nemotron STT contract & SRT/VTT/TXT formatters
+  const transcriptionResults = runTranscriptionSettingsTests();
+  testsPassed += transcriptionResults.passed;
+  testsFailed += transcriptionResults.failed;
 
   // FlashVSR upscale_video contract — tool, routing data, and output geometry
   const videoUpscaleResults = runVideoUpscaleTests();

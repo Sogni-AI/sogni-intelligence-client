@@ -704,9 +704,11 @@ function artifactKindForTool(tool: string): Artifact['kind'] {
   if (tool === 'image_to_3d') return 'model';
   if (tool === 'animate_photo' || tool === 'generate_video' || tool === 'sound_to_video'
     || tool === 'video_to_video' || tool === 'stitch_video' || tool === 'orbit_video'
-    || tool === 'dance_montage' || tool === 'upscale_video') return 'video';
+    || tool === 'dance_montage' || tool === 'upscale_video'
+    || tool === 'extend_video' || tool === 'replace_video_segment'
+    || tool === 'overlay_video' || tool === 'add_subtitles') return 'video';
   if (tool === 'generate_music' || tool === 'generate_speech') return 'audio';
-  if (tool === 'analyze_image' || tool === 'extract_metadata') return 'text';
+  if (tool === 'analyze_image' || tool === 'analyze_video' || tool === 'extract_metadata' || tool === 'transcribe_audio') return 'text';
   return 'image';
 }
 

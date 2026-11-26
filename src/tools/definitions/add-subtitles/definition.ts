@@ -3,9 +3,8 @@
  *
  * Burns subtitles onto a previously rendered or uploaded video using ffmpeg's
  * `subtitles` filter. The caller may provide cues directly as a structured
- * array, or pass a complete SRT/VTT string. Auto-transcription is intentionally
- * stubbed — the server returns a typed STT_NOT_AVAILABLE error until a
- * dedicated speech-to-text backend lands.
+ * array, pass a complete SRT/VTT string, or set `auto_transcribe: true` so
+ * speech-to-text automatically transcribes spoken speech with word/segment timings.
  */
 
 import type { ToolDefinition } from '../types.js';
@@ -17,17 +16,15 @@ export const definition: ToolDefinition = {
   function: {
     name: 'add_subtitles',
     description:
-      'Burn subtitles into a video from caller-supplied cues or an SRT/VTT string. ' +
+      'Burn subtitles into a video from caller-supplied cues, an SRT/VTT string, or automatic speech-to-text transcription (auto_transcribe=true). ' +
       'Use when the user asks to add captions, subtitles, on-screen dialogue, or burned-in lyrics to a video. ' +
-      'Either pass `cues` as an array of {startSeconds, endSeconds, text}, or pass a full `srt` string. ' +
-      'Pace cues like real subtitles: split the script into multiple short cues (typically 1.5–4 seconds each, ' +
+      'Either pass `cues` as an array of {startSeconds, endSeconds, text}, pass a full `srt` string, or set `auto_transcribe=true` when the user wants spoken dialogue in the video subtitled automatically without supplying cue text. ' +
+      'Pace caller-authored cues like real subtitles: split the script into multiple short cues (typically 1.5–4 seconds each, ' +
       '~1–8 words per cue, roughly 15–20 characters per second of cue duration). Never burn a single cue that ' +
       'spans the entire clip — even a static image should get progressively revealed lines, not one paragraph ' +
       'held on screen the whole time. ' +
-      'Auto-transcription (auto_transcribe=true) is not yet enabled and will return USER_INPUT_INCOMPLETE — ' +
-      'when the user has not supplied lines, ask them for the cue text and timing instead of calling with auto_transcribe. ' +
       'If the user explicitly asks you to write, invent, improvise, or make up captions/subtitles, create a few short, ' +
-      'generic cue lines yourself and call this tool with cues; do not ask a follow-up for exact wording in that case.',
+      'generic cue lines yourself and call this tool with cues rather than auto_transcribe; do not ask a follow-up for exact wording in that case.',
     parameters: {
       type: 'object',
       properties: {
@@ -42,7 +39,7 @@ export const definition: ToolDefinition = {
           type: 'array',
           description:
             'Ordered subtitle cues. Each cue has startSeconds, endSeconds, and the line of text to display. ' +
-            'Provide either `cues` or `srt`, not both. Aim for multiple short cues (1.5–4s each, ~1–8 words) ' +
+            'Provide `cues`, `srt`, or `auto_transcribe=true`. Aim for multiple short cues (1.5–4s each, ~1–8 words) ' +
             'rather than one long cue spanning the full clip.',
           items: {
             type: 'object',
@@ -58,13 +55,12 @@ export const definition: ToolDefinition = {
           type: 'string',
           description:
             'Full SRT (or VTT) document as a string, used in place of `cues`. Useful when the user pastes ' +
-            'a subtitle file directly. Provide either `cues` or `srt`, not both.',
+            'a subtitle file directly. Provide `cues`, `srt`, or `auto_transcribe=true`.',
         },
         auto_transcribe: {
           type: 'boolean',
           description:
-            'Reserved for future speech-to-text support. Currently returns USER_INPUT_INCOMPLETE so the LLM ' +
-            'can ask the user to supply cues. Do not set this — gather cue text from the user instead.',
+            'When true and neither `cues` nor `srt` is supplied, automatically transcribe spoken speech in the source video with word/segment timings and burn paced subtitles onto the video.',
         },
         style: {
           type: 'object',

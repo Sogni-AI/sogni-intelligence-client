@@ -119,6 +119,7 @@ export {
   generateImageDefinition,
   generateMusicDefinition,
   generateSpeechDefinition,
+  transcribeAudioDefinition,
   generateVideoDefinition,
   generationToolDefinitions,
   orbitVideoDefinition,

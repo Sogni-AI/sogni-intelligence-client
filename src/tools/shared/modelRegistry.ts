@@ -180,13 +180,18 @@ export const MODELS_BY_TOOL: Record<string, ModelOption[]> = {
     { key: 'turbo', displayName: 'ACE-Step 1.5 Turbo' },
     { key: 'sft', displayName: 'ACE-Step 1.5 SFT' },
   ],
-  // Three Qwen3-TTS checkpoints, picked by what the caller can supply rather
-  // than by quality tier: a preset voice, a recording to clone, or a written
-  // description of a speaker to invent.
+  // Three Qwen3-TTS checkpoints plus Fish Drama 3 expressive speech, picked by
+  // what the caller supplies: a preset voice, a recording to clone, a written
+  // description of a speaker to invent, or inline [direction] acting speech.
   generate_speech: [
     { key: 'voice', displayName: 'Qwen3-TTS Studio Voices' },
     { key: 'clone', displayName: 'Qwen3-TTS Voice Clone' },
     { key: 'design', displayName: 'Qwen3-TTS Voice Design' },
+    { key: 'drama3', displayName: 'Fish Drama 3' },
+  ],
+  transcribe_audio: [
+    { key: 'parakeet', displayName: 'Parakeet TDT 0.6B v3' },
+    { key: 'nemotron', displayName: 'NVIDIA Nemotron 3.5 Transcribe 30B' },
   ],
 };
 

@@ -1267,7 +1267,7 @@ export const SPEECH_GENERATION_SKILL: SkillManifest = {
   id: 'speech_generation',
   name: 'Speech generation',
   description:
-    'Read written words aloud: narration and voiceover in one of nine studio voices, a voice cloned from an uploaded recording, or a voice invented from a description. Ten languages, cross-lingual cloning.',
+    'Read written words aloud: narration and voiceover in one of nine studio voices, expressive Fish Drama 3 acting speech with inline [direction] tags, a voice cloned from an uploaded recording, or a voice invented from a description. Eleven languages, cross-lingual cloning.',
   toolNames: ['generate_speech'],
 };
 
@@ -1275,8 +1275,8 @@ export const MEDIA_ANALYSIS_SKILL: SkillManifest = {
   id: 'media_analysis',
   name: 'Media analysis',
   description:
-    'Vision analysis of uploaded images / videos and structured extraction of generation metadata from previously rendered results.',
-  toolNames: ['analyze_image', 'analyze_video', 'extract_metadata'],
+    'Vision analysis of uploaded images / videos, speech-to-text transcription and speaker diarization of audio / video recordings, and structured extraction of generation metadata from previously rendered results.',
+  toolNames: ['analyze_image', 'analyze_video', 'transcribe_audio', 'extract_metadata'],
 };
 
 export const PERSONA_MANAGEMENT_SKILL: SkillManifest = {

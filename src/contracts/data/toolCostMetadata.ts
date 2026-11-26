@@ -33,6 +33,7 @@ export type ToolCostClass =
   | 'video.vendor.premium'
   | 'audio.standard'
   | 'audio.speech'
+  | 'audio.transcription'
   | 'compose.standard'
   | 'compose.ffmpeg';
 
@@ -167,8 +168,15 @@ export const TOOL_COST_METADATA: ReadonlyArray<ToolCostMetadata> = [
     // speech is a flat quote per take because the script decides the length.
     costClass: 'audio.speech',
     riskLevel: 'paid',
-    userVisibleCost: 'Flat per-take audio pricing',
-    description: 'Text to speech with a studio voice, a cloned voice, or a designed one.',
+    userVisibleCost: 'Flat per-take or per-character audio pricing',
+    description: 'Text to speech with studio voices, Fish Drama 3 acting tags, a cloned voice, or a designed voice.',
+  },
+  {
+    tool: 'transcribe_audio',
+    costClass: 'audio.transcription',
+    riskLevel: 'paid',
+    userVisibleCost: 'Per-minute audio transcription pricing',
+    description: 'Speech-to-text transcription with timestamps, SRT/VTT export, and optional speaker diarization.',
   },
 
   // Synchronous composition helpers (LLM-side)

@@ -37,6 +37,8 @@ import type { ToolGatingPolicy } from '../toolGatingPolicy.js';
  *
  * Kept inline so the policy definitions stay portable and the list
  * does not silently change shape if a consumer's tool registry drifts.
+ * Note: `transcribe_audio` is intentionally excluded so `TEXT_ONLY_REQUEST`
+ * never blocks transcription when the user asks for a text transcript.
  */
 export const MEDIA_TOOL_NAMES: ReadonlyArray<string> = [
   'generate_image',

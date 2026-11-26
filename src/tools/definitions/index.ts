@@ -5,6 +5,7 @@ import { definition as segmentImageDefinition } from './segment-image/definition
 import { definition as generateVideoDefinition } from './generate-video/definition.js';
 import { definition as generateMusicDefinition } from './generate-music/definition.js';
 import { definition as generateSpeechDefinition } from './generate-speech/definition.js';
+import { definition as transcribeAudioDefinition } from './transcribe-audio/definition.js';
 import { definition as editImageDefinition } from './edit-image/definition.js';
 import { definition as applyStyleDefinition } from './apply-style/definition.js';
 import { definition as restorePhotoDefinition } from './restore-photo/definition.js';
@@ -47,6 +48,7 @@ export {
   generateImageDefinition,
   generateMusicDefinition,
   generateSpeechDefinition,
+  transcribeAudioDefinition,
   generateVideoDefinition,
   orbitVideoDefinition,
   overlayVideoDefinition,
@@ -71,6 +73,7 @@ export const generationToolDefinitions = [
   generateVideoDefinition,
   generateMusicDefinition,
   generateSpeechDefinition,
+  transcribeAudioDefinition,
   editImageDefinition,
   applyStyleDefinition,
   restorePhotoDefinition,

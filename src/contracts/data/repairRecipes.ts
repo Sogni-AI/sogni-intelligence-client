@@ -19,6 +19,7 @@ import { MEDIA_TOOL_NAMES } from './gatingPolicies.js';
  */
 const ASSET_CONSUMING_TOOLS: ReadonlyArray<string> = [
   ...MEDIA_TOOL_NAMES,
+  'transcribe_audio',
   'analyze_image',
   'analyze_video',
   'extract_metadata',
@@ -269,28 +270,33 @@ function makeUserCancelledRecipe(toolName: string): RepairRecipe {
   };
 }
 
-const PARAMETER_INVALID_TOOLS = MEDIA_TOOL_NAMES.filter(
+const WORKER_BACKED_TOOLS: ReadonlyArray<string> = [
+  ...MEDIA_TOOL_NAMES,
+  'transcribe_audio',
+];
+
+const PARAMETER_INVALID_TOOLS = WORKER_BACKED_TOOLS.filter(
   // already have more specific recipes
   (name) => name !== 'extend_video' && name !== 'replace_video_segment',
 );
 
-const GPU_WORKER_FAILED_TOOLS = MEDIA_TOOL_NAMES.filter(
+const GPU_WORKER_FAILED_TOOLS = WORKER_BACKED_TOOLS.filter(
   (name) => name !== 'animate_photo', // already has a more specific recipe
 );
 
 export const REPAIR_RECIPES: ReadonlyArray<RepairRecipe> = [
   ...SPECIFIC_RECIPES,
-  ...MEDIA_TOOL_NAMES.map(makeUserInputIncompleteRecipe),
-  ...MEDIA_TOOL_NAMES.map(makeCostLimitExceededRecipe),
+  ...WORKER_BACKED_TOOLS.map(makeUserInputIncompleteRecipe),
+  ...WORKER_BACKED_TOOLS.map(makeCostLimitExceededRecipe),
   ...ASSET_CONSUMING_TOOLS.map(makeAssetNotFoundRecipe),
-  ...MEDIA_TOOL_NAMES.map(makeWorkflowValidationFailedRecipe),
+  ...WORKER_BACKED_TOOLS.map(makeWorkflowValidationFailedRecipe),
   ...PARAMETER_INVALID_TOOLS.map(makeParameterInvalidRecipe),
   ...GPU_WORKER_FAILED_TOOLS.map(makeGpuWorkerFailedRecipe),
-  ...MEDIA_TOOL_NAMES.map(makeModelUnavailableRecipe),
-  ...MEDIA_TOOL_NAMES.map(makePermissionRequiredRecipe),
+  ...WORKER_BACKED_TOOLS.map(makeModelUnavailableRecipe),
+  ...WORKER_BACKED_TOOLS.map(makePermissionRequiredRecipe),
   ...SAFETY_FILTERED_TOOLS.map(makeSafetyRejectedRecipe),
-  ...MEDIA_TOOL_NAMES.map(makeProviderTimeoutRecipe),
-  ...MEDIA_TOOL_NAMES.map(makeUserCancelledRecipe),
+  ...WORKER_BACKED_TOOLS.map(makeProviderTimeoutRecipe),
+  ...WORKER_BACKED_TOOLS.map(makeUserCancelledRecipe),
 ];
 
 /**
