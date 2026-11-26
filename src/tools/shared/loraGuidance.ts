@@ -30,13 +30,16 @@ export const KREA2_LORA_CATALOG_REFERENCE =
   'Bipolar sliders — each id names its POSITIVE direction, a negative strength applies the ' +
   'opposite, and 0 disables it: krea2-detail-enhancer, krea2-scene-complexity, krea2-realism ' +
   '(+ = photoreal), krea2-amateur, krea2-candid, krea2-zoom (+ = zoomed in), krea2-skin-detail, ' +
-  'krea2-wetness, krea2-age, krea2-height, krea2-weight, krea2-hourglass-figure, krea2-breast, ' +
+  'krea2-wetness, krea2-age, krea2-height, krea2-weight, krea2-hourglass-figure, krea2-breast-v2, ' +
   'krea2-chest-firmness, krea2-nipple-projection, krea2-warm-light, krea2-afterlight ' +
-  '(+ = golden), krea2-skin-tone (+ = darker), krea2-purple-grainy (+ = grainy and muted). ' +
+  '(+ = golden), krea2-skin-tone-v2 (+ = darker), krea2-purple-grainy-v2 (+ = grainy and muted). ' +
   'Positive-only fine-tunes: krea2-realism-engine (photographic realism), krea2-bloomgirls ' +
-  '(polished influencer look), krea2-mystic-x (uncensored adult), krea2-aberrant (industrial ' +
+  '(polished influencer look), krea2-mystic-x-v4 (uncensored adult), krea2-aberrant (industrial ' +
   'body horror), krea2-filter-bypass-2 and krea2-filter-bypass-3 (restore expressions, anatomy ' +
   'and poses the base model flattens; try the 2-vector first). ' +
+  'Earlier versions (krea2-breast, krea2-skin-tone, krea2-purple-grainy, krea2-mystic-x) still ' +
+  'work by id, and the catalog marks each with supersededBy; pick the newer id unless the user ' +
+  'asks for the earlier one. ' +
   'Exact per-LoRA ranges, maturity flags and the full contract: ' +
   'GET /v1/loras/comfy?modelId=<model>. Personal imports use authenticated GET /v1/loras/personal/catalog: use an owned ready personal- id, its modelIds, strength range and requirements. Compatible Personal LoRAs also work with FLUX 3 Image Klein and both MOSS presets; a MOSS 8-step personal adapter stacks after its built-in DMD adapter. Never invent ids or silently omit a requested personal LoRA.';
 
@@ -85,10 +88,11 @@ export const H3_VIDEO_LORA_CATALOG_REFERENCE =
   + 'close-up. It is the only one gated on a trigger word — put r34l1sm near the FRONT of the '
   + 'prompt, or the render comes back as ordinary H3 with no error. h3-vbvr-video-reasoning is a '
   + 'prompt-adherence pass that holds the model to what was asked instead of improvising. '
-  + 'h3-natural-face-speech (AdaptiveVision) makes people talking on camera look and sound more '
+  + 'h3-natural-face-speech-v2 (AdaptiveVision) makes people talking on camera look and sound more '
   + 'natural: cheeks, brows, jaw and lips move together as in real speech, and spoken English comes '
   + 'through clearer; use it for talking-head shots such as vlogs, podcasts, interviews and '
-  + 'presenters. h3-better-motion (AdaptiveVision) gives people more natural, consistent body '
+  + 'presenters; v2 adds male and female voices, and h3-natural-face-speech (v1) still works by id. '
+  + 'h3-better-motion (AdaptiveVision) gives people more natural, consistent body '
   + 'movement — weight shifts, strides, turns and gestures that follow through — for dance, '
   + 'sport, walking and other full-body shots. Both AdaptiveVision LoRAs work best with short, '
   + 'simple prompt sentences and are not validated on reference-to-video. h3-mystic-xxx-v5 is an '
@@ -112,7 +116,7 @@ export const H3_VIDEO_LORA_STRENGTHS_GUIDANCE =
   + 'the default when they supplied a first or last frame. h3-vbvr-video-reasoning takes 0-1 '
   + 'and defaults to 1.0, with a usable band of 0.7-1. Mystic X v4 and v5 take 0-1; their catalog '
   + 'default is 0.5 and recommended band is 0.2-0.6. V5 is stronger at the same strength. '
-  + 'h3-natural-face-speech and h3-better-motion take 0-1.5 and default to 0.6; their usable band '
+  + 'h3-natural-face-speech-v2 and h3-better-motion take 0-1.5 and default to 0.6; their usable band '
   + 'is 0.4-0.8.';
 
 /**
