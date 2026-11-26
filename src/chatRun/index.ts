@@ -974,4 +974,5 @@ export {
   COST_APPROVAL_OVERRIDE_ALLOWLIST,
   sanitizeCostApprovalOverride,
   applyCostApprovalOverridesToToolArguments,
+  type ApplyCostApprovalOverridesOptions,
 } from './costApproval.js';

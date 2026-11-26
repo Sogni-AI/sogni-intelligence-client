@@ -100,12 +100,18 @@ export function runSpeechSettingsTests(): { passed: number; failed: number } {
       'inlineDirections',
       'instruct',
       'maxReferenceTextChars',
+      'minimumBilledCharacters',
+      'pricingBasis',
       'referenceAudio',
       'referenceSeconds',
       'referenceText',
       'voices',
     ],
   );
+  for (const mode of ['voice', 'clone', 'design', 'drama3'] as const) {
+    expect(`${mode} pricingBasis is characters`, SPEECH_MODELS[mode].pricingBasis, 'characters');
+    expect(`${mode} minimumBilledCharacters is 170`, SPEECH_MODELS[mode].minimumBilledCharacters, 170);
+  }
 
   // --- routing -----------------------------------------------------------
   expect('voice resolves to CustomVoice', getSpeechModel('voice'), SpeechModel.voice);
@@ -239,10 +245,23 @@ export function runSpeechSettingsTests(): { passed: number; failed: number } {
     null,
   );
   expect(
-    'arabic language passes',
+    'arabic language passes on drama3',
     validateSpeechRequest(request('drama3', { language: 'arabic' })),
     null,
   );
+  for (const qwenMode of ['voice', 'clone', 'design'] as const) {
+    expect(
+      `arabic language refused on ${qwenMode}`,
+      validateSpeechRequest(
+        request(qwenMode, {
+          language: 'arabic',
+          ...(qwenMode === 'clone' ? { hasReferenceAudio: true } : {}),
+          ...(qwenMode === 'design' ? { instruct: 'Calm narrator' } : {}),
+        }),
+      ),
+      'Arabic speech synthesis requires Fish Drama 3 (model="drama3").',
+    );
+  }
   expect(
     'a recording on a mode that cannot use it is refused',
     validateSpeechRequest(request('voice', { hasReferenceAudio: true })),

@@ -743,10 +743,27 @@ export class SogniClientWrapper extends EventEmitter {
     if (!params.modelId || typeof params.modelId !== 'string') {
       throw new SogniValidationError('Model ID is required and must be a string');
     }
-    if (typeof params.duration !== 'number' || params.duration < 10 || params.duration > 600) {
-      throw new SogniValidationError('Duration is required and must be between 10 and 600 seconds');
+    const hasCharacters = params.characters !== undefined;
+    if (
+      hasCharacters &&
+      (typeof params.characters !== 'number' || !Number.isFinite(params.characters) || params.characters < 0)
+    ) {
+      throw new SogniValidationError('Characters must be a non-negative number');
     }
-    if (typeof params.steps !== 'number' || params.steps <= 0) {
+    const duration = params.duration ?? (hasCharacters ? 0 : undefined);
+    const minDuration = hasCharacters ? 0 : 1;
+    if (
+      typeof duration !== 'number' ||
+      !Number.isFinite(duration) ||
+      duration < minDuration ||
+      duration > 7200
+    ) {
+      throw new SogniValidationError(
+        `Duration is required and must be between ${minDuration} and 7200 seconds`
+      );
+    }
+    const steps = params.steps ?? 1;
+    if (typeof steps !== 'number' || !Number.isFinite(steps) || steps <= 0) {
       throw new SogniValidationError('Steps is required and must be a positive number');
     }
 
@@ -756,12 +773,16 @@ export class SogniClientWrapper extends EventEmitter {
     return this.client!.projects.estimateAudioCost({
       tokenType,
       model: params.modelId,
-      duration: params.duration,
-      steps: params.steps,
+      duration,
+      steps,
       numberOfMedia,
+      ...(params.characters !== undefined ? { characters: params.characters } : {}),
       ...(params.network !== undefined ? { network: params.network } : {}),
       ...(params.billingMode !== undefined ? { billingMode: params.billingMode } : {}),
       ...(params.priorityMode !== undefined ? { priorityMode: params.priorityMode } : {}),
+      ...(params.includeMonthlyFairUse !== undefined
+        ? { includeMonthlyFairUse: params.includeMonthlyFairUse }
+        : {}),
     });
   }
 

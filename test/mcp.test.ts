@@ -125,6 +125,7 @@ test('transform_media routes transcribe_audio and add_subtitles with strict medi
 
   const subtitled = routeMcpCall('transform_media', {
     operation: 'add_subtitles',
+    prompt: 'Burn white captions at the bottom',
     request_id: 'sub-video',
     reference_videos: [video],
     parameters: { auto_transcribe: true },

@@ -68,6 +68,12 @@ export function mcpMediaReferences(input: Record<string, unknown>): McpMediaRefe
   return refs;
 }
 
+const TRANSFORM_MEDIA_PROMPT_OPERATIONS = new Set([
+  'restore_photo',
+  'extend_video',
+  'transcribe_audio',
+]);
+
 /** One mapping for quoting and dispatch. Native arguments are subsequently validated by the API. */
 export function routeMcpCall(name: string, raw: unknown): McpRoutedCall {
   const input = validateMcpArguments(name, raw);
@@ -86,7 +92,9 @@ export function routeMcpCall(name: string, raw: unknown): McpRoutedCall {
     refs.push({ type, url: url as string });
     return index;
   };
-  put('prompt', input.prompt);
+  if (name !== 'transform_media' || TRANSFORM_MEDIA_PROMPT_OPERATIONS.has(input.operation as string)) {
+    put('prompt', input.prompt);
+  }
   put('numberOfVariations', input.count);
   let toolName: string;
   if (name === 'generate_image') {

@@ -33,11 +33,13 @@ export type TranscriptionOutputFormat = (typeof TRANSCRIPTION_OUTPUT_FORMATS)[nu
 
 export const TRANSCRIPTION_MAX_HOTWORDS_CHARS = 1000;
 export const TRANSCRIPTION_MAX_PROMPT_CHARS = 2000;
+export const TRANSCRIPTION_MINIMUM_BILLED_DURATION_SECONDS = 10;
 
 export interface TranscriptionModelCapabilities {
   id: TranscriptionModel;
   name: string;
   maxDurationSec: number;
+  minimumBilledDurationSeconds: number;
   languageCount: number;
   languageCoverage: 'European' | 'Multilingual';
   timestamps: readonly TranscriptionTimestampGranularity[];
@@ -53,6 +55,7 @@ export const TRANSCRIPTION_MODELS: Record<TranscriptionEngine, TranscriptionMode
     id: TranscriptionModel.parakeet,
     name: 'Parakeet TDT 0.6B v3',
     maxDurationSec: 7200,
+    minimumBilledDurationSeconds: TRANSCRIPTION_MINIMUM_BILLED_DURATION_SECONDS,
     languageCount: 25,
     languageCoverage: 'European',
     timestamps: TRANSCRIPTION_TIMESTAMP_GRANULARITIES,
@@ -64,6 +67,7 @@ export const TRANSCRIPTION_MODELS: Record<TranscriptionEngine, TranscriptionMode
     id: TranscriptionModel.nemotron,
     name: 'NVIDIA Nemotron 3.5 Transcribe 30B',
     maxDurationSec: 3600,
+    minimumBilledDurationSeconds: TRANSCRIPTION_MINIMUM_BILLED_DURATION_SECONDS,
     languageCount: 40,
     languageCoverage: 'Multilingual',
     timestamps: TRANSCRIPTION_TIMESTAMP_GRANULARITIES,
@@ -137,30 +141,42 @@ export function isTranscriptionModel(modelId: string): boolean {
   return TRANSCRIPTION_MODEL_IDS.includes(modelId);
 }
 
+export interface ResolveTranscriptionEngineOptions {
+  diarize?: boolean;
+  hotwords?: string;
+  prompt?: string;
+}
+
 /**
  * Resolve a short selector, canonical model ID, or OpenAI audio-transcription
  * model alias to a canonical `TranscriptionEngine` (`'parakeet'` or `'nemotron'`).
  */
 export function resolveTranscriptionEngineSelector(
   input: string | null | undefined,
+  options?: ResolveTranscriptionEngineOptions,
 ): TranscriptionEngine | undefined {
   if (typeof input !== 'string') return undefined;
   const normalized = input.trim().toLowerCase();
   if (!normalized) return undefined;
+  const autoUpgradeToNemotron = Boolean(
+    options?.diarize || options?.hotwords?.trim() || options?.prompt?.trim(),
+  );
 
   switch (normalized) {
+    case 'whisper-1':
+      return autoUpgradeToNemotron ? 'nemotron' : 'parakeet';
     case 'parakeet':
     case 'parakeet-tdt':
     case 'parakeet-tdt-v3':
+    case 'parakeet-tdt-0.6b-v3':
     case 'parakeet_tdt_0.6b_v3_bf16':
-    case 'whisper-1':
-    case 'gpt-4o-transcribe':
     case 'gpt-4o-mini-transcribe':
       return 'parakeet';
     case 'nemotron':
     case 'nemotron-transcribe':
     case 'nemotron-3.5-transcribe':
     case 'nemotron_3.5_transcribe_30b_a4b_nvfp4':
+    case 'gpt-4o-transcribe':
     case 'gpt-4o-transcribe-diarize':
       return 'nemotron';
     default:
@@ -194,7 +210,11 @@ export function validateTranscriptionRequest(request: TranscriptionRequest): str
         ? 'nemotron'
         : DEFAULT_TRANSCRIPTION_ENGINE;
   } else {
-    const candidate = resolveTranscriptionEngineSelector(request.engine);
+    const candidate = resolveTranscriptionEngineSelector(request.engine, {
+      diarize: request.diarize,
+      hotwords: request.hotwords,
+      prompt: request.prompt,
+    });
     if (!candidate) {
       return `Unknown transcription model: ${request.engine}`;
     }

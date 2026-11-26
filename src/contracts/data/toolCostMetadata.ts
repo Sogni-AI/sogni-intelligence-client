@@ -165,10 +165,10 @@ export const TOOL_COST_METADATA: ReadonlyArray<ToolCostMetadata> = [
   {
     tool: 'generate_speech',
     // Its own class, not audio.standard: music is quoted per requested second,
-    // speech is a flat quote per take because the script decides the length.
+    // speech is quoted per script character (with a 170-character minimum).
     costClass: 'audio.speech',
     riskLevel: 'paid',
-    userVisibleCost: 'Flat per-take or per-character audio pricing',
+    userVisibleCost: 'Per-character speech pricing (170-character minimum)',
     description: 'Text to speech with studio voices, Fish Drama 3 acting tags, a cloned voice, or a designed voice.',
   },
   {
@@ -293,7 +293,7 @@ export const TOOL_COST_METADATA: ReadonlyArray<ToolCostMetadata> = [
     tool: 'add_subtitles',
     costClass: 'compose.ffmpeg',
     riskLevel: 'paid',
-    userVisibleCost: 'Small ffmpeg compose fee',
+    userVisibleCost: 'Small ffmpeg compose fee (+ per-minute transcription fee when auto_transcribe=true)',
     description: 'Burn subtitles into a video.',
   },
 

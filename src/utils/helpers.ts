@@ -20,6 +20,7 @@ import {
   SogniTimeoutError,
   SogniValidationError,
 } from './errors.js';
+import { isSttModelId } from '@sogni-ai/sogni-client';
 import { isGptImageModel } from '../media/gptImage.js';
 import { isTranscriptionModel, TRANSCRIPTION_MODELS, getTranscriptionEngine } from '../media/transcriptionSettings.js';
 import { isSeedreamImageModel, SEEDREAM_MAX_REFERENCE_IMAGES } from '../media/seedream.js';
@@ -339,7 +340,18 @@ export function validateProjectConfig(config: ProjectConfig): void {
     throw new SogniValidationError('Model ID is required and must be a string');
   }
 
-  if (config.positivePrompt === undefined || config.positivePrompt === null || typeof config.positivePrompt !== 'string') {
+  if (isSttModelId(config.modelId) || isTranscriptionModel(config.modelId)) {
+    if (
+      config.positivePrompt !== undefined &&
+      typeof config.positivePrompt !== 'string'
+    ) {
+      throw new SogniValidationError('Positive prompt must be a string when provided');
+    }
+  } else if (
+    config.positivePrompt === undefined ||
+    config.positivePrompt === null ||
+    typeof config.positivePrompt !== 'string'
+  ) {
     throw new SogniValidationError('Positive prompt is required and must be a string');
   }
 

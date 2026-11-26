@@ -137,6 +137,9 @@ export const DRAMA3_DIRECTION_TAG_EXAMPLES = [
   '<whisper>...</whisper>',
 ] as const;
 
+/** Minimum billed script length in characters across all speech synthesis models. */
+export const SPEECH_MINIMUM_BILLED_CHARS = 170;
+
 export interface SpeechModelCapabilities {
   /** Whether the mode picks from SPEECH_VOICES. */
   voices: boolean;
@@ -154,6 +157,10 @@ export interface SpeechModelCapabilities {
   maxReferenceTextChars?: number;
   /** Accepted reference recording duration bounds in seconds. */
   referenceSeconds?: { min: number; max: number };
+  /** Billing basis used by Sogni Socket. */
+  pricingBasis: 'characters';
+  /** Minimum character floor billed per take. */
+  minimumBilledCharacters: number;
 }
 
 export const SPEECH_MODELS: Record<SpeechMode, SpeechModelCapabilities> = {
@@ -164,6 +171,8 @@ export const SPEECH_MODELS: Record<SpeechMode, SpeechModelCapabilities> = {
     referenceText: false,
     creativity: true,
     inlineDirections: false,
+    pricingBasis: 'characters',
+    minimumBilledCharacters: SPEECH_MINIMUM_BILLED_CHARS,
   },
   clone: {
     voices: false,
@@ -174,6 +183,8 @@ export const SPEECH_MODELS: Record<SpeechMode, SpeechModelCapabilities> = {
     inlineDirections: false,
     maxReferenceTextChars: SPEECH_MAX_REFERENCE_TEXT_CHARS,
     referenceSeconds: SPEECH_REFERENCE_SECONDS,
+    pricingBasis: 'characters',
+    minimumBilledCharacters: SPEECH_MINIMUM_BILLED_CHARS,
   },
   design: {
     voices: false,
@@ -182,6 +193,8 @@ export const SPEECH_MODELS: Record<SpeechMode, SpeechModelCapabilities> = {
     referenceText: false,
     creativity: true,
     inlineDirections: false,
+    pricingBasis: 'characters',
+    minimumBilledCharacters: SPEECH_MINIMUM_BILLED_CHARS,
   },
   drama3: {
     voices: false,
@@ -192,6 +205,8 @@ export const SPEECH_MODELS: Record<SpeechMode, SpeechModelCapabilities> = {
     inlineDirections: true,
     maxReferenceTextChars: DRAMA3_MAX_REFERENCE_TEXT_CHARS,
     referenceSeconds: DRAMA3_REFERENCE_SECONDS,
+    pricingBasis: 'characters',
+    minimumBilledCharacters: SPEECH_MINIMUM_BILLED_CHARS,
   },
 };
 
@@ -317,6 +332,9 @@ export function validateSpeechRequest(request: SpeechRequest): string | null {
 
   if (request.language && !SPEECH_LANGUAGES.includes(request.language)) {
     return `Unsupported language: ${request.language}`;
+  }
+  if (request.language === 'arabic' && request.mode !== 'drama3') {
+    return 'Arabic speech synthesis requires Fish Drama 3 (model="drama3").';
   }
 
   return null;

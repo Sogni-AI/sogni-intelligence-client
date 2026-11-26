@@ -3571,6 +3571,38 @@ async function runTests() {
         throw new Error("Audio quote must retain explicit plan and Priority choices");
       }
     }
+
+    await client.estimateAudioCost({
+      modelId: 'fish_drama_3_nvfp4',
+      duration: 0,
+      steps: 1,
+      characters: 320,
+      includeMonthlyFairUse: true,
+    });
+    if (
+      capturedEstimateParams.duration !== 0 ||
+      capturedEstimateParams.characters !== 320 ||
+      capturedEstimateParams.includeMonthlyFairUse !== true
+    ) {
+      throw new Error('Speech audio quote must forward duration=0, characters, and includeMonthlyFairUse');
+    }
+
+    await client.estimateAudioCost({
+      modelId: 'parakeet_tdt_0.6b_v3_bf16',
+      duration: 7200,
+      steps: 1,
+    });
+    if (capturedEstimateParams.duration !== 7200) {
+      throw new Error(`Expected STT duration=7200, got ${capturedEstimateParams.duration}`);
+    }
+
+    validateProjectConfig({
+      type: 'audio',
+      modelId: 'parakeet_tdt_0.6b_v3_bf16',
+      numberOfMedia: 1,
+      duration: 120,
+      referenceAudio: true,
+    } as any);
   })();
 
   // Test 53: createAudioProject returns audio URLs

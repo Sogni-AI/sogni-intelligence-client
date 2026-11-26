@@ -64,6 +64,31 @@ export function runTranscriptionSettingsTests(): { passed: number; failed: numbe
   expect('isTranscriptionModel negative', isTranscriptionModel('fish_drama_3_nvfp4'), false);
   expect('selector whisper-1 -> parakeet', resolveTranscriptionEngineSelector('whisper-1'), 'parakeet');
   expect(
+    'selector whisper-1 + diarize -> nemotron',
+    resolveTranscriptionEngineSelector('whisper-1', { diarize: true }),
+    'nemotron',
+  );
+  expect(
+    'selector whisper-1 + hotwords -> nemotron',
+    resolveTranscriptionEngineSelector('whisper-1', { hotwords: 'Sogni' }),
+    'nemotron',
+  );
+  expect(
+    'selector whisper-1 + prompt -> nemotron',
+    resolveTranscriptionEngineSelector('whisper-1', { prompt: 'Keynote' }),
+    'nemotron',
+  );
+  expect(
+    'selector gpt-4o-mini-transcribe -> parakeet',
+    resolveTranscriptionEngineSelector('gpt-4o-mini-transcribe'),
+    'parakeet',
+  );
+  expect(
+    'selector gpt-4o-transcribe -> nemotron',
+    resolveTranscriptionEngineSelector('gpt-4o-transcribe'),
+    'nemotron',
+  );
+  expect(
     'selector gpt-4o-transcribe-diarize -> nemotron',
     resolveTranscriptionEngineSelector('gpt-4o-transcribe-diarize'),
     'nemotron',
@@ -77,7 +102,14 @@ export function runTranscriptionSettingsTests(): { passed: number; failed: numbe
 
   // Capabilities & validation
   expect('parakeet maxDurationSec', TRANSCRIPTION_MODELS.parakeet.maxDurationSec, 7200);
+  expect('parakeet minimumBilledDurationSeconds', TRANSCRIPTION_MODELS.parakeet.minimumBilledDurationSeconds, 10);
   expect('nemotron maxDurationSec', TRANSCRIPTION_MODELS.nemotron.maxDurationSec, 3600);
+  expect('nemotron minimumBilledDurationSeconds', TRANSCRIPTION_MODELS.nemotron.minimumBilledDurationSeconds, 10);
+  expect(
+    'whisper-1 with diarize auto-upgrades to nemotron in validateTranscriptionRequest',
+    validateTranscriptionRequest({ engine: 'whisper-1', hasAudio: true, diarize: true, durationSec: 120 }),
+    null,
+  );
   expect('missing audio refused', validateTranscriptionRequest({ hasAudio: false }), 'Transcription needs an audio or video recording');
   expect('valid parakeet request passes', validateTranscriptionRequest({ engine: 'parakeet', hasAudio: true, durationSec: 7200 }), null);
   expect(
