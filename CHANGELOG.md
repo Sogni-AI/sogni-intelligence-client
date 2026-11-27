@@ -1,3 +1,12 @@
+## [4.36.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.36.0...v4.36.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* **deps:** pin @sogni-ai/sogni-client 5.90.1 ([69d0b5b](https://github.com/Sogni-AI/sogni-intelligence-client/commit/69d0b5b9f531a11b835a82035384731a15d6d923))
+* tighten replay redaction, workflow input, and spend-gate checks ([919988d](https://github.com/Sogni-AI/sogni-intelligence-client/commit/919988d5ca82d98ecabdb0c6b9fb61919a9d18fc))
+* tighten workflow tag matching and ipv4-compatible url checks ([866b221](https://github.com/Sogni-AI/sogni-intelligence-client/commit/866b2215cc0c20329f895e209d5c26c20e83e54e))
+
 # [4.36.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.35.0...v4.36.0) (2026-11-25)
 
 
