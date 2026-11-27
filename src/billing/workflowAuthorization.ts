@@ -104,8 +104,32 @@ const STAGE_SETTLEMENT_STATUSES: ReadonlySet<StageSettlementStatus> = new Set<St
   'cancelled',
 ]);
 
+const MAX_BOUNDED_WORKFLOW_UNITS = Number.MAX_SAFE_INTEGER;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isNonNegativeBoundedUnits(value: unknown): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isFinite(value) &&
+    value >= 0 &&
+    value <= MAX_BOUNDED_WORKFLOW_UNITS
+  );
+}
+
+function hasBoundedStageBreakdownSum(entries: readonly unknown[]): boolean {
+  let sum = 0;
+  for (const entry of entries) {
+    if (isRecord(entry) && typeof entry.units === 'number' && Number.isFinite(entry.units) && entry.units >= 0) {
+      sum += entry.units;
+      if (!Number.isFinite(sum) || sum > MAX_BOUNDED_WORKFLOW_UNITS) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 function isStringArray(value: unknown): value is string[] {
@@ -123,7 +147,7 @@ export function isStageSettlementStatus(value: unknown): value is StageSettlemen
 function isStageBreakdownEntry(value: unknown): value is WorkflowCostPreview['perStageBreakdown'][number] {
   if (!isRecord(value)) return false;
   if (typeof value.stageId !== 'string') return false;
-  if (typeof value.units !== 'number' || !Number.isFinite(value.units)) return false;
+  if (!isNonNegativeBoundedUnits(value.units)) return false;
   if (!isStringArray(value.assumptions)) return false;
   return true;
 }
@@ -132,26 +156,21 @@ export function isWorkflowCostPreview(value: unknown): value is WorkflowCostPrev
   if (!isRecord(value)) return false;
   if (typeof value.templateId !== 'string') return false;
   if (!isRecord(value.inputs)) return false;
-  if (
-    typeof value.totalEstimatedCapacityUnits !== 'number' ||
-    !Number.isFinite(value.totalEstimatedCapacityUnits)
-  ) {
+  if (!isNonNegativeBoundedUnits(value.totalEstimatedCapacityUnits)) {
     return false;
   }
-  if (!Array.isArray(value.perStageBreakdown) || !value.perStageBreakdown.every(isStageBreakdownEntry)) {
+  if (
+    !Array.isArray(value.perStageBreakdown) ||
+    !value.perStageBreakdown.every(isStageBreakdownEntry) ||
+    !hasBoundedStageBreakdownSum(value.perStageBreakdown)
+  ) {
     return false;
   }
   if (!isWorkflowSpendTokenType(value.tokenType)) return false;
-  if (
-    value.maxAcceptableUnits !== undefined &&
-    (typeof value.maxAcceptableUnits !== 'number' || !Number.isFinite(value.maxAcceptableUnits))
-  ) {
+  if (value.maxAcceptableUnits !== undefined && !isNonNegativeBoundedUnits(value.maxAcceptableUnits)) {
     return false;
   }
-  if (
-    typeof value.expectedDurationSeconds !== 'number' ||
-    !Number.isFinite(value.expectedDurationSeconds)
-  ) {
+  if (!isNonNegativeBoundedUnits(value.expectedDurationSeconds)) {
     return false;
   }
   if (typeof value.validityUntil !== 'string') return false;
@@ -171,11 +190,8 @@ export function isStageSettlement(value: unknown): value is StageSettlement {
   if (typeof value.stageId !== 'string') return false;
   if (value.projectId !== undefined && typeof value.projectId !== 'string') return false;
   if (!isStringArray(value.jobIds)) return false;
-  if (typeof value.estimatedUnits !== 'number' || !Number.isFinite(value.estimatedUnits)) return false;
-  if (
-    value.settledUnits !== undefined &&
-    (typeof value.settledUnits !== 'number' || !Number.isFinite(value.settledUnits))
-  ) {
+  if (!isNonNegativeBoundedUnits(value.estimatedUnits)) return false;
+  if (value.settledUnits !== undefined && !isNonNegativeBoundedUnits(value.settledUnits)) {
     return false;
   }
   if (!isStageSettlementStatus(value.status)) return false;
@@ -185,24 +201,21 @@ export function isStageSettlement(value: unknown): value is StageSettlement {
 export function isWorkflowAuthorization(value: unknown): value is WorkflowAuthorization {
   if (!isRecord(value)) return false;
   if (typeof value.workflowRunId !== 'string') return false;
-  if (
-    typeof value.authorizedCapacityUnits !== 'number' ||
-    !Number.isFinite(value.authorizedCapacityUnits)
-  ) {
+  if (!isNonNegativeBoundedUnits(value.authorizedCapacityUnits)) {
     return false;
   }
   if (!isWorkflowSpendTokenType(value.tokenType)) return false;
   if (typeof value.authorizedAt !== 'string') return false;
   if (typeof value.expiresAt !== 'string') return false;
-  if (
-    typeof value.cumulativeSettledUnits !== 'number' ||
-    !Number.isFinite(value.cumulativeSettledUnits)
-  ) {
+  if (!isNonNegativeBoundedUnits(value.cumulativeSettledUnits)) {
+    return false;
+  }
+  if (!isNonNegativeBoundedUnits(value.cumulativeReservedUnits)) {
     return false;
   }
   if (
-    typeof value.cumulativeReservedUnits !== 'number' ||
-    !Number.isFinite(value.cumulativeReservedUnits)
+    !Number.isFinite(value.cumulativeSettledUnits + value.cumulativeReservedUnits) ||
+    value.cumulativeSettledUnits + value.cumulativeReservedUnits > MAX_BOUNDED_WORKFLOW_UNITS
   ) {
     return false;
   }
@@ -244,8 +257,8 @@ function validateStageBreakdownEntryInternal(
     pushError(errors, `${basePath}/stageId`, 'must be a string');
   }
   const units = (value as { units?: unknown }).units;
-  if (typeof units !== 'number' || !Number.isFinite(units)) {
-    pushError(errors, `${basePath}/units`, 'must be a finite number');
+  if (!isNonNegativeBoundedUnits(units)) {
+    pushError(errors, `${basePath}/units`, 'must be a non-negative bounded number');
   }
   const assumptions = (value as { assumptions?: unknown }).assumptions;
   if (!Array.isArray(assumptions)) {
@@ -280,8 +293,8 @@ export function validateWorkflowCostPreview(
     pushError(errors, '/inputs', 'must be an object');
   }
   const total = (value as { totalEstimatedCapacityUnits?: unknown }).totalEstimatedCapacityUnits;
-  if (typeof total !== 'number' || !Number.isFinite(total)) {
-    pushError(errors, '/totalEstimatedCapacityUnits', 'must be a finite number');
+  if (!isNonNegativeBoundedUnits(total)) {
+    pushError(errors, '/totalEstimatedCapacityUnits', 'must be a non-negative bounded number');
   }
   const perStage = (value as { perStageBreakdown?: unknown }).perStageBreakdown;
   if (!Array.isArray(perStage)) {
@@ -290,17 +303,20 @@ export function validateWorkflowCostPreview(
     perStage.forEach((entry, idx) =>
       validateStageBreakdownEntryInternal(entry, `/perStageBreakdown/${idx}`, errors),
     );
+    if (!hasBoundedStageBreakdownSum(perStage)) {
+      pushError(errors, '/perStageBreakdown', 'sum of stage breakdown units exceeds safe finite range');
+    }
   }
   if (!isWorkflowSpendTokenType((value as { tokenType?: unknown }).tokenType)) {
     pushError(errors, '/tokenType', 'must be a valid WorkflowSpendTokenType');
   }
   const maxAcc = (value as { maxAcceptableUnits?: unknown }).maxAcceptableUnits;
-  if (maxAcc !== undefined && (typeof maxAcc !== 'number' || !Number.isFinite(maxAcc))) {
-    pushError(errors, '/maxAcceptableUnits', 'must be a finite number when present');
+  if (maxAcc !== undefined && !isNonNegativeBoundedUnits(maxAcc)) {
+    pushError(errors, '/maxAcceptableUnits', 'must be a non-negative bounded number when present');
   }
   const dur = (value as { expectedDurationSeconds?: unknown }).expectedDurationSeconds;
-  if (typeof dur !== 'number' || !Number.isFinite(dur)) {
-    pushError(errors, '/expectedDurationSeconds', 'must be a finite number');
+  if (!isNonNegativeBoundedUnits(dur)) {
+    pushError(errors, '/expectedDurationSeconds', 'must be a non-negative bounded number');
   }
   if (typeof (value as { validityUntil?: unknown }).validityUntil !== 'string') {
     pushError(errors, '/validityUntil', 'must be a string');
@@ -335,12 +351,12 @@ function validateStageSettlementInternal(
     });
   }
   const est = (value as { estimatedUnits?: unknown }).estimatedUnits;
-  if (typeof est !== 'number' || !Number.isFinite(est)) {
-    pushError(errors, `${basePath}/estimatedUnits`, 'must be a finite number');
+  if (!isNonNegativeBoundedUnits(est)) {
+    pushError(errors, `${basePath}/estimatedUnits`, 'must be a non-negative bounded number');
   }
   const settled = (value as { settledUnits?: unknown }).settledUnits;
-  if (settled !== undefined && (typeof settled !== 'number' || !Number.isFinite(settled))) {
-    pushError(errors, `${basePath}/settledUnits`, 'must be a finite number when present');
+  if (settled !== undefined && !isNonNegativeBoundedUnits(settled)) {
+    pushError(errors, `${basePath}/settledUnits`, 'must be a non-negative bounded number when present');
   }
   if (!isStageSettlementStatus((value as { status?: unknown }).status)) {
     pushError(errors, `${basePath}/status`, 'must be a valid StageSettlementStatus');
@@ -363,8 +379,8 @@ export function validateWorkflowAuthorization(
     pushError(errors, '/workflowRunId', 'must be a string');
   }
   const authCap = (value as { authorizedCapacityUnits?: unknown }).authorizedCapacityUnits;
-  if (typeof authCap !== 'number' || !Number.isFinite(authCap)) {
-    pushError(errors, '/authorizedCapacityUnits', 'must be a finite number');
+  if (!isNonNegativeBoundedUnits(authCap)) {
+    pushError(errors, '/authorizedCapacityUnits', 'must be a non-negative bounded number');
   }
   if (!isWorkflowSpendTokenType((value as { tokenType?: unknown }).tokenType)) {
     pushError(errors, '/tokenType', 'must be a valid WorkflowSpendTokenType');
@@ -376,12 +392,19 @@ export function validateWorkflowAuthorization(
     pushError(errors, '/expiresAt', 'must be a string');
   }
   const cumSettled = (value as { cumulativeSettledUnits?: unknown }).cumulativeSettledUnits;
-  if (typeof cumSettled !== 'number' || !Number.isFinite(cumSettled)) {
-    pushError(errors, '/cumulativeSettledUnits', 'must be a finite number');
+  if (!isNonNegativeBoundedUnits(cumSettled)) {
+    pushError(errors, '/cumulativeSettledUnits', 'must be a non-negative bounded number');
   }
   const cumRes = (value as { cumulativeReservedUnits?: unknown }).cumulativeReservedUnits;
-  if (typeof cumRes !== 'number' || !Number.isFinite(cumRes)) {
-    pushError(errors, '/cumulativeReservedUnits', 'must be a finite number');
+  if (!isNonNegativeBoundedUnits(cumRes)) {
+    pushError(errors, '/cumulativeReservedUnits', 'must be a non-negative bounded number');
+  }
+  if (
+    isNonNegativeBoundedUnits(cumSettled) &&
+    isNonNegativeBoundedUnits(cumRes) &&
+    (!Number.isFinite(cumSettled + cumRes) || cumSettled + cumRes > MAX_BOUNDED_WORKFLOW_UNITS)
+  ) {
+    pushError(errors, '/cumulativeReservedUnits', 'combined settled and reserved units exceed safe finite range');
   }
   const stages = (value as { stageSettlements?: unknown }).stageSettlements;
   if (!Array.isArray(stages)) {

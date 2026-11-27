@@ -91,10 +91,86 @@ import {
   isWanVideoModel,
 } from '../utils/helpers.js';
 import { isRegisteredWan3VideoModelId } from '../utils/videoModelIds.js';
+import { redactPayload } from '../replay/redact.js';
 
 const LTX2_FRAME_STEP = 8;
 const MINIMAX_H3_FPS = 24;
 const MINIMAX_H3_MAX_FRAMES = 362;
+
+const activeCustomTlsClients = new Set<SogniClientWrapper>();
+let savedNodeTlsRejectUnauthorized: string | undefined;
+let hasSavedNodeTlsRejectUnauthorized = false;
+
+function acquireTlsSetting(instance: SogniClientWrapper): void {
+  if (!activeCustomTlsClients.has(instance)) {
+    if (activeCustomTlsClients.size === 0) {
+      savedNodeTlsRejectUnauthorized = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+      hasSavedNodeTlsRejectUnauthorized = Object.prototype.hasOwnProperty.call(
+        process.env,
+        'NODE_TLS_REJECT_UNAUTHORIZED',
+      );
+    }
+    activeCustomTlsClients.add(instance);
+  }
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
+function releaseTlsSetting(instance: SogniClientWrapper): void {
+  if (!activeCustomTlsClients.delete(instance)) {
+    return;
+  }
+  if (activeCustomTlsClients.size === 0) {
+    if (hasSavedNodeTlsRejectUnauthorized && savedNodeTlsRejectUnauthorized !== undefined) {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = savedNodeTlsRejectUnauthorized;
+    } else {
+      delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+    }
+    savedNodeTlsRejectUnauthorized = undefined;
+    hasSavedNodeTlsRejectUnauthorized = false;
+  }
+}
+
+function isBinaryMediaValue(value: unknown): boolean {
+  return (
+    Buffer.isBuffer(value) ||
+    ArrayBuffer.isView(value) ||
+    value instanceof ArrayBuffer ||
+    (typeof Blob !== 'undefined' && value instanceof Blob)
+  );
+}
+
+function prepareConfigForRedaction(
+  value: unknown,
+  depth = 0,
+  seen = new WeakSet<object>(),
+): unknown {
+  if (depth > 32) return '[truncated]';
+  if (value === null || value === undefined) return value;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'function') return '[function]';
+  if (typeof value === 'object') {
+    if (isBinaryMediaValue(value)) return '[binary]';
+    if (value instanceof Date) return value.toISOString();
+    if (seen.has(value)) return '[circular]';
+    seen.add(value);
+    try {
+      if (Array.isArray(value)) {
+        return value.map((item) => prepareConfigForRedaction(item, depth + 1, seen));
+      }
+      return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).map(([key, val]) => [
+          key,
+          prepareConfigForRedaction(val, depth + 1, seen),
+        ]),
+      );
+    } finally {
+      seen.delete(value);
+    }
+  }
+  return String(value);
+}
 
 function freezeAttributionDefaults(
   attribution: SogniAttributionConfig | undefined,
@@ -235,8 +311,8 @@ export class SogniClientWrapper extends EventEmitter {
       this.log('Creating Sogni client...');
 
       if (this.config.allowInsecureTLS) {
-        process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-        this.log('TLS verification disabled (allowInsecureTLS=true)');
+        acquireTlsSetting(this);
+        this.log('TLS verification disabled for active client connection');
       }
 
       const clientConfig = {
@@ -390,6 +466,7 @@ export class SogniClientWrapper extends EventEmitter {
       this.client = null;
     }
     this.projectEtaSeconds.clear();
+    releaseTlsSetting(this);
 
     this.updateConnectionState({
       status: 'disconnected' as ConnectionStatus,
@@ -1501,6 +1578,7 @@ export class SogniClientWrapper extends EventEmitter {
   private discardFailedClient(): void {
     const client = this.client;
     this.client = null;
+    releaseTlsSetting(this);
     if (!client) return;
     try {
       if (typeof client.dispose === 'function') {
@@ -1748,10 +1826,8 @@ export class SogniClientWrapper extends EventEmitter {
   /**
    * Sanitize configuration for logging
    */
-  private sanitizeConfig(config: any): any {
-    const sanitized = { ...config };
-    if (sanitized.password) sanitized.password = '***';
-    return sanitized;
+  private sanitizeConfig(config: unknown): unknown {
+    return redactPayload(prepareConfigForRedaction(config));
   }
 
   /**

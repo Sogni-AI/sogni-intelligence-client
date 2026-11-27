@@ -76,13 +76,17 @@ export class SanitizerError extends Error {
   }
 }
 
-// The four strip patterns that are quadratic under String.prototype.replace,
-// named so `stripPattern` can apply them in linear time (see
-// LINEAR_STRIP_SCANS below).
-const UNTRUSTED_USER_INPUT_OPEN_PATTERN = /<UNTRUSTED_USER_INPUT(?:\s[^>]*)?>/gi;
-const UNTRUSTED_USER_BRIEF_OPEN_PATTERN = /<UNTRUSTED_USER_BRIEF(?:\s[^>]*)?>/gi;
-const SYSTEM_BLOCK_PATTERN = /<system>[\s\S]*?<\/system>/gi;
-const TOOL_CALL_BLOCK_PATTERN = /<tool_call>[\s\S]*?<\/tool_call>/gi;
+// Strip patterns that would be quadratic under String.prototype.replace on
+// repeated unterminated openings, named so `stripPattern` can apply them in
+// linear time (see LINEAR_STRIP_SCANS below).
+const UNTRUSTED_USER_INPUT_OPEN_PATTERN = /<\s*UNTRUSTED_USER_INPUT(?:[\s/][^<>]*)?>/gi;
+const UNTRUSTED_USER_BRIEF_OPEN_PATTERN = /<\s*UNTRUSTED_USER_BRIEF(?:[\s/][^<>]*)?>/gi;
+const SYSTEM_BLOCK_PATTERN = /<\s*system\s*\/?\s*>[\s\S]*?<\/\s*system\s*>/gi;
+const TOOL_CALL_BLOCK_PATTERN = /<\s*tool_call\s*\/?\s*>[\s\S]*?<\/\s*tool_call\s*>/gi;
+const SYSTEM_TAG_PATTERN = /<\s*\/?\s*system\s*\/?\s*>/gi;
+const TOOL_CALL_TAG_PATTERN = /<\s*\/?\s*tool_call\s*\/?\s*>/gi;
+
+const MAX_STRIP_PASSES = 8;
 
 /**
  * Untrusted-block delimiter tags this sanitizer knows about. Both the
@@ -93,9 +97,9 @@ const TOOL_CALL_BLOCK_PATTERN = /<tool_call>[\s\S]*?<\/tool_call>/gi;
  */
 const DELIMITER_PATTERNS: readonly RegExp[] = [
   UNTRUSTED_USER_INPUT_OPEN_PATTERN,
-  /<\/UNTRUSTED_USER_INPUT>/gi,
+  /<\/\s*UNTRUSTED_USER_INPUT\s*>/gi,
   UNTRUSTED_USER_BRIEF_OPEN_PATTERN,
-  /<\/UNTRUSTED_USER_BRIEF>/gi,
+  /<\/\s*UNTRUSTED_USER_BRIEF\s*>/gi,
 ];
 
 /**
@@ -112,14 +116,23 @@ const CHAT_TEMPLATE_PATTERNS: readonly RegExp[] = [
   /<\|assistant\|>/gi,
   /<\|tool\|>/gi,
   /<\|tool_call\|>/gi,
+  /<\|eot_id\|>/gi,
+  /<\|endoftext\|>/gi,
   /<\|begin▁of▁sentence\|>/gi,
   /<\|end▁of▁sentence\|>/gi,
+  /<｜begin▁of▁sentence｜>/gi,
+  /<｜end▁of▁sentence｜>/gi,
+  /<｜User｜>/gi,
+  /<｜Assistant｜>/gi,
+  /<｜System｜>/gi,
   /\[INST\]/gi,
   /\[\/INST\]/gi,
   /<<SYS>>/gi,
   /<<\/SYS>>/gi,
   SYSTEM_BLOCK_PATTERN,
   TOOL_CALL_BLOCK_PATTERN,
+  SYSTEM_TAG_PATTERN,
+  TOOL_CALL_TAG_PATTERN,
 ];
 
 /**
@@ -132,11 +145,10 @@ const CHAT_TEMPLATE_PATTERNS: readonly RegExp[] = [
  * separately in `sanitizeUntrustedString` because it's a character-class
  * regex applied byte-by-byte, not a tag matcher.
  *
- * Four of these patterns (the `<system>` and `<tool_call>` blocks and
- * the two attribute-bearing delimiter openings) take quadratic time
- * under `String.prototype.replace` when the text holds many openings
- * without a terminator. `sanitizeUntrustedString` applies them in linear
- * time with identical output; apply this list yourself only to input of
+ * The attribute-bearing and block entries take quadratic time under
+ * `String.prototype.replace` when the text holds many openings without
+ * a terminator. `sanitizeUntrustedString` applies them in linear time
+ * with identical output; apply this list yourself only to input of
  * bounded length.
  */
 export const HARD_STRIP_PATTERNS: readonly RegExp[] = Object.freeze([
@@ -145,38 +157,48 @@ export const HARD_STRIP_PATTERNS: readonly RegExp[] = Object.freeze([
 ]);
 
 /**
- * Linear-time stand-ins for the four quadratic entries above. Each
- * original scans to the end of the text for its terminator (a closing
- * tag, or the `>` that ends an opening with attributes) and fails when
- * there is none, once per opening. A long run of unterminated openings,
- * such as a pasted chat message, therefore costs O(n²) in a call that
- * runs on every turn.
+ * Linear-time stand-ins for the entries above that scan across `[^>]*`
+ * or `[\s\S]*?`. Each original scans to the end of the text for its
+ * terminator (a closing tag, or the `>` that ends an opening with
+ * attributes) and fails when there is none, once per opening. A long
+ * run of unterminated openings therefore costs O(n²) under naive
+ * `String.prototype.replace`.
  *
  * A stand-in starts matching wherever its original could. When the
  * terminator is missing it consumes the rest of the text in one pass
  * instead of failing, and {@link stripPattern} hands that text back
- * unchanged. That is exactly what the original does: if no terminator
- * follows one opening, none follows any later opening either, so the
- * original leaves the rest of the text alone. Group 1 is non-empty
- * precisely when the original pattern matches, so the output is
- * identical for every input.
+ * unchanged. Group 1 is non-empty precisely when the original pattern
+ * matches, so the output is identical for every input.
  */
 const LINEAR_STRIP_SCANS: ReadonlyMap<RegExp, RegExp> = new Map([
-  [SYSTEM_BLOCK_PATTERN, /<system>(?:[\s\S]*?(<\/system>)|[\s\S]*)/gi],
-  [TOOL_CALL_BLOCK_PATTERN, /<tool_call>(?:[\s\S]*?(<\/tool_call>)|[\s\S]*)/gi],
-  [UNTRUSTED_USER_INPUT_OPEN_PATTERN, /<UNTRUSTED_USER_INPUT(?:\s[^>]*)?(>?)/gi],
-  [UNTRUSTED_USER_BRIEF_OPEN_PATTERN, /<UNTRUSTED_USER_BRIEF(?:\s[^>]*)?(>?)/gi],
+  [SYSTEM_BLOCK_PATTERN, /<\s*system\s*\/?\s*>(?:[\s\S]*?(<\/\s*system\s*>)|[\s\S]*)/gi],
+  [TOOL_CALL_BLOCK_PATTERN, /<\s*tool_call\s*\/?\s*>(?:[\s\S]*?(<\/\s*tool_call\s*>)|[\s\S]*)/gi],
+  [UNTRUSTED_USER_INPUT_OPEN_PATTERN, /<\s*UNTRUSTED_USER_INPUT(?:[\s/][^<>]*)?(>|(?=<)|$)/gi],
+  [UNTRUSTED_USER_BRIEF_OPEN_PATTERN, /<\s*UNTRUSTED_USER_BRIEF(?:[\s/][^<>]*)?(>|(?=<)|$)/gi],
 ]);
 
 /**
  * `text.replace(pattern, '')` for any pattern in
- * {@link HARD_STRIP_PATTERNS}, in linear time for the four entries
- * that would otherwise be quadratic.
+ * {@link HARD_STRIP_PATTERNS}, in linear time for the entries that
+ * would otherwise be quadratic.
  */
 function stripPattern(text: string, pattern: RegExp): string {
   const scan = LINEAR_STRIP_SCANS.get(pattern);
   if (!scan) return text.replace(pattern, '');
   return text.replace(scan, (match: string, terminator: string | undefined) => (terminator ? '' : match));
+}
+
+function stripPatternsToFixedPoint(text: string, patterns: readonly RegExp[]): string {
+  let cleaned = text;
+  for (let pass = 0; pass < MAX_STRIP_PASSES; pass += 1) {
+    let next = cleaned;
+    for (const pattern of patterns) {
+      next = stripPattern(next, pattern);
+    }
+    if (next === cleaned) break;
+    cleaned = next;
+  }
+  return cleaned;
 }
 
 // ---------------------------------------------------------------------------
@@ -308,11 +330,7 @@ function sanitizeFieldTagged(raw: unknown, field: SanitizeField): SanitizeResult
   if (FORBIDDEN_CONTROL_CHARS.test(raw)) {
     return { ok: false, field, reason: 'forbidden-control-character' };
   }
-  let cleaned = raw;
-  for (const pattern of HARD_STRIP_PATTERNS) {
-    cleaned = stripPattern(cleaned, pattern);
-  }
-  cleaned = cleaned.trim();
+  const cleaned = stripPatternsToFixedPoint(raw, HARD_STRIP_PATTERNS).trim();
   if (cleaned.length > FIELD_CAPS[field]) {
     return { ok: false, field, reason: 'too-long' };
   }
@@ -395,16 +413,11 @@ export function sanitizeUntrustedString(
 
   // Drop non-whitespace control bytes first so a delimiter pattern
   // can't be split across a stray \x01.
-  let cleaned = input.replace(CONTROL_CHARS_RE, '');
-
-  for (const pattern of CHAT_TEMPLATE_PATTERNS) {
-    cleaned = stripPattern(cleaned, pattern);
-  }
-  if (stripDelimiters) {
-    for (const pattern of DELIMITER_PATTERNS) {
-      cleaned = stripPattern(cleaned, pattern);
-    }
-  }
+  const withoutControls = input.replace(CONTROL_CHARS_RE, '');
+  const cleaned = stripPatternsToFixedPoint(
+    withoutControls,
+    stripDelimiters ? HARD_STRIP_PATTERNS : CHAT_TEMPLATE_PATTERNS,
+  );
 
   if (opts?.maxLength !== undefined && cleaned.length > opts.maxLength) {
     throw new SanitizerError({

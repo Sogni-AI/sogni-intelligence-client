@@ -12,6 +12,8 @@
  * spinning up a model.
  */
 
+import { escapeAttribute, sanitizeUntrustedString } from './sanitizer.js';
+
 export interface ValidateRubricInput {
   /** Free-text criteria, one per line. Each becomes a separate gate. */
   rubric: readonly string[];
@@ -38,6 +40,16 @@ export interface RubricJudgement {
 const PASS_TOKEN = '__PASS__';
 const FAIL_TOKEN = '__FAIL__';
 
+const THINK_BLOCK_SCAN = /<think>(?:[\s\S]*?(<\/think>)|[\s\S]*)/gi;
+
+function sanitizeRubricField(raw: string): string {
+  let out = sanitizeUntrustedString(raw);
+  while (/__PASS__|__FAIL__/i.test(out)) {
+    out = out.replace(/__PASS__/gi, '[PASS]').replace(/__FAIL__/gi, '[FAIL]');
+  }
+  return out;
+}
+
 /**
  * Build the system + user prompt the judge LLM will see. The judge is
  * forced to emit either `__PASS__` or `__FAIL__: <reasons>` so the
@@ -47,15 +59,22 @@ export function buildRubricPrompts(input: ValidateRubricInput): {
   system: string;
   user: string;
 } {
-  const successLine = input.successDescription
-    ? `Good output looks like: ${input.successDescription}`
+  const kind: ValidateRubricInput['artifactKind'] =
+    input.artifactKind === 'text' || input.artifactKind === 'image' || input.artifactKind === 'video'
+      ? input.artifactKind
+      : 'image';
+  const cleanedSuccess = input.successDescription
+    ? sanitizeRubricField(input.successDescription).replace(/[\r\n]+/g, ' ').trim()
+    : '';
+  const successLine = cleanedSuccess
+    ? `Good output looks like: ${cleanedSuccess}`
     : 'Good output satisfies every rubric item completely.';
   const rubricList = input.rubric
-    .map((line, i) => `${i + 1}. ${line.trim()}`)
+    .map((line, i) => `${i + 1}. ${sanitizeRubricField(line).replace(/[\r\n]+/g, ' ').trim()}`)
     .join('\n');
 
   const system = [
-    `You are a strict creative quality judge for ${input.artifactKind} artifacts.`,
+    `You are a strict creative quality judge for ${kind} artifacts.`,
     successLine,
     'Evaluate the artifact against EACH rubric item one at a time.',
     `If ALL items pass, your ENTIRE response must be exactly: ${PASS_TOKEN}`,
@@ -68,11 +87,20 @@ export function buildRubricPrompts(input: ValidateRubricInput): {
     'Do not output anything else. No preamble. No analysis.',
   ].join('\n');
 
-  const artifactBlock = input.artifactKind === 'text'
-    ? `<text-artifact>\n${(input.artifactInline ?? '').trim()}\n</text-artifact>`
-    : input.artifactUrl
-      ? `<${input.artifactKind}-artifact src="${input.artifactUrl}"/>`
-      : '<artifact missing/>';
+  let artifactBlock: string;
+  if (kind === 'text') {
+    const inlineText = sanitizeRubricField(input.artifactInline ?? '')
+      .replace(/<\s*(\/?)\s*text-artifact\b/gi, '&lt;$1text-artifact')
+      .trim();
+    artifactBlock = `<text-artifact>\n${inlineText}\n</text-artifact>`;
+  } else if (input.artifactUrl) {
+    const safeSrc = escapeAttribute(
+      sanitizeRubricField(input.artifactUrl).replace(/[\r\n\t]+/g, ''),
+    );
+    artifactBlock = `<${kind}-artifact src="${safeSrc}"/>`;
+  } else {
+    artifactBlock = '<artifact missing/>';
+  }
 
   const user = [
     'Rubric:',
@@ -87,17 +115,20 @@ export function buildRubricPrompts(input: ValidateRubricInput): {
 
 /**
  * Parse the judge's response. Returns a structured RubricJudgement.
- * Recognises a leading `__PASS__` or `__FAIL__: …` and falls back to a
- * loose contains-check so a slightly chatty model doesn't break the
- * gate. Items mentioned by number in a fail response are mapped back
- * to rubric strings.
+ * Recognises a leading `__PASS__` or `__FAIL__: …` after stripping any
+ * reasoning `<think>` blocks, and accepts a fallback pass only when
+ * `__PASS__` appears as a standalone verdict rather than quoted inside
+ * commentary. Items mentioned by number in a fail response are mapped
+ * back to rubric strings.
  */
 export function parseJudgeResponse(
   raw: string,
   rubric: readonly string[],
 ): RubricJudgement {
-  const cleaned = (raw ?? '').trim();
-  if (cleaned.startsWith(PASS_TOKEN)) {
+  const cleaned = (raw ?? '')
+    .replace(THINK_BLOCK_SCAN, (match, close: string | undefined) => (close ? '' : match))
+    .trim();
+  if (cleaned.startsWith(PASS_TOKEN) && !cleaned.includes(FAIL_TOKEN)) {
     return { pass: true, failedCriteria: [], notes: cleaned, suggestedRetryNotes: '' };
   }
   if (cleaned.startsWith(FAIL_TOKEN)) {
@@ -109,9 +140,13 @@ export function parseJudgeResponse(
       suggestedRetryNotes: afterToken,
     };
   }
-  // Fallback: loose checks. A response that contains __PASS__ but also
-  // some commentary still counts as a pass. Anything else is fail.
-  if (cleaned.includes(PASS_TOKEN) && !cleaned.includes(FAIL_TOKEN)) {
+  if (
+    !cleaned.includes(FAIL_TOKEN) &&
+    (/^(?:sure[!.,]?\s+|ok(?:ay)?[!.,]?\s+|(?:final\s+)?verdict\s*:\s*|result\s*:\s*)?__PASS__\.?$/i.test(cleaned) ||
+      (/^\s*(?:(?:final\s+)?verdict\s*:\s*)?__PASS__\.?\s*$/m.test(cleaned) &&
+        /__PASS__\.?$/.test(cleaned) &&
+        !/\b(?:fail(?:ed|s|ure)?|cannot|not|said|quote[ds]?|instruction|ignore)\b/i.test(cleaned)))
+  ) {
     return { pass: true, failedCriteria: [], notes: cleaned, suggestedRetryNotes: '' };
   }
   return {
@@ -140,31 +175,54 @@ function extractFailedCriteria(text: string, rubric: readonly string[]): string[
 export { PASS_TOKEN, FAIL_TOKEN };
 
 // ---------------------------------------------------------------------------
-// SSRF guard for artifactUrl
+// Static URL host validation for artifactUrl
 // ---------------------------------------------------------------------------
 
+const LOOPBACK_HOSTS: ReadonlySet<string> = new Set([
+  'localhost',
+  '127.0.0.1',
+  '0.0.0.0',
+  '::',
+  '::1',
+]);
+
+const INTERNAL_EXACT_HOSTS: ReadonlySet<string> = new Set([
+  'metadata',
+  'metadata.goog',
+  'metadata.google.internal',
+  'instance-data',
+]);
+
+const INTERNAL_HOST_SUFFIXES: readonly string[] = [
+  '.localhost',
+  '.local',
+  '.internal',
+  '.cluster.local',
+  '.consul',
+  '.localdomain',
+  '.home.arpa',
+];
+
+// eslint-disable-next-line no-control-regex
+const URL_CONTROL_CHARS = /[\x00-\x1f\x7f]/;
+
 /**
- * Allow-list check for the `artifactUrl` argument of `wf:validate_with_rubric`
- * (and any future primitive that fetches a remote artifact for vision /
- * audio judgement). Returns `{ ok: false, reason }` for anything that
- * could initiate a server-side request to internal / link-local /
- * loopback addresses.
+ * Synchronous static URL check for the `artifactUrl` argument of
+ * `wf:validate_with_rubric` (and other remote media reference helpers).
+ * Returns `{ ok: false, reason }` for URLs targeting internal,
+ * cloud-metadata, link-local, or loopback hosts.
  *
- * Why this lives in the shared package: durable (server-side) runs of a
- * workflow template that uses `wf:validate_with_rubric` will fetch the
- * supplied URL from the api host. Template authors are arbitrary end
- * users; without this guard a malicious template could probe the cloud
- * metadata service (`169.254.169.254`), private VPC services, or
- * internal admin endpoints. The chat frontend runs in the user's own
- * browser so the SSRF risk is lower there — but the same allow-list
- * defends against accidental misuse and keeps every frontend on one
- * policy.
- *
- * Pure: no IO, only string + regex inspection.
+ * Pure and synchronous: performs string and URL inspection only (no DNS
+ * resolution or network I/O). Server-side HTTP fetchers MUST also
+ * validate resolved DNS addresses and redirect targets at connection
+ * time before opening a socket.
  */
 export function assertArtifactUrlIsSafe(
   url: string,
 ): { ok: true } | { ok: false; reason: string } {
+  if (typeof url !== 'string' || URL_CONTROL_CHARS.test(url)) {
+    return { ok: false, reason: 'artifactUrl is not a valid URL' };
+  }
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -183,41 +241,55 @@ export function assertArtifactUrlIsSafe(
   const host = parsed.hostname.toLowerCase();
   if (!host) return { ok: false, reason: 'artifactUrl host is empty' };
 
-  // URL parsers sometimes leave IPv6 hosts wrapped in brackets — strip
-  // before pattern matching.
+  // URL parsers leave IPv6 hosts wrapped in brackets — strip before matching.
   const bareHost =
     host.startsWith('[') && host.endsWith(']') ? host.slice(1, -1) : host;
+  let normalizedHost = bareHost.replace(/\.+$/, '');
+  if (!normalizedHost) return { ok: false, reason: 'artifactUrl host is empty' };
 
-  const loopback = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::', '::1']);
-  if (loopback.has(bareHost)) {
-    return { ok: false, reason: `artifactUrl host "${bareHost}" is a loopback address` };
+  // Re-canonicalize when trailing dots hid a shorthand/hex/decimal IPv4 host.
+  if (normalizedHost !== bareHost && !normalizedHost.includes(':')) {
+    try {
+      normalizedHost = new URL(`http://${normalizedHost}`).hostname.toLowerCase();
+    } catch {
+      return { ok: false, reason: 'artifactUrl is not a valid URL' };
+    }
   }
-  if (bareHost.endsWith('.localhost') || bareHost.endsWith('.local')) {
+
+  if (LOOPBACK_HOSTS.has(normalizedHost)) {
+    return { ok: false, reason: `artifactUrl host "${normalizedHost}" is a loopback address` };
+  }
+  if (INTERNAL_EXACT_HOSTS.has(normalizedHost)) {
     return {
       ok: false,
-      reason: `artifactUrl host "${bareHost}" is on a local network suffix`,
+      reason: `artifactUrl host "${normalizedHost}" is a reserved internal hostname`,
     };
   }
-  // IPv4-mapped (::ffff:0:0/96, including ::ffff:a.b.c.d → ::ffff:hhhh:hhhh
-  // after URL canonicalization) and NAT64 (64:ff9b::/96) IPv6 addresses route
-  // to their embedded IPv4 destination at the socket layer on Linux, bypassing
-  // the dotted-quad IPv4 checks below. Reject them outright.
-  if (/^(::ffff:|64:ff9b:)/i.test(bareHost)) {
+  if (INTERNAL_HOST_SUFFIXES.some((suffix) => normalizedHost.endsWith(suffix))) {
     return {
       ok: false,
-      reason: `artifactUrl host "${bareHost}" is an IPv4-embedded IPv6 address`,
+      reason: `artifactUrl host "${normalizedHost}" is on a local or internal network suffix`,
     };
   }
-  if (PRIVATE_IPV4_PATTERNS.some((re) => re.test(bareHost))) {
+  // IPv4-mapped (::ffff:0:0/96), IPv4-compatible (::/96, e.g. ::127.0.0.1 ->
+  // ::7f00:1 after URL canonicalization), and NAT64 (64:ff9b::/96) IPv6
+  // addresses route to their embedded IPv4 destination. Reject them outright.
+  if (/^(?:::ffff:|64:ff9b:|::(?:[0-9a-f]{1,4}:)?[0-9a-f]{1,4}$)/i.test(normalizedHost)) {
     return {
       ok: false,
-      reason: `artifactUrl host "${bareHost}" is in a private/link-local IPv4 range`,
+      reason: `artifactUrl host "${normalizedHost}" is an IPv4-embedded IPv6 address`,
     };
   }
-  if (PRIVATE_IPV6_PATTERNS.some((re) => re.test(bareHost))) {
+  if (PRIVATE_IPV4_PATTERNS.some((re) => re.test(normalizedHost))) {
     return {
       ok: false,
-      reason: `artifactUrl host "${bareHost}" is in a private/link-local IPv6 range`,
+      reason: `artifactUrl host "${normalizedHost}" is in a private/link-local IPv4 range`,
+    };
+  }
+  if (PRIVATE_IPV6_PATTERNS.some((re) => re.test(normalizedHost))) {
+    return {
+      ok: false,
+      reason: `artifactUrl host "${normalizedHost}" is in a private/link-local IPv6 range`,
     };
   }
   return { ok: true };
@@ -228,12 +300,12 @@ const PRIVATE_IPV4_PATTERNS: readonly RegExp[] = [
   /^192\.168\.\d{1,3}\.\d{1,3}$/,
   /^172\.(1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3}$/,
   /^169\.254\.\d{1,3}\.\d{1,3}$/, // link-local incl. cloud metadata 169.254.169.254
+  /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}$/, // CGNAT / metadata 100.64.0.0/10
   /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
   /^0\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
 ];
 
 const PRIVATE_IPV6_PATTERNS: readonly RegExp[] = [
-  /^fe80::/i,         // link-local
-  /^fc00:/i,          // unique local
-  /^fd[0-9a-f]{2}:/i, // unique local
+  /^fe[89ab][0-9a-f]?:/i, // link-local fe80::/10
+  /^f[cd][0-9a-f]{0,2}:/i, // unique local fc00::/7
 ];
