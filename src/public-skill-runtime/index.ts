@@ -27,6 +27,12 @@ import { WAN22_MAX_VIDEO_PIXELS } from '../media/videoSettings.js';
 import { modelConsentRequiredPayloadFromError } from '../media/modelConsentRequired.js';
 import { modelNotYetAvailablePayloadFromError } from '../media/modelNotYetAvailable.js';
 import { MINIMAX_H3_KEYFRAMES_GUIDANCE } from '../contracts/toolPromptMarkers.js';
+import {
+  createGptImageModelRefScanRegex,
+  removeMatchesNotAfterLetterOrNumber,
+  splitAtSentenceBreaks,
+  textBeforeFirstClauseBreak,
+} from '../utils/lookbehindFree.js';
 
 type LtxWorkflow = 't2v' | 'i2v' | 'ia2v' | 'a2v' | 'v2v';
 type Ltx25Workflow = LtxWorkflow;
@@ -960,6 +966,11 @@ export interface ParsedModelRef {
 export interface ModelRefFormat {
   format(index: number, type: AssetType): string;
   parse(token: string): ParsedModelRef | null;
+  /**
+   * Where the engine cannot compile lookbehind (Safari before 16.4), the GPT
+   * Image format's regex is a RegExp subclass whose `source` is the token
+   * pattern alone; copy it with `new re.constructor(re.source, re.flags)`.
+   */
   scanRegex: RegExp;
 }
 
@@ -999,7 +1010,7 @@ const GPT_IMAGE_MODEL_REF_FORMAT: ModelRefFormat = {
       type: kind === 'Video' ? 'video' : kind === 'Audio' ? 'audio' : 'image',
     };
   },
-  scanRegex: /(?<!@)(?<!\b[Gg][Pp][Tt]\s)(?:\[(?:Image|Video|Audio)\s+\d+\]|\b(?:Image|Video|Audio)\s+\d+\b)/g,
+  scanRegex: createGptImageModelRefScanRegex(),
 };
 
 const CONTEXT_MODEL_REF_FORMAT: ModelRefFormat = {
@@ -5651,8 +5662,7 @@ function extractStoryboardRequiredText(text: string): string[] {
       .filter(Boolean);
     if (quoted.length > 0) return quoted;
 
-    return value
-      .split(/(?<=[.!?])\s+(?=[A-Z0-9])/g)
+    return splitAtSentenceBreaks(value)
       .map(line => compactStoryboardLine(line)
         .replace(/^["“”'`]+|["“”'`]+$/g, '')
         .trim())
@@ -6166,7 +6176,7 @@ function splitStoryboardTitleDescription(value: string): { title: string; descri
       .replace(/"[^"]{1,240}"|“[^”]{1,240}”|`[^`]{1,240}`/g, '')
       .replace(/\s+\b(?:Dialogue\/VO|VO\/Dialogue|V\.O\.|VO|Voiceover|Voice-over|Speech|Narration|Audio\/SFX|Audio|SFX|FX|Foley|Sound|Sounds|Music|Visible text|On-screen text|Onscreen text|Text|CTA|Camera\/Motion|Camera|Lighting\/Style|Lighting|Style|Look|Action\/Motion|Action|Motion)\s*:[\s\S]*$/i, '')
       .replace(/\s*:\s*$/, '');
-    const firstClause = titleSafe.split(/(?<=[.!?])\s+|;\s+|\n/)[0] || titleSafe || withoutLeadingLabel;
+    const firstClause = textBeforeFirstClauseBreak(titleSafe) || titleSafe || withoutLeadingLabel;
     return compactStoryboardLine(firstClause.slice(0, 80), 'Storyboard Beat');
   };
   const match = cleaned.match(/^([^:\n]{1,100})\s*:\s*([\s\S]+)$/);
@@ -8326,9 +8336,11 @@ function removeStoryboardMetadataLabelsFromPromptText(value: string, metadataLab
     .sort((a, b) => b.length - a.length);
   for (const label of aliases) {
     const escaped = escapeStoryboardRegExp(label);
-    const leadingBoundary = /^[\p{L}\p{N}_]/u.test(label) ? '(?<![\\p{L}\\p{N}_])' : '';
     const trailingBoundary = /[\p{L}\p{N}_]$/u.test(label) ? '(?![\\p{L}\\p{N}_])' : '';
-    cleaned = cleaned.replace(new RegExp(`${leadingBoundary}${escaped}${trailingBoundary}`, 'giu'), '');
+    const labelPattern = new RegExp(`${escaped}${trailingBoundary}`, 'giu');
+    cleaned = /^[\p{L}\p{N}_]/u.test(label)
+      ? removeMatchesNotAfterLetterOrNumber(cleaned, labelPattern)
+      : cleaned.replace(labelPattern, '');
   }
   return compactStoryboardLine(cleaned)
     .replace(/\s+([,.;:])/g, '$1')
