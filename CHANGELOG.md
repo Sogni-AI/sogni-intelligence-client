@@ -1,3 +1,10 @@
+## [4.37.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.37.0...v4.37.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* **compat:** load on Safari before 16.4 without changing scanRegex where lookbehind compiles ([5b1883d](https://github.com/Sogni-AI/sogni-intelligence-client/commit/5b1883d9fb7200f922ce22b0506b6b1c6956ec16))
+
 # [4.37.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.36.1...v4.37.0) (2026-11-27)
 
 
