@@ -214,6 +214,9 @@ interface BaseClientConfig {
   /** Automatically connect on client creation */
   autoConnect?: boolean;
 
+  /** Called when another connection takes this app ID, including during startup. */
+  onConnectionTakeover?: () => void;
+
   /**
    * Retry a failed connect. A connection that was established is kept alive by
    * the SDK itself, which reconnects with capped backoff and re-syncs projects.

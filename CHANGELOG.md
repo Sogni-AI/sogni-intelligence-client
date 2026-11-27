@@ -1,3 +1,101 @@
+# [4.37.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.36.1...v4.37.0) (2026-11-27)
+
+
+### Features
+
+* **loras:** point agents at the newest Krea 2 and H3 LoRA versions ([a727a48](https://github.com/Sogni-AI/sogni-intelligence-client/commit/a727a48bd04032c3082b271ae3e49266e1b261a1))
+
+## [4.36.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.36.0...v4.36.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* **deps:** pin @sogni-ai/sogni-client 5.90.1 ([69d0b5b](https://github.com/Sogni-AI/sogni-intelligence-client/commit/69d0b5b9f531a11b835a82035384731a15d6d923))
+* tighten replay redaction, workflow input, and spend-gate checks ([919988d](https://github.com/Sogni-AI/sogni-intelligence-client/commit/919988d5ca82d98ecabdb0c6b9fb61919a9d18fc))
+* tighten workflow tag matching and ipv4-compatible url checks ([866b221](https://github.com/Sogni-AI/sogni-intelligence-client/commit/866b2215cc0c20329f895e209d5c26c20e83e54e))
+
+# [4.36.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.35.0...v4.36.0) (2026-11-25)
+
+
+### Bug Fixes
+
+* **deps:** pin SDK 5.90.0 and protocol alpha.67 for Flash Uncensored ([fe1fbf5](https://github.com/Sogni-AI/sogni-intelligence-client/commit/fe1fbf54de88b4daec017ab7b220b5bbeb279d7a))
+* **tools:** ignore the retired wan watermark argument ([21f4627](https://github.com/Sogni-AI/sogni-intelligence-client/commit/21f46274024d551d78da1cf31d03154458ebcca9))
+
+
+### Features
+
+* **video:** add the optional seedance flash variant ([d5e7d5e](https://github.com/Sogni-AI/sogni-intelligence-client/commit/d5e7d5ee0a8d993b8a3cb0a091f999d94554ccf1))
+* **video:** add the optional seedance flash variant ([6e6d508](https://github.com/Sogni-AI/sogni-intelligence-client/commit/6e6d5082dfbd63d207fe7ea9cde482092c684af2))
+
+# [4.35.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.34.0...v4.35.0) (2026-11-25)
+
+
+### Bug Fixes
+
+* **deps:** pin SDK 5.89.0 and protocol alpha.66 for the train ([e78c0b4](https://github.com/Sogni-AI/sogni-intelligence-client/commit/e78c0b4be0e9e40e4752659eda2c3499e9d750ec))
+
+
+### Features
+
+* **video:** retire HappyHorse from creative tool options ([11ef57d](https://github.com/Sogni-AI/sogni-intelligence-client/commit/11ef57d5e9a69c4cef6b0eafcf0845239211a8ad))
+
+# [4.34.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.33.3...v4.34.0) (2026-11-24)
+
+
+### Features
+
+* **video:** expose Seedance 2.5 Flash capabilities ([492321c](https://github.com/Sogni-AI/sogni-intelligence-client/commit/492321c61263517503dde38473eaee266c73ebaf))
+
+## [4.33.3](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.33.2...v4.33.3) (2026-11-23)
+
+
+### Bug Fixes
+
+* **chatRun:** pause for confirmation on tools without cost metadata ([9c71f51](https://github.com/Sogni-AI/sogni-intelligence-client/commit/9c71f51bb0137708b51441e79e8662e188da9a3c))
+* **client:** integrate updated text processing ([be462d8](https://github.com/Sogni-AI/sogni-intelligence-client/commit/be462d831fff294de560c2267931a019084e8a1e))
+* **contracts:** check MiniMax H3 audio prompt markers in linear time ([5e7adba](https://github.com/Sogni-AI/sogni-intelligence-client/commit/5e7adba345367da1e6904a9726f97917f1c485fe))
+* **deps:** update the client SDK to 5.86.2 ([475288d](https://github.com/Sogni-AI/sogni-intelligence-client/commit/475288d8d45673a440a6a9db77a070ed7b3df1ba))
+* **media:** match GPT Image 2.5 requests in linear time ([e3011b4](https://github.com/Sogni-AI/sogni-intelligence-client/commit/e3011b486e4707e66964fe128c888cd0dfc4783f))
+* **public-skill-runtime:** strip tool-message blocks in linear time ([5c5fd6e](https://github.com/Sogni-AI/sogni-intelligence-client/commit/5c5fd6e8be549f463e8ce7ded18bdb54874e4a7b))
+* **tools:** strip think and tool_call blocks in linear time ([197e3e3](https://github.com/Sogni-AI/sogni-intelligence-client/commit/197e3e3444d1ebe53469dbf35dc0e53a729bd97a))
+* **workflows:** strip sanitizer blocks and delimiter tags in linear time ([878f2df](https://github.com/Sogni-AI/sogni-intelligence-client/commit/878f2df4ce90c92637171b16d22ea31cbb04a0c8))
+
+## [4.33.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.33.1...v4.33.2) (2026-11-23)
+
+
+### Bug Fixes
+
+* **video:** quote MiniMax H3 clips up to 15 seconds ([c0afee6](https://github.com/Sogni-AI/sogni-intelligence-client/commit/c0afee668c6aff870094f91a709a5a3a7065716f))
+
+## [4.33.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.33.0...v4.33.1) (2026-11-22)
+
+
+### Bug Fixes
+
+* **client:** notify callers when another connection takes their app ID ([bdfe690](https://github.com/Sogni-AI/sogni-intelligence-client/commit/bdfe690d16aaabdab6da260afab5b88fd0918b48))
+
+# [4.33.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.32.2...v4.33.0) (2026-11-20)
+
+
+### Features
+
+* **media:** persona sheets use a four-panel layout made for video models ([aea6c4b](https://github.com/Sogni-AI/sogni-intelligence-client/commit/aea6c4b133426f52fdf237a78d671ae31d0018dd))
+
+## [4.32.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.32.1...v4.32.2) (2026-11-20)
+
+
+### Bug Fixes
+
+* **video:** honor session reference video routing ([783b04d](https://github.com/Sogni-AI/sogni-intelligence-client/commit/783b04d565b859a480e833eadc1d1fde1f187b22))
+
+## [4.32.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.32.0...v4.32.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* **video:** keep the requested seedance band when a frame sets the canvas ([f645a6e](https://github.com/Sogni-AI/sogni-intelligence-client/commit/f645a6e67dfb2e148406c46a1167132a84c56a73))
+
 # [4.32.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.31.0...v4.32.0) (2026-11-17)
 
 

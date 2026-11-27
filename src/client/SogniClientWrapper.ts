@@ -85,13 +85,92 @@ import {
   isHappyHorseVideoModel,
   isLtxVideoModel,
   isLooseReferenceVideoModel,
+  isMiniMaxH3VideoModel,
   isSeedance25VideoModel,
   isSeedanceVideoModel,
   isWanVideoModel,
 } from '../utils/helpers.js';
 import { isRegisteredWan3VideoModelId } from '../utils/videoModelIds.js';
+import { redactPayload } from '../replay/redact.js';
 
 const LTX2_FRAME_STEP = 8;
+const MINIMAX_H3_FPS = 24;
+const MINIMAX_H3_MAX_FRAMES = 362;
+
+const activeCustomTlsClients = new Set<SogniClientWrapper>();
+let savedNodeTlsRejectUnauthorized: string | undefined;
+let hasSavedNodeTlsRejectUnauthorized = false;
+
+function acquireTlsSetting(instance: SogniClientWrapper): void {
+  if (!activeCustomTlsClients.has(instance)) {
+    if (activeCustomTlsClients.size === 0) {
+      savedNodeTlsRejectUnauthorized = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+      hasSavedNodeTlsRejectUnauthorized = Object.prototype.hasOwnProperty.call(
+        process.env,
+        'NODE_TLS_REJECT_UNAUTHORIZED',
+      );
+    }
+    activeCustomTlsClients.add(instance);
+  }
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
+function releaseTlsSetting(instance: SogniClientWrapper): void {
+  if (!activeCustomTlsClients.delete(instance)) {
+    return;
+  }
+  if (activeCustomTlsClients.size === 0) {
+    if (hasSavedNodeTlsRejectUnauthorized && savedNodeTlsRejectUnauthorized !== undefined) {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = savedNodeTlsRejectUnauthorized;
+    } else {
+      delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+    }
+    savedNodeTlsRejectUnauthorized = undefined;
+    hasSavedNodeTlsRejectUnauthorized = false;
+  }
+}
+
+function isBinaryMediaValue(value: unknown): boolean {
+  return (
+    Buffer.isBuffer(value) ||
+    ArrayBuffer.isView(value) ||
+    value instanceof ArrayBuffer ||
+    (typeof Blob !== 'undefined' && value instanceof Blob)
+  );
+}
+
+function prepareConfigForRedaction(
+  value: unknown,
+  depth = 0,
+  seen = new WeakSet<object>(),
+): unknown {
+  if (depth > 32) return '[truncated]';
+  if (value === null || value === undefined) return value;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'function') return '[function]';
+  if (typeof value === 'object') {
+    if (isBinaryMediaValue(value)) return '[binary]';
+    if (value instanceof Date) return value.toISOString();
+    if (seen.has(value)) return '[circular]';
+    seen.add(value);
+    try {
+      if (Array.isArray(value)) {
+        return value.map((item) => prepareConfigForRedaction(item, depth + 1, seen));
+      }
+      return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).map(([key, val]) => [
+          key,
+          prepareConfigForRedaction(val, depth + 1, seen),
+        ]),
+      );
+    } finally {
+      seen.delete(value);
+    }
+  }
+  return String(value);
+}
 
 function freezeAttributionDefaults(
   attribution: SogniAttributionConfig | undefined,
@@ -127,6 +206,7 @@ interface InternalConfig {
   multiInstance?: boolean;
   allowInsecureTLS?: boolean;
   autoConnect: boolean;
+  onConnectionTakeover?: () => void;
   reconnect: boolean;
   reconnectInterval: number;
   maxReconnectInterval: number;
@@ -180,6 +260,7 @@ export class SogniClientWrapper extends EventEmitter {
       multiInstance: config.multiInstance,
       allowInsecureTLS: config.allowInsecureTLS,
       autoConnect: config.autoConnect !== false,
+      onConnectionTakeover: config.onConnectionTakeover,
       reconnect: config.reconnect !== false,
       reconnectInterval: config.reconnectInterval || 5000,
       maxReconnectInterval: config.maxReconnectInterval || 300000,
@@ -230,8 +311,8 @@ export class SogniClientWrapper extends EventEmitter {
       this.log('Creating Sogni client...');
 
       if (this.config.allowInsecureTLS) {
-        process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-        this.log('TLS verification disabled (allowInsecureTLS=true)');
+        acquireTlsSetting(this);
+        this.log('TLS verification disabled for active client connection');
       }
 
       const clientConfig = {
@@ -253,6 +334,12 @@ export class SogniClientWrapper extends EventEmitter {
 
       // Create client instance with auth type
       this.client = await SogniClient.createInstance(clientConfig);
+      const onTakeover = this.config.onConnectionTakeover;
+      if (onTakeover) {
+        this.client.apiClient.on('disconnected', ({ code }) => {
+          if (code === 4015) onTakeover();
+        });
+      }
 
       // Authentication depends on authType
       if (this.config.authType === 'cookies') {
@@ -379,6 +466,7 @@ export class SogniClientWrapper extends EventEmitter {
       this.client = null;
     }
     this.projectEtaSeconds.clear();
+    releaseTlsSetting(this);
 
     this.updateConnectionState({
       status: 'disconnected' as ConnectionStatus,
@@ -697,8 +785,9 @@ export class SogniClientWrapper extends EventEmitter {
 
     const { min: minDuration, max: maxDuration } = this.getVideoDurationBounds(params.modelId);
     if (duration < minDuration || duration > maxDuration) {
+      // H3's 362/24s ceiling prints as 15.083; integer bounds print unchanged.
       throw new SogniValidationError(
-        `Duration must be between ${minDuration} and ${maxDuration} seconds`
+        `Duration must be between ${minDuration} and ${Number(maxDuration.toFixed(3))} seconds`
       );
     }
 
@@ -1153,6 +1242,22 @@ export class SogniClientWrapper extends EventEmitter {
       height = normalizedDims.height;
     }
 
+    // Seedance reads only a ratio and a resolution band (by area) from the
+    // canvas. Fitting the frame inside the requested box shrank the box whenever
+    // the shapes differed: a portrait still at 1080p became 608x1080, which the
+    // network bills and renders as 480p, and a 16:9 still in an 848x480 box became
+    // 848x477, below the 480px the SDK accepted. The box takes the frame's shape
+    // at the requested area instead, so the requested band holds.
+    if (baseBuffer && width && height && isSeedanceVideoModel(config.modelId)) {
+      const meta = await this.getImageMetadata(baseBuffer);
+      if (meta?.width && meta?.height) {
+        const area = width * height;
+        const aspect = meta.width / meta.height;
+        width = Math.round(Math.sqrt(area * aspect));
+        height = Math.round(Math.sqrt(area / aspect));
+      }
+    }
+
     if (baseBuffer && width && height) {
       const baseFit: 'inside' | 'cover' =
         baseKey === 'referenceImageEnd' && !!config.referenceImage ? 'cover' : 'inside';
@@ -1452,6 +1557,7 @@ export class SogniClientWrapper extends EventEmitter {
   private discardFailedClient(): void {
     const client = this.client;
     this.client = null;
+    releaseTlsSetting(this);
     if (!client) return;
     try {
       if (typeof client.dispose === 'function') {
@@ -1628,6 +1734,11 @@ export class SogniClientWrapper extends EventEmitter {
     if (this.isLtx2Model(modelId)) {
       return { min: 1, max: 20 };
     }
+    if (isMiniMaxH3VideoModel(modelId)) {
+      // H3 renders up to 362 frames at a fixed 24fps (15.083s); the server
+      // snaps shorter requests up to its 124-frame minimum.
+      return { min: 1, max: MINIMAX_H3_MAX_FRAMES / MINIMAX_H3_FPS };
+    }
     return { min: 1, max: 10 };
   }
 
@@ -1694,10 +1805,8 @@ export class SogniClientWrapper extends EventEmitter {
   /**
    * Sanitize configuration for logging
    */
-  private sanitizeConfig(config: any): any {
-    const sanitized = { ...config };
-    if (sanitized.password) sanitized.password = '***';
-    return sanitized;
+  private sanitizeConfig(config: unknown): unknown {
+    return redactPayload(prepareConfigForRedaction(config));
   }
 
   /**

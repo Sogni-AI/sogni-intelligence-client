@@ -159,7 +159,19 @@ const clip = (text: string | undefined, limit: number) => {
   return value.length > limit ? `${value.slice(0, limit - 1).trimEnd()}…` : value;
 };
 
-/** The prompt for one character reference sheet rendered in a single pass. */
+/**
+ * The prompt for one character reference sheet rendered in a single pass.
+ *
+ * The sheet is a reference for video and image models (Seedance, Wan 3 and
+ * MiniMax H3 read it beside the identity photo), so it holds four panels on a
+ * flat medium grey: one large face close-up, then the full body from the front,
+ * the side and the back. In the 2026-11-19 A/B the earlier seven-view prompt
+ * often drew the wrong number of views or heads (every seed on Krea 2 and Dark
+ * Beast, about a third on FLUX 3 Image Klein) and its small faces drifted from
+ * the photo; this layout held on every model and seed tried. Video results
+ * differed little and by model. Headless bodies were tested and left out.
+ * Evidence: sogni-agent-knowledge `conventions/character-sheets-for-video.md`.
+ */
 export function personaSheetPrompt(brief: PersonaSheetBrief, photoCount: number): string {
   const subject = photoCount >= 2
     ? 'the person from the reference images: Image 1 shows their body and outfit, Image 2 shows their face. Combine them into one person'
@@ -174,10 +186,12 @@ export function personaSheetPrompt(brief: PersonaSheetBrief, photoCount: number)
   const description = clip(brief.description, 800);
   return [
     `Create one character reference sheet of ${subject}.`,
-    'Show the same person several times on a single plain light-grey studio background: a full-body front view, a full-body three-quarter view, a full-body side profile, a full-body back view, and a row of head-and-shoulders close-ups with a neutral, a smiling and a speaking expression.',
-    'Keep the face, age, skin tone, hairstyle, body proportions, markings and outfit identical in every view. Show head to toe in every full-body view, evenly spaced, nothing overlapping or cropped.',
+    'Four equal vertical panels side by side on one seamless, flat, medium-grey studio background.',
+    'Panel 1 is a large close-up of their head and face, looking straight at the camera with a relaxed neutral expression, mouth closed.',
+    'Panels 2, 3 and 4 show them full body from the front, from the side in profile and from the back, standing relaxed with arms at their sides, head to toe with nothing cropped.',
+    'Keep the face, age, skin tone, hairstyle, body proportions, markings and outfit identical in every panel.',
     likeness,
-    'Soft even lighting, sharp natural detail. No text, labels, captions, borders or color swatches.',
+    'Soft, even, shadowless studio lighting, sharp natural detail. No text, labels, captions, borders, grid lines or color swatches.',
     appearance ? `Appearance: ${appearance}.` : '',
     attire ? `Outfit: ${attire}.` : '',
     description ? `Character: ${description}.` : '',

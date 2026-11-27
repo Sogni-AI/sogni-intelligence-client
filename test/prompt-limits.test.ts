@@ -180,7 +180,7 @@ test('tool schemas tell the LLM the prompt limits', () => {
   const property = (definition: typeof generateVideo, name: string) =>
     String((definition.function.parameters.properties as Record<string, { description?: string }>)[name]?.description);
   for (const definition of [generateVideo, animatePhoto, soundToVideo, videoToVideo]) {
-    assert.match(property(definition, 'prompt'), /MiniMax H3 at most 7,000 characters; HappyHorse at most 5,000 \(each Chinese character counts as 2\)/, definition.function.name);
+    assert.match(property(definition, 'prompt'), /MiniMax H3 at most 7,000 characters; Wan 3 at most 20,000/, definition.function.name);
   }
   assert.match(property(generateMusic, 'prompt'), /ACE-Step accepts at most 4,096 characters of prompt/);
   assert.match(property(generateMusic, 'lyrics'), /at most 4,096 characters of lyrics/);

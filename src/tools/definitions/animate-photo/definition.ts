@@ -41,7 +41,7 @@ const H3_LORA_SELECTORS = [
 ] as const;
 
 const WAN3_VIDEO_MODEL_GUIDANCE =
-  '"wan3.0-video" is Alibaba Wan 3 and "wan3.0-spicy-video" is MuleRouter w3.0-video. Both support 2-30s at 30 fps, optional native audio, prompt expansion, 480p/720p/1080p, adaptive/fixed ratios, first/last frames, and loose multimodal references. Frame-anchor and loose-reference modes are mutually exclusive. Enhanced has no document/web context or watermark. Do not send negativePrompt; video references are loose conditioning, not edit or extend modes.';
+  '"wan3.0-video" is regular Wan 3 and "wan3.0-spicy-video" is MuleRouter w3.0-video. Both support 2-30s at 30 fps, optional native audio, prompt expansion, 480p/720p/1080p, adaptive/fixed ratios, first/last frames, and loose multimodal references. Frame-anchor and loose-reference modes are mutually exclusive. Enhanced has no document/web context. Do not send negativePrompt; video references are loose conditioning, not edit or extend modes.';
 
 export const definition: ToolDefinition = {
   type: "function",
@@ -103,8 +103,6 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
             "ltx25",
             "ltx23",
             "wan22",
-            "happyhorse-1.1-i2v",
-            "happyhorse-1.1-r2v",
             "minimax-h3-i2v",
             "minimax-h3-i2v-turbo",
             "minimax-h3-fasth3-i2v-turbo",
@@ -141,14 +139,10 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
           enum: ["adaptive", "16:9", "4:3", "1:1", "3:4", "9:16"],
           description: 'Wan 3 only. Use "adaptive" to preserve the source frame shape.',
         },
-        watermark: {
-          type: "boolean",
-          description: "Alibaba wan3.0-video only. Add the visible watermark. Defaults to false.",
-        },
         targetResolution: {
           type: "number",
           description:
-            'Short-side video resolution target in pixels. Use when the user asks for a bare named resolution such as "480p", "720p", or "1080p" without exact pixels or an output orientation. This preserves the source image aspect ratio. Wan 3 supports 480p, 720p, and 1080p; HappyHorse supports only 720p and 1080p. Never set 4K for either. MiniMax H3 renders inside a 1344x768 pixel budget on a 32px grid, so use 768 for the regular H3 selectors and never 1080p or 4K. The two-stage H3 selectors "minimax-h3-fasth3-i2v-turbo-2stage" and "minimax-h3-fasth3-flf2v-turbo-2stage" deliver twice the canvas, so there targetResolution names the delivered short-edge class: 1080 (544px canvas short edge: 960x544 delivered at 1920x1088), 1440 for 2K (the 1344x768 canvas delivered at 2688x1536), or 720 (384px canvas: 672x384 delivered at 1344x768); omit it for 2K. The source aspect is kept: a portrait source at 1080 renders 544x960 and is delivered at 1088x1920. Never set 4K for H3. Do NOT set width, height, or exact-pixel aspectRatio for bare named resolution requests. If the user says "720p portrait" or "720p landscape", use exact-pixel aspectRatio instead.',
+            'Short-side video resolution target in pixels. Use when the user asks for a bare named resolution such as "480p", "720p", or "1080p" without exact pixels or an output orientation. This preserves the source image aspect ratio. Wan 3 supports 480p, 720p, and 1080p. Never set 4K for Wan 3. MiniMax H3 renders inside a 1344x768 pixel budget on a 32px grid, so use 768 for the regular H3 selectors and never 1080p or 4K. The two-stage H3 selectors "minimax-h3-fasth3-i2v-turbo-2stage" and "minimax-h3-fasth3-flf2v-turbo-2stage" deliver twice the canvas, so there targetResolution names the delivered short-edge class: 1080 (544px canvas short edge: 960x544 delivered at 1920x1088), 1440 for 2K (the 1344x768 canvas delivered at 2688x1536), or 720 (384px canvas: 672x384 delivered at 1344x768); omit it for 2K. The source aspect is kept: a portrait source at 1080 renders 544x960 and is delivered at 1088x1920. Never set 4K for H3. Do NOT set width, height, or exact-pixel aspectRatio for bare named resolution requests. If the user says "720p portrait" or "720p landscape", use exact-pixel aspectRatio instead.',
         },
         sourceImageIndex: {
           type: "number",
@@ -219,7 +213,7 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
         voicePersonaName: {
           type: "string",
           description:
-            'ONLY when the user explicitly asks for a registered persona\'s own voice. Name of the persona whose voice clip to use as referenceAudioIdentity (LTX 2.3 Audio ID). Set this when the narrator/speaker is a different persona than the one shown in the video (e.g. "David" narrates a video of Aleyna), or to explicitly select a requested voice when multiple personas with voice clips are resolved. Do NOT set this for ordinary character dialogue, inferred voices, or personas without a voice clip — LTX 2.3 generates voice natively from the text prompt instead. On animate_photo it requires ltx23: LTX 2.5 has no compatible ID-LoRA, and the WAN, Wan 3, HappyHorse and MiniMax H3 frame modes take no voice reference. For a persona voice on MiniMax H3 r2v, Seedance or Wan 3, use generate_video.',
+            'ONLY when the user explicitly asks for a registered persona\'s own voice. Name of the persona whose voice clip to use as referenceAudioIdentity (LTX 2.3 Audio ID). Set this when the narrator/speaker is a different persona than the one shown in the video (e.g. "David" narrates a video of Aleyna), or to explicitly select a requested voice when multiple personas with voice clips are resolved. Do NOT set this for ordinary character dialogue, inferred voices, or personas without a voice clip — LTX 2.3 generates voice natively from the text prompt instead. On animate_photo it requires ltx23: LTX 2.5 has no compatible ID-LoRA, and the WAN, Wan 3 and MiniMax H3 frame modes take no voice reference. For a persona voice on MiniMax H3 r2v, Seedance or Wan 3, use generate_video.',
         },
         loras: {
           type: "array",

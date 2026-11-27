@@ -2,11 +2,11 @@
 export type VideoPromptGuideFamily =
   | 'seedance-2.0'
   | 'seedance-2.5'
+  | 'seedance-2.5-flash'
   | 'ltx-2.5'
   | 'ltx-2.3'
   | 'wan-2.2'
   | 'wan-3'
-  | 'happyhorse-1.1'
   | 'minimax-h3';
 
 /** Image model families with their own prompt rules, named after their prompting guide. */

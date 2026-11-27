@@ -1245,10 +1245,10 @@ async function runTests() {
     const generateParams = generateVideoDefinition.function.parameters.properties;
     const contract = PROMPT_CONTRACTS.find((entry) => entry.toolName === 'generate_video');
     for (const guidance of [generateParams.videoModel.description, contract?.baseDescription]) {
-      // Mark, 2026-10-22: only Balanced passes the mature-content quality bar on MiniMax H3.
-      if (!guidance?.includes('Prefer Balanced R2V (minimax-h3-r2v-balanced)')
-        || !guidance.includes('Use Standard, LightX2V Turbo, or FastH3 Omni R2V only when explicitly requested.')) {
-        throw new Error('MiniMax R2V tool and contract guidance must prefer Balanced and preserve explicit tiers');
+      if (!guidance?.includes('follow the session routing when supplied')
+        || !guidance.includes('Otherwise use Balanced (minimax-h3-r2v-balanced')
+        || !guidance.includes('Honor explicit model choices.')) {
+        throw new Error('MiniMax R2V guidance must follow session routing, with Balanced as the baseline');
       }
     }
     const generateModels = generateParams.videoModel.enum ?? [];
@@ -1927,6 +1927,56 @@ async function runTests() {
     }
     if (modelDefault.referenceImage !== source) {
       throw new Error('Loose reference was modified while retaining the model-default canvas');
+    }
+  })();
+
+  await test('Should keep the requested Seedance band when a frame reshapes the canvas', async () => {
+    const { default: sharp } = await import('sharp');
+    const frame = (width: number, height: number) => sharp({
+      create: { width, height, channels: 3, background: { r: 40, g: 90, b: 160 } },
+    }).png().toBuffer();
+    const client = new SogniClientWrapper({
+      username: 'test-user',
+      password: 'test-pass',
+      autoConnect: false,
+    });
+    const prepare = (
+      client as unknown as {
+        prepareProjectConfig: (config: VideoProjectConfig) => Promise<VideoProjectConfig>;
+      }
+    ).prepareProjectConfig.bind(client);
+
+    // Before: 848x477 (refused by the SDK), 405x720 (refused) and 608x1080 (480p).
+    for (const testCase of [
+      { modelId: 'seedance-2-0-mini', frame: [2048, 1152], box: [848, 480] },
+      { modelId: 'seedance-2-5', frame: [1080, 1920], box: [1280, 720] },
+      { modelId: 'seedance-2-5-uncensored', frame: [1404, 2362], box: [1920, 1080] },
+      { modelId: 'seedance-2-0', frame: [1024, 1024], box: [1920, 1080] },
+    ]) {
+      const [frameWidth, frameHeight] = testCase.frame;
+      const [boxWidth, boxHeight] = testCase.box;
+      const prepared = await prepare({
+        type: 'video',
+        modelId: testCase.modelId,
+        positivePrompt: 'The camera holds still.',
+        width: boxWidth,
+        height: boxHeight,
+        referenceImage: await frame(frameWidth, frameHeight),
+        numberOfMedia: 1,
+      } as VideoProjectConfig);
+      const width = prepared.width as number;
+      const height = prepared.height as number;
+      const label = `${testCase.modelId} ${frameWidth}x${frameHeight} frame in ${boxWidth}x${boxHeight}`;
+      if (Math.abs(width * height / (boxWidth * boxHeight) - 1) > 0.01) {
+        throw new Error(`${label} changed the canvas area: ${width}x${height}`);
+      }
+      if (Math.abs(Math.log((width / height) / (frameWidth / frameHeight))) > 0.01) {
+        throw new Error(`${label} did not take the frame's shape: ${width}x${height}`);
+      }
+      const metadata = await sharp(prepared.referenceImage as Buffer).metadata();
+      if (metadata.width !== width || metadata.height !== height) {
+        throw new Error(`${label} sent a ${metadata.width}x${metadata.height} frame for a ${width}x${height} canvas`);
+      }
     }
   })();
 

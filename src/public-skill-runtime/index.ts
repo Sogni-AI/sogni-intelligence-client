@@ -812,6 +812,9 @@ export function classifySkillError(error: unknown): ClassifiedSkillError {
 const TOOL_RESULT_BEGIN = '[[TOOL_RESULT_BEGIN]]';
 const TOOL_RESULT_END = '[[TOOL_RESULT_END]]';
 
+const SYSTEM_BLOCK_PATTERN = /<system>[\s\S]*?<\/system>/gi;
+const TOOL_CALL_BLOCK_PATTERN = /<tool_call>[\s\S]*?<\/tool_call>/gi;
+
 const HARD_STRIP_PATTERNS: RegExp[] = [
   /<\|im_start\|>/gi,
   /<\|im_end\|>/gi,
@@ -826,10 +829,47 @@ const HARD_STRIP_PATTERNS: RegExp[] = [
   /\[\/INST\]/gi,
   /<<SYS>>/gi,
   /<<\/SYS>>/gi,
-  /<system>[\s\S]*?<\/system>/gi,
-  /<tool_call>[\s\S]*?<\/tool_call>/gi,
+  SYSTEM_BLOCK_PATTERN,
+  TOOL_CALL_BLOCK_PATTERN,
   /<\/?(?:user|assistant|tool)>/gi,
 ];
+
+/**
+ * Linear-time stand-ins for the two block patterns, which take quadratic
+ * time under `test` and `replace` when a tool result holds many openings
+ * without a closing tag: each opening scans to the end of the text and
+ * fails. A stand-in matches wherever its original could start, but an
+ * unclosed opening consumes the rest of the text in one pass, which is
+ * then kept as it is, matching the original (no closing tag after one
+ * opening means none after any later opening either). Group 1 is set
+ * exactly when the original pattern matches, so the cleaned text and the
+ * stripped signals are identical for every input. The originals stay in
+ * HARD_STRIP_PATTERNS because the signal labels are built from them.
+ */
+const LINEAR_HARD_STRIP_SCANS: ReadonlyMap<RegExp, RegExp> = new Map([
+  [SYSTEM_BLOCK_PATTERN, /<system>(?:[\s\S]*?(<\/system>)|[\s\S]*)/gi],
+  [TOOL_CALL_BLOCK_PATTERN, /<tool_call>(?:[\s\S]*?(<\/tool_call>)|[\s\S]*)/gi],
+]);
+
+/**
+ * `input` with every match of `pattern` replaced by a space, or null when
+ * `pattern` does not match, in linear time for the two block patterns.
+ */
+function replaceHardStripPattern(input: string, pattern: RegExp): string | null {
+  const scan = LINEAR_HARD_STRIP_SCANS.get(pattern);
+  if (!scan) {
+    const matched = pattern.test(input);
+    pattern.lastIndex = 0;
+    return matched ? input.replace(pattern, ' ') : null;
+  }
+  let matched = false;
+  const replaced = input.replace(scan, (block: string, closing: string | undefined) => {
+    if (closing === undefined) return block;
+    matched = true;
+    return ' ';
+  });
+  return matched ? replaced : null;
+}
 
 const SUSPICIOUS_PHRASE_PATTERNS: RegExp[] = [
   /\bignore\s+(?:all\s+)?(?:previous|prior|the\s+above)\s+instructions?\b/gi,
@@ -863,12 +903,11 @@ export function sanitizeToolMessageContent(input: string): SanitizationResult {
   let cleaned = input;
   const signals: string[] = [];
   for (const pattern of HARD_STRIP_PATTERNS) {
-    if (pattern.test(cleaned)) {
-      pattern.lastIndex = 0;
-      cleaned = cleaned.replace(pattern, ' ');
+    const stripped = replaceHardStripPattern(cleaned, pattern);
+    if (stripped !== null) {
+      cleaned = stripped;
       signals.push(`stripped:${pattern.source.replace(/\\\|/g, '|').slice(0, 40)}`);
     }
-    pattern.lastIndex = 0;
   }
   for (const pattern of SUSPICIOUS_PHRASE_PATTERNS) {
     if (pattern.test(cleaned)) {
@@ -1189,11 +1228,12 @@ export const VIDEO_GENERATION_SKILL: SkillManifest = {
   toolNames: ['generate_video'],
   constraints: [
     'For My Personas video requests on MiniMax H3 reference-to-video, Seedance or Wan 3, pass the resolved persona reference images straight to generate_video as references, each clip with its own, and bind each persona to its images with the model\'s tokens. On other video models, default to image_editing first to produce a conditioned scene image before animation; use direct video only when the user explicitly asks to animate an existing persona image/reference or no source image is available for a voice-only request.',
+    'Use seedance2-5-flash-uncensored (seedance-2-5-flash-uncensored) only when the user selects Seedance 2.5 Flash Uncensored. It shares Flash modes and limits and requires the shared likeness agreement.',
     'Seedance 2.5 Uncensored uses selector seedance2-5-uncensored (Sogni model id seedance-2-5-uncensored): the same modes, 480p/720p/1080p/4K, 4-30 seconds at 24 fps, reference limits, MOV and last-frame options as seedance2-5. Use it only when the user asks for Seedance 2.5 Uncensored, Seedance Uncensored, or Seedance Spicy, and never swap it for seedance2-5. Each account must accept a one-time likeness and consent agreement in the Sogni app first; error 4103 means it has not, so tell the user to accept it there and do not retry.',
     'Every regular Seedance model (seedance2-5, seedance2, seedance2-mini) takes photos and clips of real people once the account has accepted that same one-time likeness agreement, and never requires it otherwise. When one of them refuses an input because it may contain a real person, first offer the agreement (the user accepts it once in the Sogni app at the link the refusal names, e.g. https://app.sogni.ai/account/model-consents/seedance-2-5) and, after the user says they accepted it, retry the same request on the same model at its regular price; then offer the Uncensored model the refusal suggests, then MiniMax H3. When the context says the user has an active Sogni Unlimited plan, offer MiniMax H3 first instead (it is included with Unlimited), then the agreement and the same-model retry, then the Uncensored model.',
     'Seedance 2.0 Mini Uncensored uses selector seedance2-mini-uncensored (Sogni model id seedance-2-0-mini-uncensored): the same modes, 480p/720p, 4-15 seconds at 24 fps and reference limits as seedance2-mini. Use it only when the user asks for Seedance 2.0 Mini Uncensored, Seedance Mini Uncensored, or Seedance Mini Spicy, and never swap it for seedance2-mini or seedance2-5-uncensored. It shares the Seedance 2.5 Uncensored likeness and consent agreement, so error 4103 means the account has not accepted it: tell the user to accept it in the Sogni app and do not retry.',
-    'Wan 3.0 Enhanced uses exact Sogni model id wan3.0-spicy-video (MuleRouter provider id w3.0-video): 2-30 seconds at 30 fps, 480p/720p/1080p, native audio, prompt expansion, adaptive/fixed ratios, and up to 10 image/5 video/5 audio references. First/last-frame mode and loose-reference mode are mutually exclusive. It has no document/web context, watermark, negative prompt, source-video edit, or extend mode.',
-    'Prefer Balanced R2V (minimax-h3-r2v-balanced) for MiniMax reference-to-video. For two-stage, 1080p or 2K output, prefer minimax-h3-r2v-balanced-2stage. Use Standard, LightX2V Turbo, or FastH3 Omni R2V only when explicitly requested.',
+    'Wan 3.0 Enhanced uses exact Sogni model id wan3.0-spicy-video (MuleRouter provider id w3.0-video): 2-30 seconds at 30 fps, 480p/720p/1080p, native audio, prompt expansion, adaptive/fixed ratios, and up to 10 image/5 video/5 audio references. First/last-frame mode and loose-reference mode are mutually exclusive. It has no document/web context, negative prompt, source-video edit, or extend mode.',
+    'For unspecified MiniMax Reference to Video, follow the session routing when supplied. Otherwise use Balanced (minimax-h3-r2v-balanced; minimax-h3-r2v-balanced-2stage for two-stage, 1080p or 2K). Honor explicit model choices.',
     'MiniMax H3 two-stage: 1080p and 2K H3 delivery is its own selector, not an option. minimax-h3-fasth3-t2v-turbo-2stage on generate_video (animate_photo carries minimax-h3-fasth3-i2v-turbo-2stage and minimax-h3-fasth3-flf2v-turbo-2stage) renders the FastH3 canvas, then the worker enlarges it 2x and refines it, so the clip is delivered at twice the canvas with the same length and audio. targetResolution names the delivered class: 1080 renders a 544px short-edge canvas (960x544 becomes 1920x1088) for 10 Spark per second, 1440 or omitted renders the 768p canvas for 2K (1344x768 becomes 2688x1536) for 16 Spark per second, and 720 renders a 384px canvas (672x384 becomes 1344x768) for the regular FastH3 price of 4 Spark per second. Choose it when the user asks for 1080p, 1440p or 2K H3 output, for two-stage output, or for the sharpest/best H3 quality, and send the same prompt contract, durations and LoRAs as the matching FastH3 selector; keep ordinary 768p FastH3 output on the regular FastH3 selector at targetResolution 768. Reference-to-video has its own two-stage selectors on generate_video: minimax-h3-r2v-2stage (Standard, 20 steps) and minimax-h3-r2v-balanced-2stage (Balanced, 8 steps) take exactly the references, prompt contract, durations and LoRAs of minimax-h3-r2v and minimax-h3-r2v-balanced, deliver twice the canvas, and read targetResolution the same way; each bills its tier\'s rate plus the two-stage surcharge of the delivered class. Keep the one-stage R2V selectors for ordinary 768p output. FastH3 Reference is the FastH3 tier\'s reference-to-video: minimax-h3-fasth3-r2v-turbo takes the same references, prompt contract, durations, catalog LoRAs and Personal LoRAs as minimax-h3-r2v, and minimax-h3-fasth3-r2v-turbo-2stage is its two-stage form, read the same way.',
     `${MINIMAX_H3_KEYFRAMES_GUIDANCE} On generate_video only the MiniMax H3 reference-to-video selectors take keyframes, never text-to-video; the keyframe images are not references and do not go in referenceImageIndices.`,
   ],
@@ -1542,11 +1582,13 @@ function compactSceneVideoPrompt(project: StoryboardProject, scene: SceneSpec, r
 
 function publicSeedanceVideoModelFromInput(
   input: PublicStoryboardAdapterCompileInput,
-): 'seedance2-mini' | 'seedance2-mini-uncensored' | 'seedance2' | 'seedance2-5' | 'seedance2-5-uncensored' {
+): 'seedance2-mini' | 'seedance2-mini-uncensored' | 'seedance2' | 'seedance2-5' | 'seedance2-5-flash' | 'seedance2-5-flash-uncensored' | 'seedance2-5-uncensored' {
   const requestedModelId = String(input.options?.requestedModelId ?? '').trim().toLowerCase();
   if (!requestedModelId || requestedModelId === 'seedance') return 'seedance2-5';
   const resolved = resolveVideoModelAlias(requestedModelId, 't2v');
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25) return 'seedance2-5';
+  if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25Flash) return 'seedance2-5-flash';
+  if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored) return 'seedance2-5-flash-uncensored';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored) return 'seedance2-5-uncensored';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2vMini) return 'seedance2-mini';
   if (resolved === SEEDANCE_WORKFLOW_MODELS.t2vMiniUncensored) return 'seedance2-mini-uncensored';
@@ -1566,7 +1608,7 @@ const PUBLIC_SEEDANCE_ADAPTER: PublicStoryboardAdapter = {
         prompt: compileStoryboardImagePromptFromProject(storyboard),
         args: {
           videoModel,
-          ...(isSeedance25VideoModelId(videoModel) ? { targetResolution: 1080 } : {}),
+          ...(isSeedance25VideoModelId(videoModel) ? { targetResolution: (videoModel === 'seedance2-5-flash' || videoModel === 'seedance2-5-flash-uncensored') ? 720 : 1080 } : {}),
           aspectRatio: storyboard.targetVideoAspectRatio,
           skipPromptProcessing: true,
           expandPrompt: false,
@@ -1583,7 +1625,7 @@ const PUBLIC_SEEDANCE_ADAPTER: PublicStoryboardAdapter = {
         prompt: compileSeedanceSceneClipPromptFromProject(storyboard, scene, referenceTag),
         args: {
           videoModel,
-          ...(isSeedance25VideoModelId(videoModel) ? { targetResolution: 1080 } : {}),
+          ...(isSeedance25VideoModelId(videoModel) ? { targetResolution: (videoModel === 'seedance2-5-flash' || videoModel === 'seedance2-5-flash-uncensored') ? 720 : 1080 } : {}),
           duration,
           aspectRatio: storyboard.targetVideoAspectRatio,
           skipPromptProcessing: true,
@@ -1967,6 +2009,8 @@ export const SEEDANCE_WORKFLOW_MODELS = Object.freeze({
   // Seedance 2.5 is a single canonical model id across every workflow it
   // supports (t2v, i2v, flf2v, r2v, ia2v, v2v), like the 2.0 family.
   t2v25: SEEDANCE_VIDEO_MODEL_IDS.v25,
+  t2v25Flash: SEEDANCE_VIDEO_MODEL_IDS.v25Flash,
+  t2v25FlashUncensored: SEEDANCE_VIDEO_MODEL_IDS.v25FlashUncensored,
   // Seedance 2.5 Uncensored: the same workflows and limits as Seedance 2.5
   // under its own id, which must never be rewritten to seedance-2-5.
   t2v25Uncensored: SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored
@@ -2223,6 +2267,34 @@ export const VIDEO_MODEL_REGISTRY = Object.freeze({
     maxFrames: 721,
     supportsNativeAudio: true
   },
+  [SEEDANCE_WORKFLOW_MODELS.t2v25Flash]: {
+    workflow: 't2v',
+    family: 'seedance2',
+    defaultWidth: 1280,
+    defaultHeight: 720,
+    minDimension: 1,
+    maxDimension: 1470,
+    dimensionMultiple: 1,
+    fps: 24,
+    frameStep: 1,
+    minFrames: 97,
+    maxFrames: 721,
+    supportsNativeAudio: true
+  },
+  [SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored]: {
+    workflow: 't2v',
+    family: 'seedance2',
+    defaultWidth: 1280,
+    defaultHeight: 720,
+    minDimension: 1,
+    maxDimension: 1470,
+    dimensionMultiple: 1,
+    fps: 24,
+    frameStep: 1,
+    minFrames: 97,
+    maxFrames: 721,
+    supportsNativeAudio: true
+  },
   // Seedance 2.5 Uncensored shares the Seedance 2.5 contract.
   [SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored]: {
     workflow: 't2v',
@@ -2382,9 +2454,17 @@ export const VIDEO_MODEL_ALIASES: Readonly<Record<string, string>> = Object.free
   'seedance2-ia2v': SEEDANCE_WORKFLOW_MODELS.ia2v,
   'seedance2-v2v': SEEDANCE_WORKFLOW_MODELS.v2v,
   'seedance2-5': SEEDANCE_WORKFLOW_MODELS.t2v25,
+  'seedance2-5-flash': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
+  'seedance2-5-flash-uncensored': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored,
   'seedance2-5-t2v': SEEDANCE_WORKFLOW_MODELS.t2v25,
+  'seedance2-5-flash-t2v': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
+  'seedance2-5-flash-uncensored-t2v': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored,
   'seedance2-5-ia2v': SEEDANCE_WORKFLOW_MODELS.t2v25,
+  'seedance2-5-flash-ia2v': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
+  'seedance2-5-flash-uncensored-ia2v': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored,
   'seedance2-5-v2v': SEEDANCE_WORKFLOW_MODELS.t2v25,
+  'seedance2-5-flash-v2v': SEEDANCE_WORKFLOW_MODELS.t2v25Flash,
+  'seedance2-5-flash-uncensored-v2v': SEEDANCE_WORKFLOW_MODELS.t2v25FlashUncensored,
   // Seedance 2.5 Uncensored, including its friendly names. Each resolves to
   // seedance-2-5-uncensored, never to seedance-2-5.
   'seedance2-5-uncensored': SEEDANCE_WORKFLOW_MODELS.t2v25Uncensored,
@@ -4060,6 +4140,8 @@ export interface StoryboardVideoHostedWorkflowBuildOptions {
     | 'seedance2-mini'
     | 'seedance2-mini-uncensored'
     | 'seedance2-5'
+    | 'seedance2-5-flash'
+    | 'seedance2-5-flash-uncensored'
     | 'seedance2-5-uncensored'
     | string;
   videoDurationSec?: number;

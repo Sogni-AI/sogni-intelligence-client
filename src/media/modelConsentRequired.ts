@@ -58,11 +58,15 @@ export interface ModelConsentRequirement {
   modelId?: string;
 }
 
+const FLASH_CONSENT_REQUIRED_MESSAGE =
+  'Seedance 2.5 Flash Uncensored requires a one-time likeness and consent agreement. Review and accept it in the Sogni app, then try again.';
+
 export interface ModelConsentRequiredPayload {
   error: typeof MODEL_CONSENT_REQUIRED_ERROR;
   errorCode: typeof MODEL_CONSENT_REQUIRED_ERROR_CODE;
   message:
     | typeof MODEL_CONSENT_REQUIRED_MESSAGE
+    | typeof FLASH_CONSENT_REQUIRED_MESSAGE
     | typeof SEEDANCE_MINI_UNCENSORED_CONSENT_REQUIRED_MESSAGE
     | typeof SEEDREAM_5_PRO_UNCENSORED_CONSENT_REQUIRED_MESSAGE
     | typeof SEEDREAM_5_5_UNCENSORED_CONSENT_REQUIRED_MESSAGE;
@@ -79,6 +83,7 @@ export interface ModelConsentRequiredPayload {
 
 type ConsentRequiredModelId =
   | 'seedance-2-5-uncensored'
+  | 'seedance-2-5-flash-uncensored'
   | 'seedance-2-0-mini-uncensored'
   | typeof SEEDREAM_5_PRO_UNCENSORED_MODEL_ID
   | typeof SEEDREAM_5_5_UNCENSORED_MODEL_ID;
@@ -93,6 +98,7 @@ function consentRequiredModelIdFor(
   text: string | undefined,
 ): ConsentRequiredModelId {
   if (consentRequired?.modelId) {
+    if (consentRequired.modelId === 'seedance-2-5-flash-uncensored') return 'seedance-2-5-flash-uncensored';
     if (isSeedreamImageModel(consentRequired.modelId)) return consentRequired.modelId;
     return isSeedanceMiniUncensoredVideoModelId(consentRequired.modelId)
       ? 'seedance-2-0-mini-uncensored' : 'seedance-2-5-uncensored';
@@ -108,6 +114,7 @@ function consentRequiredModelIdFor(
 }
 
 const CONSENT_REQUIRED_MESSAGE_BY_MODEL_ID: Record<ConsentRequiredModelId, ModelConsentRequiredPayload['message']> = {
+  'seedance-2-5-flash-uncensored': FLASH_CONSENT_REQUIRED_MESSAGE,
   'seedance-2-5-uncensored': MODEL_CONSENT_REQUIRED_MESSAGE,
   'seedance-2-0-mini-uncensored': SEEDANCE_MINI_UNCENSORED_CONSENT_REQUIRED_MESSAGE,
   [SEEDREAM_5_PRO_UNCENSORED_MODEL_ID]: SEEDREAM_5_PRO_UNCENSORED_CONSENT_REQUIRED_MESSAGE,
@@ -117,6 +124,7 @@ const CONSENT_REQUIRED_MESSAGE_BY_MODEL_ID: Record<ConsentRequiredModelId, Model
 // Seedance and Seedream 5.0 Pro keep their existing sentences; Seedream 5.5
 // names every model the one agreement covers.
 const CONSENT_COVERAGE_SENTENCE_BY_MODEL_ID: Record<ConsentRequiredModelId, string> = {
+  'seedance-2-5-flash-uncensored': 'The existing Seedance likeness agreement covers this model.',
   'seedance-2-5-uncensored': 'One agreement covers both Uncensored Seedance models.',
   'seedance-2-0-mini-uncensored': 'One agreement covers both Uncensored Seedance models.',
   [SEEDREAM_5_PRO_UNCENSORED_MODEL_ID]:

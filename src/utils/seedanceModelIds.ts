@@ -13,6 +13,8 @@ export const SEEDANCE_VIDEO_MODEL_IDS = Object.freeze({
   // capability but is its own id: never alias or rewrite it to seedance-2-0-mini.
   miniUncensored: 'seedance-2-0-mini-uncensored',
   v25: 'seedance-2-5',
+  v25Flash: 'seedance-2-5-flash',
+  v25FlashUncensored: 'seedance-2-5-flash-uncensored',
   // Seedance 2.5 Uncensored: the same vendor model as Seedance 2.5 on a
   // separate uncensored account. It shares every 2.5 capability but is its own
   // id: never alias or rewrite it to seedance-2-5.
@@ -44,9 +46,17 @@ const SEEDANCE_VIDEO_MODEL_ALIASES: Readonly<Record<string, SeedanceVideoModelId
     'seedance-mini-uncensored': SEEDANCE_VIDEO_MODEL_IDS.miniUncensored,
     'seedance-mini-spicy': SEEDANCE_VIDEO_MODEL_IDS.miniUncensored,
     'seedance2-5': SEEDANCE_VIDEO_MODEL_IDS.v25,
+    'seedance2-5-flash': SEEDANCE_VIDEO_MODEL_IDS.v25Flash,
+    'seedance2-5-flash-uncensored': SEEDANCE_VIDEO_MODEL_IDS.v25FlashUncensored,
     'seedance2-5-t2v': SEEDANCE_VIDEO_MODEL_IDS.v25,
+    'seedance2-5-flash-t2v': SEEDANCE_VIDEO_MODEL_IDS.v25Flash,
+    'seedance2-5-flash-uncensored-t2v': SEEDANCE_VIDEO_MODEL_IDS.v25FlashUncensored,
     'seedance2-5-ia2v': SEEDANCE_VIDEO_MODEL_IDS.v25,
+    'seedance2-5-flash-ia2v': SEEDANCE_VIDEO_MODEL_IDS.v25Flash,
+    'seedance2-5-flash-uncensored-ia2v': SEEDANCE_VIDEO_MODEL_IDS.v25FlashUncensored,
     'seedance2-5-v2v': SEEDANCE_VIDEO_MODEL_IDS.v25,
+    'seedance2-5-flash-v2v': SEEDANCE_VIDEO_MODEL_IDS.v25Flash,
+    'seedance2-5-flash-uncensored-v2v': SEEDANCE_VIDEO_MODEL_IDS.v25FlashUncensored,
     'seedance2-5-uncensored': SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored,
     'seedance2-5-uncensored-t2v': SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored,
     'seedance2-5-uncensored-ia2v': SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored,
@@ -81,7 +91,7 @@ export function isSeedanceVideoModelId(modelId: string | null | undefined): bool
  */
 export function isSeedance25VideoModelId(modelId: string | null | undefined): boolean {
   const resolved = resolveSeedanceVideoModelId(modelId);
-  return resolved === SEEDANCE_VIDEO_MODEL_IDS.v25 || resolved === SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored;
+  return resolved === SEEDANCE_VIDEO_MODEL_IDS.v25 || resolved === SEEDANCE_VIDEO_MODEL_IDS.v25Flash || resolved === SEEDANCE_VIDEO_MODEL_IDS.v25FlashUncensored || resolved === SEEDANCE_VIDEO_MODEL_IDS.v25Uncensored;
 }
 
 /** True only for Seedance 2.5 Uncensored (`seedance-2-5-uncensored`). */

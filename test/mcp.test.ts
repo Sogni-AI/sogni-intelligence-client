@@ -121,6 +121,44 @@ test('invalid routing fails before a job can be created', () => {
   assert.throws(() => routeMcpCall('generate_image', { ...base, parameters: { prompt: 'replace intent' } }));
 });
 
+test('MCP media references and masks reject non-public and metadata hosts', () => {
+  for (const target of [
+    'https://169.254.169.254/latest/meta-data/iam/security-credentials/',
+    'https://127.0.0.1:8080/admin',
+    'https://10.0.0.5/internal',
+    'https://100.100.100.200/latest/meta-data/',
+    'https://localhost:8443/',
+    'https://localhost.:8443/',
+    'https://metadata.google.internal/computeMetadata/v1/',
+    'https://service.cluster.local/asset.png',
+    'https://[fe80::1]/asset.png',
+    'https://[fd12:3456::1]/asset.png',
+    'https://[::127.0.0.1]/asset.png',
+    'https://[::169.254.169.254]/asset.png',
+  ]) {
+    assert.throws(
+      () => routeMcpCall('generate_image', { ...base, reference_images: [target] }),
+      /References must target a public host/,
+      target,
+    );
+    assert.throws(
+      () => routeMcpCall('generate_image', { ...base, reference_images: [image], mask: target }),
+      /References must target a public host/,
+      `mask: ${target}`,
+    );
+    assert.throws(
+      () => routeMcpCall('generate_video', { ...base, duration: 5, first_frame: target }),
+      /References must target a public host/,
+      `first_frame: ${target}`,
+    );
+    assert.throws(
+      () => routeMcpCall('generate_audio', { ...base, kind: 'speech', voice_sample: target }),
+      /References must target a public host/,
+      `voice_sample: ${target}`,
+    );
+  }
+});
+
 test('MCP null validation follows declared fields while preserving opaque native payloads', () => {
   assert.throws(() => validateMcpArguments('get_balance', { unexpected: null }));
   for (const fields of [{ width: null }, { parameters: null }, { reference_images: null }, { reference_images: [null] }]) {

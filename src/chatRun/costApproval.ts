@@ -28,22 +28,20 @@ import { getToolCostMetadata } from '../contracts/index.js';
  *     prompt, compose script, etc.); not Sogni-credit spend, and the
  *     chat popup does not gate them.
  *
- * Fail-closed for known creative tools: callers should pass a non-empty
- * `knownCreativeToolNames` set so that a missing metadata entry for a
- * known durable creative tool is treated as paid (catalog drift caught
- * loudly rather than silently dispatching unpaid).
+ * A tool with no cost metadata pauses: nothing says it is free, so it
+ * is treated as paid. A caller that runs tools of its own decides for
+ * those before asking here (sogni-api pauses only for the hosted tools
+ * it dispatches, since no other name runs there).
+ *
+ * `knownCreativeToolNames` is still accepted; every name without
+ * metadata already pauses, so it no longer changes the answer.
  */
 export function isCostApprovalGatedTool(
   toolName: string,
-  options: { knownCreativeToolNames?: ReadonlySet<string> } = {},
+  _options: { knownCreativeToolNames?: ReadonlySet<string> } = {},
 ): boolean {
   const metadata = getToolCostMetadata(toolName);
-  if (!metadata) {
-    if (options.knownCreativeToolNames?.has(toolName)) {
-      return true;
-    }
-    return false;
-  }
+  if (!metadata) return true;
   if (metadata.costClass === 'free') return false;
   if (metadata.costClass === 'compose.standard') return false;
   return true;

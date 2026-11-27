@@ -49,7 +49,7 @@ const MINIMAX_H3_AUDIO_GUIDE_SELECTORS = [
 ] as const;
 
 const WAN3_VIDEO_MODEL_GUIDANCE =
-  '"wan3.0-video" is Alibaba Wan 3 and "wan3.0-spicy-video" is MuleRouter w3.0-video. Both support 2-30s at 30 fps, optional native audio, prompt expansion, 480p/720p/1080p, adaptive/fixed ratios, and up to 10 image/5 video/5 audio references. Enhanced has no document/web context or watermark. Frame anchors cannot be mixed with loose references. Do not send negativePrompt; video references are loose conditioning, not edit or extend modes.';
+  '"wan3.0-video" is Alibaba Wan 3 and "wan3.0-spicy-video" is MuleRouter w3.0-video. Both support 2-30s at 30 fps, optional native audio, prompt expansion, 480p/720p/1080p, adaptive/fixed ratios, and up to 10 image/5 video/5 audio references. Enhanced has no document/web context. Frame anchors cannot be mixed with loose references. Do not send negativePrompt; video references are loose conditioning, not edit or extend modes.';
 
 export const definition: ToolDefinition = {
   type: "function",
@@ -150,10 +150,6 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
           enum: ["adaptive", "16:9", "4:3", "1:1", "3:4", "9:16"],
           description: 'Wan 3 only. Output ratio; "adaptive" derives it from the input.',
         },
-        watermark: {
-          type: "boolean",
-          description: "Alibaba wan3.0-video only. Add the visible watermark. Defaults to false.",
-        },
         referenceFileUrl: {
           type: "string",
           description:
@@ -178,7 +174,7 @@ ${VIDEO_PROMPT_LENGTH_LIMITS_GUIDANCE}`,
         },
         videoModel: {
           type: "string",
-          enum: ["wan-s2v", "seedance2", "seedance2-mini", "seedance2-mini-uncensored", "seedance2-5", "seedance2-5-uncensored", "ltx25-ia2v", "ltx25-a2v", "ltx23-ia2v", "ltx23-a2v", "wan3.0-video", "wan3.0-spicy-video", ...MINIMAX_H3_AUDIO_GUIDE_SELECTORS],
+          enum: ["wan-s2v", "seedance2", "seedance2-mini", "seedance2-mini-uncensored", "seedance2-5", 'seedance2-5-flash', 'seedance2-5-flash-uncensored', "seedance2-5-uncensored", "ltx25-ia2v", "ltx25-a2v", "ltx23-ia2v", "ltx23-a2v", "wan3.0-video", "wan3.0-spicy-video", ...MINIMAX_H3_AUDIO_GUIDE_SELECTORS],
           description:
             '"ltx25-ia2v" (default with image) and "ltx25-a2v" (default without image): LTX 2.5 image+audio and audio-only modes; Fast, HQ, and Pro currently use the release-validated official Distilled INT8 workflows. The Dev checkpoints are not publicly routed until upstream publishes and Sogni validates official ComfyUI Dev recipes. ' +
             'Video model. "ltx23-ia2v" (rollback with image): LTX 2.3 image+audio to video, audio-reactive with a reference image; Fast/HQ use the distilled 8-step worker and Default Media Quality Pro uses the non-distilled dev worker. "ltx23-a2v" (rollback without image): LTX 2.3 audio-only to video, no image needed, creates video purely from text prompt + audio with the same quality-tier routing. "wan-s2v": WAN 2.2 sound-to-video, best for lip-sync with a face image, fast 4-step. "seedance2": full Seedance 2.0 audio-reference video, 4-15s. "seedance2-mini": Seedance 2.0 Mini, 720p cap, fastest/lower-cost Seedance option. Seedance quality is selected only by this model value: pick "seedance2-mini" for faster/lower-cost drafts or explicit Mini requests, and pick "seedance2" for full-quality Seedance or 1080p/4K when no model is selected. Keep explicit 2.5/Uncensored choices at 4K. Do not infer the Seedance model from Default Media Quality Fast/HQ/Pro. "seedance2-5": newest Seedance 2.5: 480p/720p/1080p/4K, 4-30s per clip at fixed 24 fps, native audio and first-and-last-frame conditioning. Larger reference budget: 30 images, 10 videos, 10 audios, 50 files total within those per-modality caps. Choose it when asked for 2.5, for one continuous clip over 15s (up to 30s in one call instead of split and stitched clips), or for a first-and-last-frame transition. ' +

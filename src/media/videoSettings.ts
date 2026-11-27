@@ -41,6 +41,8 @@ export type VideoModelId =
   | "seedance2-mini"
   | "seedance2-mini-uncensored"
   | "seedance2-5"
+  | "seedance2-5-flash"
+  | "seedance2-5-flash-uncensored"
   | "seedance2-5-uncensored"
   | "happyhorse-1.1-t2v"
   | "happyhorse-1.1-i2v"
@@ -992,6 +994,24 @@ export const VIDEO_MODEL_CONFIGS: Record<VideoModelId, VideoModelConfig> = {
     minFrames: 97,
     maxFrames: 721,
   },
+  "seedance2-5-flash": {
+    model: "seedance-2-5-flash",
+    fps: 24,
+    dimensionDivisor: 1,
+    minDimension: 1,
+    maxDimension: 1470,
+    minFrames: 97,
+    maxFrames: 721,
+  },
+  "seedance2-5-flash-uncensored": {
+    model: "seedance-2-5-flash-uncensored",
+    fps: 24,
+    dimensionDivisor: 1,
+    minDimension: 1,
+    maxDimension: 1470,
+    minFrames: 97,
+    maxFrames: 721,
+  },
   // Seedance 2.5 Uncensored: the same model and limits as Seedance 2.5 under
   // its own canonical id. Never map it to "seedance-2-5".
   "seedance2-5-uncensored": {
@@ -1253,8 +1273,8 @@ export function isMinimaxH3TwoStageModelId(modelId: string | null | undefined): 
  * `minimax-h3-r2v-prism`). It runs Balanced R2V's graph with a fixed recipe in
  * the worker (8 Euler steps), takes Balanced R2V's optional two-stage sizes,
  * references and keyframes, and is served only with the Sensitive Content
- * Filter off: offer or route to it only for a filter-off session whose user
- * picked it or asked for it.
+ * Filter off. The host can choose it for eligible reference video when the
+ * user delegates the model choice to that host.
  */
 export const MINIMAX_H3_PRISM_MODEL_ID = "minimax-h3-prism-int8_r2v";
 export const MINIMAX_H3_PRISM_SELECTOR = "minimax-h3-r2v-prism";
