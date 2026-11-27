@@ -99,6 +99,36 @@ export function sanitizeCostApprovalOverride(key: string, value: unknown): unkno
   return undefined;
 }
 
+export interface ApplyCostApprovalOverridesOptions {
+  toolName?: string;
+}
+
+const SPEECH_MINIMUM_BILLED_CHARACTERS = 170;
+
+function isCostInflatingPromptOverride(
+  toolName: string | undefined,
+  parsedArgs: Record<string, unknown>,
+  overridePrompt: string,
+): boolean {
+  if (toolName === 'generate_speech') {
+    const originalPrompt = typeof parsedArgs.prompt === 'string' ? parsedArgs.prompt : '';
+    return overridePrompt.trim().length > Math.max(
+      SPEECH_MINIMUM_BILLED_CHARACTERS,
+      originalPrompt.trim().length,
+    );
+  }
+  if (toolName === 'transcribe_audio') {
+    const rawModel = typeof parsedArgs.model === 'string' ? parsedArgs.model.trim().toLowerCase() : '';
+    const modelOmittedOrWhisper = rawModel === '' || rawModel === 'whisper-1';
+    const alreadyNemotron =
+      parsedArgs.diarize === true ||
+      (typeof parsedArgs.hotwords === 'string' && parsedArgs.hotwords.trim().length > 0) ||
+      (typeof parsedArgs.prompt === 'string' && parsedArgs.prompt.trim().length > 0);
+    return modelOmittedOrWhisper && !alreadyNemotron && overridePrompt.trim().length > 0;
+  }
+  return false;
+}
+
 /**
  * Apply user-provided override args from the confirmation popup onto a
  * raw LLM-emitted arguments JSON string. Only keys in
@@ -109,6 +139,7 @@ export function sanitizeCostApprovalOverride(key: string, value: unknown): unkno
 export function applyCostApprovalOverridesToToolArguments(
   argumentsJson: string,
   overrides: Record<string, unknown> | undefined,
+  options?: ApplyCostApprovalOverridesOptions | string,
 ): { result: string; rejected: string[] } {
   if (!overrides || Object.keys(overrides).length === 0) {
     return { result: argumentsJson, rejected: [] };
@@ -122,6 +153,10 @@ export function applyCostApprovalOverridesToToolArguments(
   } catch {
     parsed = {};
   }
+  const toolName =
+    typeof options === 'string'
+      ? options.trim() || undefined
+      : options?.toolName?.trim() || undefined;
   const rejected: string[] = [];
   const sanitized: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(overrides)) {
@@ -131,6 +166,14 @@ export function applyCostApprovalOverridesToToolArguments(
     }
     const narrowed = sanitizeCostApprovalOverride(key, value);
     if (narrowed === undefined) {
+      rejected.push(key);
+      continue;
+    }
+    if (key === 'prompt' && isCostInflatingPromptOverride(toolName, parsed, narrowed as string)) {
+      rejected.push(key);
+      continue;
+    }
+    if (key === 'prompts' && (toolName === 'generate_speech' || toolName === 'transcribe_audio')) {
       rejected.push(key);
       continue;
     }

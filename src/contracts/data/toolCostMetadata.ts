@@ -33,6 +33,7 @@ export type ToolCostClass =
   | 'video.vendor.premium'
   | 'audio.standard'
   | 'audio.speech'
+  | 'audio.transcription'
   | 'compose.standard'
   | 'compose.ffmpeg';
 
@@ -164,11 +165,18 @@ export const TOOL_COST_METADATA: ReadonlyArray<ToolCostMetadata> = [
   {
     tool: 'generate_speech',
     // Its own class, not audio.standard: music is quoted per requested second,
-    // speech is a flat quote per take because the script decides the length.
+    // speech is quoted per script character (with a 170-character minimum).
     costClass: 'audio.speech',
     riskLevel: 'paid',
-    userVisibleCost: 'Flat per-take audio pricing',
-    description: 'Text to speech with a studio voice, a cloned voice, or a designed one.',
+    userVisibleCost: 'Per-character speech pricing (170-character minimum)',
+    description: 'Text to speech with studio voices, Fish Drama 3 acting tags, a cloned voice, or a designed voice.',
+  },
+  {
+    tool: 'transcribe_audio',
+    costClass: 'audio.transcription',
+    riskLevel: 'paid',
+    userVisibleCost: 'Per-minute audio transcription pricing',
+    description: 'Speech-to-text transcription with timestamps, SRT/VTT export, and optional speaker diarization.',
   },
 
   // Synchronous composition helpers (LLM-side)
@@ -285,7 +293,7 @@ export const TOOL_COST_METADATA: ReadonlyArray<ToolCostMetadata> = [
     tool: 'add_subtitles',
     costClass: 'compose.ffmpeg',
     riskLevel: 'paid',
-    userVisibleCost: 'Small ffmpeg compose fee',
+    userVisibleCost: 'Small ffmpeg compose fee (+ per-minute transcription fee when auto_transcribe=true)',
     description: 'Burn subtitles into a video.',
   },
 

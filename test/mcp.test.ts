@@ -97,6 +97,43 @@ test('stitch uses all videos in order and supplied soundtrack', () => {
   assert.deepEqual(routed.arguments, { videoIndices: [0, 1], audioIndex: 0 });
 });
 
+test('transform_media routes transcribe_audio and add_subtitles with strict media bounds', () => {
+  const fromAudio = routeMcpCall('transform_media', {
+    operation: 'transcribe_audio',
+    request_id: 'stt-audio',
+    reference_audios: [audio],
+    parameters: { model: 'nemotron', diarize: true },
+  });
+  assert.equal(fromAudio.toolName, 'transcribe_audio');
+  assert.deepEqual(fromAudio.arguments, { model: 'nemotron', diarize: true, audioSourceIndex: -1 });
+
+  const fromVideo = routeMcpCall('transform_media', {
+    operation: 'transcribe_audio',
+    request_id: 'stt-video',
+    reference_videos: [video],
+  });
+  assert.equal(fromVideo.toolName, 'transcribe_audio');
+  assert.deepEqual(fromVideo.arguments, { audioSourceIndex: -1 });
+
+  assert.throws(() =>
+    routeMcpCall('transform_media', {
+      operation: 'transcribe_audio',
+      request_id: 'stt-invalid',
+      reference_images: [image],
+    }),
+  );
+
+  const subtitled = routeMcpCall('transform_media', {
+    operation: 'add_subtitles',
+    prompt: 'Burn white captions at the bottom',
+    request_id: 'sub-video',
+    reference_videos: [video],
+    parameters: { auto_transcribe: true },
+  });
+  assert.equal(subtitled.toolName, 'add_subtitles');
+  assert.deepEqual(subtitled.arguments, { auto_transcribe: true, sourceVideoIndex: 0 });
+});
+
 test('frame-driven exact dimensions and explicit content preferences survive routing', () => {
   const routed = routeMcpCall('generate_video', { ...base, duration: 5, first_frame: image,
     width: 1920, height: 1080, safe_content_filter: false });

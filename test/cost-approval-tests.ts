@@ -68,6 +68,46 @@ export function runCostApprovalTests(): { passed: number; failed: number } {
   expect('sanitize keeps prompts array', sanitizeCostApprovalOverride('prompts', ['a']), ['a']);
   expect('sanitize drops empty-entry prompts', sanitizeCostApprovalOverride('prompts', ['a', '']), undefined);
 
+  // generate_speech: prompt override within max(170, original.trim().length) is allowed; longer is rejected
+  r = applyCostApprovalOverridesToToolArguments(
+    JSON.stringify({ prompt: 'Hello world' }),
+    { prompt: 'x'.repeat(170) },
+    { toolName: 'generate_speech' },
+  );
+  expect('generate_speech prompt <= 170 chars allowed', JSON.parse(r.result).prompt.length, 170);
+  expect('generate_speech prompt <= 170 not rejected', r.rejected, []);
+
+  r = applyCostApprovalOverridesToToolArguments(
+    JSON.stringify({ prompt: 'Hello world' }),
+    { prompt: 'x'.repeat(171) },
+    { toolName: 'generate_speech' },
+  );
+  expect('generate_speech prompt > 170 chars rejected when original < 170', r.rejected, ['prompt']);
+  expect('generate_speech rejected override leaves prompt unchanged', JSON.parse(r.result).prompt, 'Hello world');
+
+  r = applyCostApprovalOverridesToToolArguments(
+    JSON.stringify({ prompt: 'x'.repeat(300) }),
+    { prompt: 'y'.repeat(300) },
+    'generate_speech',
+  );
+  expect('generate_speech same-length prompt allowed', JSON.parse(r.result).prompt.length, 300);
+
+  // transcribe_audio: adding prompt when model was omitted (or whisper-1) without diarize/hotwords/prompt is rejected
+  r = applyCostApprovalOverridesToToolArguments(
+    JSON.stringify({ audioSourceIndex: -1 }),
+    { prompt: 'Domain hint' },
+    { toolName: 'transcribe_audio' },
+  );
+  expect('transcribe_audio prompt rejected when model omitted (parakeet -> nemotron upgrade)', r.rejected, ['prompt']);
+
+  r = applyCostApprovalOverridesToToolArguments(
+    JSON.stringify({ audioSourceIndex: -1, model: 'nemotron' }),
+    { prompt: 'Domain hint' },
+    { toolName: 'transcribe_audio' },
+  );
+  expect('transcribe_audio prompt allowed when model is already nemotron', JSON.parse(r.result).prompt, 'Domain hint');
+  expect('transcribe_audio prompt not rejected on nemotron', r.rejected, []);
+
   return { passed: testsPassed, failed: testsFailed };
 }
 

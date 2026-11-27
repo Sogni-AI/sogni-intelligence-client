@@ -188,16 +188,32 @@ export {
 } from './utils/seedanceModelIds.js';
 export type { SeedanceVideoModelId } from './utils/seedanceModelIds.js';
 
-// SDK chat tool-calling helpers
+// SDK chat tool-calling & audio helpers
 export {
+  AudioApi,
   ChatStream,
   CreativeWorkflowsApi,
+  FISH_DRAMA_3_TTS_MODEL_ID,
+  NEMOTRON_STT_MODEL_ID,
+  PARAKEET_STT_MODEL_ID,
   SogniClient,
   SogniTools,
+  isAudioModel,
   isSogniToolCall,
+  isSpeechTtsModelId,
+  isSttModelId,
   parseCreativeWorkflowSseChunk,
   parseToolCallArguments,
 } from '@sogni-ai/sogni-client';
+export {
+  normalizeTranscriptArtifact,
+  parseWorkerTranscriptArtifact,
+} from './media/transcriptionSettings.js';
+export type {
+  TranscriptArtifact,
+  TranscriptSegment,
+  TranscriptWord,
+} from './media/transcriptionSettings.js';
 
 // Public-safe tool-arg normalization helpers (also reachable via the
 // `./tools` subpath). Re-exported from the root so consumers that already

@@ -665,6 +665,11 @@ function parseToolErrorMessage(rawResult: string): string | null {
   return 'tool returned an error envelope';
 }
 
+function firstNonEmptyString(values: unknown): string | undefined {
+  if (!Array.isArray(values) || values.length === 0) return undefined;
+  return typeof values[0] === 'string' && values[0].length > 0 ? values[0] : undefined;
+}
+
 function versionFromToolResult(
   rawResult: string,
   stageId: string,
@@ -675,16 +680,42 @@ function versionFromToolResult(
   let content: string | undefined;
   try {
     const parsed = JSON.parse(rawResult) as Record<string, unknown>;
-    const resultUrls = parsed.resultUrls as unknown;
-    const videoUrls = parsed.videoResultUrls as unknown;
-    const audioUrls = parsed.audioResultUrls as unknown;
-    if (Array.isArray(videoUrls) && videoUrls.length > 0 && typeof videoUrls[0] === 'string') {
-      url = videoUrls[0];
-    } else if (Array.isArray(resultUrls) && resultUrls.length > 0 && typeof resultUrls[0] === 'string') {
-      url = resultUrls[0];
-    } else if (Array.isArray(audioUrls) && audioUrls.length > 0 && typeof audioUrls[0] === 'string') {
-      url = audioUrls[0];
-    } else {
+    const metadata =
+      parsed.metadata && typeof parsed.metadata === 'object'
+        ? (parsed.metadata as Record<string, unknown>)
+        : undefined;
+    const outputAssets = Array.isArray(parsed.output_assets) ? parsed.output_assets : undefined;
+    const firstOutputAssetUrl =
+      outputAssets &&
+      outputAssets.length > 0 &&
+      outputAssets[0] &&
+      typeof outputAssets[0] === 'object' &&
+      typeof (outputAssets[0] as { url?: unknown }).url === 'string' &&
+      (outputAssets[0] as { url: string }).url.length > 0
+        ? (outputAssets[0] as { url: string }).url
+        : undefined;
+
+    url =
+      firstNonEmptyString(parsed.videoResultUrls) ??
+      firstNonEmptyString(parsed.resultUrls) ??
+      firstNonEmptyString(parsed.audioResultUrls) ??
+      firstOutputAssetUrl ??
+      firstNonEmptyString(metadata?.videoUrls) ??
+      firstNonEmptyString(metadata?.audioUrls);
+
+    if (tool === 'transcribe_audio') {
+      const transcriptContent =
+        (typeof parsed.formatted === 'string' && parsed.formatted.length > 0
+          ? parsed.formatted
+          : undefined) ??
+        (typeof metadata?.srt === 'string' && metadata.srt.length > 0
+          ? metadata.srt
+          : undefined) ??
+        (typeof parsed.transcript === 'string' && parsed.transcript.length > 0
+          ? parsed.transcript
+          : undefined);
+      content = transcriptContent ?? rawResult;
+    } else if (!url) {
       content = rawResult;
     }
   } catch {
@@ -704,9 +735,11 @@ function artifactKindForTool(tool: string): Artifact['kind'] {
   if (tool === 'image_to_3d') return 'model';
   if (tool === 'animate_photo' || tool === 'generate_video' || tool === 'sound_to_video'
     || tool === 'video_to_video' || tool === 'stitch_video' || tool === 'orbit_video'
-    || tool === 'dance_montage' || tool === 'upscale_video') return 'video';
+    || tool === 'dance_montage' || tool === 'upscale_video'
+    || tool === 'extend_video' || tool === 'replace_video_segment'
+    || tool === 'overlay_video' || tool === 'add_subtitles') return 'video';
   if (tool === 'generate_music' || tool === 'generate_speech') return 'audio';
-  if (tool === 'analyze_image' || tool === 'extract_metadata') return 'text';
+  if (tool === 'analyze_image' || tool === 'analyze_video' || tool === 'extract_metadata' || tool === 'transcribe_audio') return 'text';
   return 'image';
 }
 

@@ -945,7 +945,7 @@ const GENERATE_MUSIC_CONTRACT: PromptContract = {
 // ---------------------------------------------------------------------------
 const GENERATE_SPEECH_CONTRACT: PromptContract = {
   contractId: 'generate_speech_v1',
-  version: '1.1.0',
+  version: '1.2.0',
   toolName: 'generate_speech',
   baseDescription: [
     'generate_speech reads written words aloud. It is text-to-speech, not music: use',
@@ -954,14 +954,17 @@ const GENERATE_SPEECH_CONTRACT: PromptContract = {
     'THE PROMPT IS THE SCRIPT. Unlike every image and video tool, prompt is not a description',
     'of the output — it is the literal text to be spoken, character for character. Writing "a',
     'calm woman reading the news" produces a voice saying those seven words. Put the delivery in',
-    'voiceDescription and the actual copy in prompt.',
+    'voiceDescription (for voice/design) or inline acting tags (for drama3) and the actual copy in prompt.',
     '',
     'WRITE THE SCRIPT WHEN THE USER DOES NOT. "Read me a haiku about rain", "record a podcast',
     'intro" and "say something reassuring" are requests for words you compose and then speak.',
     'Compose the line and pass it as prompt. Reach for compose_script only for a long or',
     'structured piece; a sentence or two is yours to write.',
     '',
-    'PICK THE MODEL FROM WHAT THE USER GAVE YOU. A voice clip uploaded with "make it sound like',
+    'PICK THE MODEL FROM WHAT THE USER GAVE YOU. When the user names Fish Drama 3 or asks for',
+    'expressive acting speech with inline vocal cues ([sighs], [laughs], [warmly], [gasps],',
+    '<whisper>...</whisper>), use model="drama3" (with optional zero-shot voice cloning via',
+    'voiceSourceIndex / voice_source_url). A voice clip uploaded with "make it sound like',
     'me" is model="clone" with voiceSourceIndex pointing at that upload. A saved Persona\'s voice is',
     'a clone source too: when the user asks for that persona\'s own voice, call resolve_personas and',
     'use model="clone" with voiceSourceIndex set to the full voice recording index it reports. A',
@@ -970,26 +973,88 @@ const GENERATE_SPEECH_CONTRACT: PromptContract = {
     'user described a mood or a delivery, put that in voiceDescription too.',
     '',
     'CLONING QUALITY. Set voiceTranscript whenever the words in the uploaded clip are known: it',
-    'is the difference between a close clone and a loose one. Leave it out for a persona recording:',
+    'is the difference between a close clone and a loose one (up to 1024 chars on clone, 2000 chars',
+    'on drama3). Leave it out for a persona recording:',
     'the persona\'s saved transcript is supplied automatically. Tell the user if their reference is',
-    'shorter than three seconds, has music under it, or has two people talking — those are the',
+    'too short, has music under it, or has two people talking — those are the',
     'three reasons a clone comes back sounding wrong.',
     '',
-    'PUNCTUATION IS PROSODY. Keep full stops, commas and question marks; they are the only pause',
-    'and intonation control there is. Spell out numbers, dates and abbreviations the way they',
+    'PUNCTUATION IS PROSODY. Keep full stops, commas and question marks; they control pauses',
+    'and intonation. Spell out numbers, dates and abbreviations the way they',
     'should be read when the written form is ambiguous.',
     '',
     'To put speech over video, generate it here and then call sound_to_video with the result.',
     'Do not use animate_photo or generate_video to "say" a line of provided text.',
   ].join('\n'),
   parameterDocs: {
-    prompt: 'The literal words to speak, verbatim. Not a description of the audio.',
+    prompt:
+      'The literal words to speak, verbatim (up to 4096 chars on voice/clone/design, up to 5000 chars on drama3). With model="drama3", inline [direction] and <whisper>...</whisper> acting tags may be embedded directly in prompt.',
+    model:
+      'Speech engine selector: "voice" (default studio voices), "clone" (Qwen3-TTS voice clone), "design" (invented voice from voiceDescription), or "drama3" (Fish Drama 3 expressive acting voice with inline [direction] tags and optional voice cloning).',
+    voice: 'Preset studio voice for model="voice" only (default serena).',
     voiceDescription:
-      'Delivery direction for model="voice"; the speaker to invent for model="design". Never sent with model="clone".',
+      'Delivery direction for model="voice"; the speaker to invent for model="design". Never sent with model="clone" or model="drama3".',
     voiceSourceIndex:
-      'Which audio holds the voice to clone, same numbering as other tools use for audio: -1 is the first upload, -2 the second, and 0-based non-negative indices address audio generated earlier. A resolved persona\'s full voice recording uses the index resolve_personas reports. Required for model="clone".',
+      'Which audio holds the voice to clone, same numbering as other tools use for audio: -1 is the first upload, -2 the second, and 0-based non-negative indices address audio generated earlier. A resolved persona\'s full voice recording uses the index resolve_personas reports. Required for model="clone" and optional for model="drama3".',
+    voice_source_url:
+      'REST alternative to voiceSourceIndex for clone or optional drama3 reference audio.',
     voiceTranscript:
-      'What the uploaded clip says. Optional, but it makes the clone markedly closer to the source. Omit it for a persona voice recording; its saved transcript is filled in automatically.',
+      'What the uploaded clip says. Optional, but it makes the clone markedly closer to the source (up to 1024 chars on clone, 2000 chars on drama3). Omit it for a persona voice recording; its saved transcript is filled in automatically.',
+    language:
+      'Script language or "auto" (default). Supports English, Chinese, Japanese, Korean, German, French, Russian, Portuguese, Spanish, Italian, and Arabic.',
+    creativity:
+      'Qwen3-TTS (voice, clone, design) variation from 0.1 to 2; default 0.9. Omit on model="drama3".',
+    outputFormat: 'Audio file format: wav (default), mp3, or flac.',
+    seed: 'Optional integer seed for reproducible speech takes.',
+    numberOfVariations: 'Number of takes (1-16, default 1).',
+  },
+};
+
+// ---------------------------------------------------------------------------
+// transcribe_audio
+// ---------------------------------------------------------------------------
+const TRANSCRIBE_AUDIO_CONTRACT: PromptContract = {
+  contractId: 'transcribe_audio_v1',
+  version: '1.0.0',
+  toolName: 'transcribe_audio',
+  baseDescription: [
+    'transcribe_audio converts spoken audio from an uploaded or generated audio/video clip into',
+    'structured text, sentence or word timestamps, speaker-diarized turns, or SRT/VTT subtitle text.',
+    '',
+    'Use transcribe_audio whenever the user asks what is said in an audio or video clip, wants a',
+    'verbatim transcript, needs speaker labels (who spoke when), or asks for SRT/VTT/plain-text',
+    'captions without burning them onto video pixels. analyze_video inspects visual frames only and',
+    'does not transcribe speech — pair or prefer transcribe_audio when spoken dialogue matters.',
+    '',
+    'ENGINE SELECTION:',
+    '- "parakeet" (default): fast 25-language European speech-to-text up to 2 hours with sentence',
+    '  and word timestamps. Best for single-speaker European-language recordings and quick captions.',
+    '- "nemotron": 40-language NVIDIA Nemotron 3.5 30B transcription up to 1 hour with speaker',
+    '  diarization (diarize=true -> S01, S02, ...), custom vocabulary hints (hotwords), and context',
+    '  prompting (prompt). Choose "nemotron" for multi-speaker conversations, non-European languages',
+    '  (including Asian and Arabic languages), or domain-specific terminology.',
+    '',
+    'To burn spoken subtitles directly into a video in one step, you can either call add_subtitles',
+    'with auto_transcribe=true or run transcribe_audio first when the user wants to review/edit the',
+    'transcript or use speaker diarization before burning.',
+  ].join('\n'),
+  parameterDocs: {
+    model:
+      'Choose "parakeet" (default, fast 25-language European STT up to 2h) or "nemotron" (40-language multilingual STT up to 1h with diarization and hotwords).',
+    audioSourceIndex:
+      'Negative uploaded audio/video index (-1 = first upload) or 0-based generated audio index. Omit to default to the primary upload or latest audio.',
+    audio_source_url:
+      'REST alternative to audioSourceIndex: retrievable HTTPS URL or inline audio data URI.',
+    timestamps:
+      'Timestamp granularity: "sentence" (default), "word" (word-level timings), or "none".',
+    diarize:
+      'Set true for multi-speaker labels (S01, S02, ...). Supported by model="nemotron" (auto-selected if model is omitted).',
+    hotwords:
+      'Comma-separated names, brands, or technical terms to bias recognition on model="nemotron" (max 1000 chars).',
+    prompt:
+      'Optional context or language hint for model="nemotron" (max 2000 chars).',
+    responseFormat:
+      'Output format: "json" (default structured segments), "text", "srt", or "vtt".',
   },
 };
 
@@ -1322,29 +1387,31 @@ const VIDEO_TO_VIDEO_CONTRACT: PromptContract = {
 // ---------------------------------------------------------------------------
 const ADD_SUBTITLES_CONTRACT: PromptContract = {
   contractId: 'add_subtitles_v1',
-  version: '1.0.0',
+  version: '1.1.0',
   toolName: 'add_subtitles',
   baseDescription: [
-    'add_subtitles burns caller-supplied subtitles, captions, lyrics, or on-screen dialogue into',
-    'an existing video. Use this when the user provides cue text/timing, pastes SRT/VTT, or asks',
-    'to add known caption lines to a generated or uploaded video.',
+    'add_subtitles burns subtitles, captions, lyrics, or on-screen dialogue into an existing',
+    'video. Use this when the user provides cue text/timing, pastes SRT/VTT, asks to caption the',
+    'spoken audio in a generated or uploaded video, or asks to add caption lines.',
     '',
-    'Do not use auto_transcribe. Speech-to-text is not enabled; when the user has not supplied',
-    'subtitle text or timing, ask for the cue text/timing instead of calling this tool.',
+    'When the user wants subtitles for the spoken audio in the video and has not supplied cue',
+    'text or SRT/VTT, set auto_transcribe=true so speech-to-text transcribes the audio track',
+    'automatically with word/segment timings and burns paced subtitle cues.',
     '',
-    'Exception: if the user explicitly authorizes invented caption copy with language like',
-    '"make them up", "write captions", "invent subtitles", or "add funny captions", create a few',
-    'short generic cue lines yourself and call add_subtitles. Do not ask for exact wording when',
-    'the user has asked you to author the captions.',
+    'If the user explicitly asks you to write, invent, improvise, or make up captions/subtitles',
+    '("make them up", "write captions", "invent subtitles", "add funny captions"), create a few',
+    'short cue lines yourself and pass cues instead of auto_transcribe. Do not ask for exact',
+    'wording when the user asked you to author the captions.',
     '',
-    'Split subtitles into multiple short cues. Do not burn one paragraph across the whole clip.',
-    'Use overlay_video instead for static title cards, labels, logos, watermarks, or non-timed text.',
+    'Split caller-authored subtitles into multiple short cues (1.5-4 seconds each). Do not burn',
+    'one paragraph across the whole clip. Use overlay_video instead for static title cards,',
+    'labels, logos, watermarks, or non-timed text.',
   ].join('\n'),
   parameterDocs: {
     sourceVideoIndex: 'Non-negative generated video index or negative uploaded video index. Omit/default to the latest relevant video.',
     cues: 'Multiple short cues with startSeconds, endSeconds, and text. Prefer 1.5-4 seconds per cue.',
-    srt: 'Full SRT/VTT string. Provide either srt or cues, not both.',
-    auto_transcribe: 'Do not set. Ask the user for subtitle text/timing until STT is available.',
+    srt: 'Full SRT/VTT string. Provide cues, srt, or auto_transcribe=true.',
+    auto_transcribe: 'Set true when cues and srt are omitted to automatically transcribe spoken speech in the video with word/segment timings.',
   },
 };
 
@@ -1379,18 +1446,19 @@ const ANALYZE_IMAGE_CONTRACT: PromptContract = {
 // ---------------------------------------------------------------------------
 const ANALYZE_VIDEO_CONTRACT: PromptContract = {
   contractId: 'analyze_video_v1',
-  version: '1.0.0',
+  version: '1.1.0',
   toolName: 'analyze_video',
   baseDescription: [
     'analyze_video uses sampled frames to answer questions about an uploaded or generated video:',
     'summary, timeline, visual scene description, action breakdown, or visible text.',
     '',
-    'Use only when the user asks to inspect or understand a video. Do not call it as automatic',
+    'Use only when the user asks to inspect or understand a video visually. Do not call it as automatic',
     'verification after generation, and do not use it before stitch_video when the requested',
     'generation pipeline should continue.',
     '',
     'This is visual sampled-frame analysis only. It does not transcribe audio and does not inspect',
-    'every frame.',
+    'every frame — use transcribe_audio when the user asks what is spoken in the video, wants a',
+    'transcript, or needs speaker diarization.',
   ].join('\n'),
   parameterDocs: {
     query: 'Specific question/request about the video. State whether summary, timeline, OCR, scene, or action detail is needed.',
@@ -1891,6 +1959,7 @@ export const PROMPT_CONTRACTS: ReadonlyArray<PromptContract> = [
   DANCE_MONTAGE_CONTRACT,
   GENERATE_MUSIC_CONTRACT,
   GENERATE_SPEECH_CONTRACT,
+  TRANSCRIBE_AUDIO_CONTRACT,
   ANALYZE_IMAGE_CONTRACT,
   ANALYZE_VIDEO_CONTRACT,
   SET_CONTENT_FILTER_CONTRACT,

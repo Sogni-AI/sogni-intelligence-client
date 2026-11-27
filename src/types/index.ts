@@ -431,15 +431,15 @@ export interface VideoCostEstimateParams
  */
 export interface AudioCostEstimateParams
   extends Pick<Parameters<SogniClient["projects"]["estimateAudioCost"]>[0],
-    "network" | "billingMode" | "priorityMode"> {
+    "network" | "billingMode" | "priorityMode" | "characters" | "includeMonthlyFairUse"> {
   /** Model ID to use */
   modelId: string;
 
-  /** Duration in seconds */
-  duration: number;
+  /** Duration in seconds (0..7200 when characters is provided, or 1..7200 for music/STT) */
+  duration?: number;
 
-  /** Inference steps */
-  steps: number;
+  /** Inference steps (defaults to 1 when omitted) */
+  steps?: number;
 
   /** Number of audio tracks to generate */
   numberOfMedia?: number;

@@ -47,6 +47,7 @@ export const COST_CLASS_NUMERIC_WEIGHTS: Readonly<Record<ToolCostClass, number>>
   'video.vendor.premium': 10,
   'audio.standard': 3,
   'audio.speech': 1,
+  'audio.transcription': 1,
   'compose.standard': 1,
   'compose.ffmpeg': 1,
 };

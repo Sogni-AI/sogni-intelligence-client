@@ -1,6 +1,6 @@
 /**
- * Qwen3-TTS speech synthesis: the shared contract every Sogni speech surface
- * reads from.
+ * Speech synthesis contract shared across every Sogni speech surface
+ * (Qwen3-TTS 1.7B modes and Fish Drama 3).
  *
  * Speech and music share the `audio` media type and nothing else. A music model
  * composes for a requested duration with a diffusion sampler; a speech model
@@ -8,12 +8,11 @@
  * count, no tempo and no sampler. Anything from `musicSettings` is therefore
  * deliberately absent here rather than reused with a different meaning.
  *
- * The three modes are three different checkpoints, not three presets of one, so
- * each carries its own required and forbidden inputs.
+ * Each mode maps to its own checkpoint with distinct accepted and required inputs.
  */
 
 /** Which speech checkpoint to use, chosen by what the caller can supply. */
-export type SpeechMode = 'voice' | 'clone' | 'design';
+export type SpeechMode = 'voice' | 'clone' | 'design' | 'drama3';
 
 export enum SpeechModel {
   /** Nine studio voices, optionally restyled by a written direction. */
@@ -22,18 +21,21 @@ export enum SpeechModel {
   clone = 'qwen3_tts_1.7b_voice_clone_bf16',
   /** A voice invented from a written description, with no recording. */
   design = 'qwen3_tts_1.7b_voice_design_bf16',
+  /** Fish Drama 3 expressive acting speech with inline [direction] tags and optional cloning. */
+  drama3 = 'fish_drama_3_nvfp4',
 }
 
 export const SPEECH_MODEL_IDS: readonly string[] = [
   SpeechModel.voice,
   SpeechModel.clone,
   SpeechModel.design,
+  SpeechModel.drama3,
 ];
 
 /**
  * The nine CustomVoice timbres, in the order the checkpoint declares them.
  *
- * Every one of them speaks all ten supported languages; the nationality below
+ * Every one of them speaks all supported languages; the nationality below
  * describes the accent it carries, not the language it is limited to.
  */
 export const SPEECH_VOICES = [
@@ -53,7 +55,7 @@ export type SpeechVoice = (typeof SPEECH_VOICES)[number]['id'];
 export const DEFAULT_SPEECH_VOICE: SpeechVoice = 'serena';
 
 /**
- * The ten languages the checkpoints carry, plus `auto`.
+ * The eleven spoken languages supported across speech synthesis, plus `auto`.
  *
  * `auto` is the default on purpose: it infers the language from the script and
  * is the only setting that reads a code-switched line correctly. Pin a language
@@ -71,6 +73,7 @@ export const SPEECH_LANGUAGES = [
   'portuguese',
   'spanish',
   'italian',
+  'arabic',
 ] as const;
 
 export type SpeechLanguage = (typeof SPEECH_LANGUAGES)[number];
@@ -89,6 +92,7 @@ export const SPEECH_LANGUAGE_LABELS: Record<SpeechLanguage, string> = {
   portuguese: 'Portuguese',
   spanish: 'Spanish',
   italian: 'Italian',
+  arabic: 'Arabic',
 };
 
 export const SPEECH_LANGUAGE_OPTIONS = SPEECH_LANGUAGES.map((code) => ({
@@ -96,26 +100,48 @@ export const SPEECH_LANGUAGE_OPTIONS = SPEECH_LANGUAGES.map((code) => ({
   label: SPEECH_LANGUAGE_LABELS[code],
 }));
 
-/** Sampling temperature. Lower is steadier and flatter, higher more expressive. */
+/** Qwen3-TTS delivery variation (`voice`, `clone`, `design`). Lower is steadier, higher more expressive. */
 export const SPEECH_CREATIVITY = { min: 0.1, max: 2, default: 0.9 };
 
-/** The script itself. sogni-socket refuses a longer one rather than truncating it. */
+/** The script itself on Qwen3-TTS (`voice`, `clone`, `design`). sogni-socket refuses a longer one rather than truncating it. */
 export const SPEECH_MAX_SCRIPT_CHARS = 4096;
+
+/** The script limit on Fish Drama 3 (`drama3`). */
+export const DRAMA3_MAX_SCRIPT_CHARS = 5000;
 
 /** A written direction for the delivery, or for the voice to invent. */
 export const SPEECH_MAX_INSTRUCT_CHARS = 512;
 
-/** The transcript of the reference recording, for in-context cloning. */
+/** The transcript of the reference recording on Qwen3-TTS Voice Clone. */
 export const SPEECH_MAX_REFERENCE_TEXT_CHARS = 1024;
 
+/** The transcript of the reference recording on Fish Drama 3. */
+export const DRAMA3_MAX_REFERENCE_TEXT_CHARS = 2000;
+
 /**
- * Reference recording bounds for cloning. Three seconds is the published
+ * Reference recording bounds for Qwen3-TTS Voice Clone. Three seconds is the published
  * minimum for a usable clone; past thirty the worker trims, because the tail of
  * a long clip is prompt cost rather than identity.
  */
 export const SPEECH_REFERENCE_SECONDS = { min: 3, max: 30 };
 
+/** Reference recording bounds for optional Fish Drama 3 zero-shot voice cloning. */
+export const DRAMA3_REFERENCE_SECONDS = { min: 1, max: 30 };
+
 export const SPEECH_OUTPUT_SAMPLE_RATE = 24000;
+
+export const DRAMA3_OUTPUT_SAMPLE_RATE = 44100;
+
+export const DRAMA3_DIRECTION_TAG_EXAMPLES = [
+  '[sighs]',
+  '[laughs]',
+  '[warmly]',
+  '[gasps]',
+  '<whisper>...</whisper>',
+] as const;
+
+/** Minimum billed script length in characters across all speech synthesis models. */
+export const SPEECH_MINIMUM_BILLED_CHARS = 170;
 
 export interface SpeechModelCapabilities {
   /** Whether the mode picks from SPEECH_VOICES. */
@@ -123,9 +149,23 @@ export interface SpeechModelCapabilities {
   /** Whether the mode accepts a written direction, and whether it needs one. */
   instruct: 'unsupported' | 'optional' | 'required';
   /** Whether the mode takes a reference recording, and whether it needs one. */
-  referenceAudio: 'unsupported' | 'required';
+  referenceAudio: 'unsupported' | 'optional' | 'required';
   /** Whether the mode uses the reference recording's transcript. */
   referenceText: boolean;
+  /** Whether the mode exposes adjustable delivery creativity. */
+  creativity?: boolean;
+  /** Whether inline [direction] / <whisper> tags in the script are acted out. */
+  inlineDirections?: boolean;
+  /** Maximum script length in characters accepted by this speech mode. */
+  maxScriptChars: number;
+  /** Maximum characters for referenceText when referenceText is supported. */
+  maxReferenceTextChars?: number;
+  /** Accepted reference recording duration bounds in seconds. */
+  referenceSeconds?: { min: number; max: number };
+  /** Billing basis used by Sogni Socket. */
+  pricingBasis: 'characters';
+  /** Minimum character floor billed per take. */
+  minimumBilledCharacters: number;
 }
 
 export const SPEECH_MODELS: Record<SpeechMode, SpeechModelCapabilities> = {
@@ -134,18 +174,48 @@ export const SPEECH_MODELS: Record<SpeechMode, SpeechModelCapabilities> = {
     instruct: 'optional',
     referenceAudio: 'unsupported',
     referenceText: false,
+    creativity: true,
+    inlineDirections: false,
+    maxScriptChars: SPEECH_MAX_SCRIPT_CHARS,
+    pricingBasis: 'characters',
+    minimumBilledCharacters: SPEECH_MINIMUM_BILLED_CHARS,
   },
   clone: {
     voices: false,
     instruct: 'unsupported',
     referenceAudio: 'required',
     referenceText: true,
+    creativity: true,
+    inlineDirections: false,
+    maxScriptChars: SPEECH_MAX_SCRIPT_CHARS,
+    maxReferenceTextChars: SPEECH_MAX_REFERENCE_TEXT_CHARS,
+    referenceSeconds: SPEECH_REFERENCE_SECONDS,
+    pricingBasis: 'characters',
+    minimumBilledCharacters: SPEECH_MINIMUM_BILLED_CHARS,
   },
   design: {
     voices: false,
     instruct: 'required',
     referenceAudio: 'unsupported',
     referenceText: false,
+    creativity: true,
+    inlineDirections: false,
+    maxScriptChars: SPEECH_MAX_SCRIPT_CHARS,
+    pricingBasis: 'characters',
+    minimumBilledCharacters: SPEECH_MINIMUM_BILLED_CHARS,
+  },
+  drama3: {
+    voices: false,
+    instruct: 'unsupported',
+    referenceAudio: 'optional',
+    referenceText: true,
+    creativity: false,
+    inlineDirections: true,
+    maxScriptChars: DRAMA3_MAX_SCRIPT_CHARS,
+    maxReferenceTextChars: DRAMA3_MAX_REFERENCE_TEXT_CHARS,
+    referenceSeconds: DRAMA3_REFERENCE_SECONDS,
+    pricingBasis: 'characters',
+    minimumBilledCharacters: SPEECH_MINIMUM_BILLED_CHARS,
   },
 };
 
@@ -164,6 +234,11 @@ export const SPEECH_MODE_OPTIONS: Array<{ value: SpeechMode; label: string; desc
     value: 'design',
     label: 'Design a voice',
     description: 'Describe a speaker who does not exist and let the model invent them.',
+  },
+  {
+    value: 'drama3',
+    label: 'Fish Drama 3',
+    description: 'Expressive acting voice with inline [direction] tags and optional voice cloning.',
   },
 ];
 
@@ -197,6 +272,7 @@ export interface SpeechRequest {
   instruct?: string;
   referenceText?: string;
   hasReferenceAudio?: boolean;
+  creativity?: number;
 }
 
 /**
@@ -211,8 +287,10 @@ export function validateSpeechRequest(request: SpeechRequest): string | null {
 
   const script = request.script?.trim() ?? '';
   if (!script) return 'Speech generation needs the words to speak';
-  if (script.length > SPEECH_MAX_SCRIPT_CHARS) {
-    return `Speech scripts are limited to ${SPEECH_MAX_SCRIPT_CHARS} characters; this one is ${script.length}`;
+  const maxChars =
+    request.mode === 'drama3' ? DRAMA3_MAX_SCRIPT_CHARS : SPEECH_MAX_SCRIPT_CHARS;
+  if (script.length > maxChars) {
+    return `Speech scripts are limited to ${maxChars} characters; this one is ${script.length}`;
   }
 
   const instruct = request.instruct?.trim() ?? '';
@@ -244,12 +322,30 @@ export function validateSpeechRequest(request: SpeechRequest): string | null {
   if (referenceText && !capabilities.referenceText) {
     return 'This speech mode has nothing to transcribe';
   }
-  if (referenceText.length > SPEECH_MAX_REFERENCE_TEXT_CHARS) {
-    return `The reference transcript is limited to ${SPEECH_MAX_REFERENCE_TEXT_CHARS} characters; this one is ${referenceText.length}`;
+  if (referenceText && !request.hasReferenceAudio) {
+    return 'A reference transcript requires a reference recording';
+  }
+  const maxReferenceTextChars =
+    capabilities.maxReferenceTextChars ?? SPEECH_MAX_REFERENCE_TEXT_CHARS;
+  if (referenceText.length > maxReferenceTextChars) {
+    return `The reference transcript is limited to ${maxReferenceTextChars} characters; this one is ${referenceText.length}`;
+  }
+
+  if (request.creativity !== undefined && capabilities.creativity !== false) {
+    if (
+      !Number.isFinite(request.creativity) ||
+      request.creativity < SPEECH_CREATIVITY.min ||
+      request.creativity > SPEECH_CREATIVITY.max
+    ) {
+      return `Speech creativity must be between ${SPEECH_CREATIVITY.min} and ${SPEECH_CREATIVITY.max}`;
+    }
   }
 
   if (request.language && !SPEECH_LANGUAGES.includes(request.language)) {
     return `Unsupported language: ${request.language}`;
+  }
+  if (request.language === 'arabic' && request.mode !== 'drama3') {
+    return 'Arabic speech synthesis requires Fish Drama 3 (model="drama3").';
   }
 
   return null;

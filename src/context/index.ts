@@ -29,6 +29,7 @@ const DEFAULT_AUDIO_TOOLS = new Set([
 const DEFAULT_UNMASKABLE_TOOLS = new Set([
   'analyze_image',
   'analyze_video',
+  'transcribe_audio',
 ]);
 
 export type ContextCompactionAction = 'none' | 'masked' | 'trimmed' | 'over_budget_untrimmed';
