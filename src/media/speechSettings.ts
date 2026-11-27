@@ -103,8 +103,11 @@ export const SPEECH_LANGUAGE_OPTIONS = SPEECH_LANGUAGES.map((code) => ({
 /** Qwen3-TTS delivery variation (`voice`, `clone`, `design`). Lower is steadier, higher more expressive. */
 export const SPEECH_CREATIVITY = { min: 0.1, max: 2, default: 0.9 };
 
-/** The script itself. sogni-socket refuses a longer one rather than truncating it. */
+/** The script itself on Qwen3-TTS (`voice`, `clone`, `design`). sogni-socket refuses a longer one rather than truncating it. */
 export const SPEECH_MAX_SCRIPT_CHARS = 4096;
+
+/** The script limit on Fish Drama 3 (`drama3`). */
+export const DRAMA3_MAX_SCRIPT_CHARS = 5000;
 
 /** A written direction for the delivery, or for the voice to invent. */
 export const SPEECH_MAX_INSTRUCT_CHARS = 512;
@@ -153,6 +156,8 @@ export interface SpeechModelCapabilities {
   creativity?: boolean;
   /** Whether inline [direction] / <whisper> tags in the script are acted out. */
   inlineDirections?: boolean;
+  /** Maximum script length in characters accepted by this speech mode. */
+  maxScriptChars: number;
   /** Maximum characters for referenceText when referenceText is supported. */
   maxReferenceTextChars?: number;
   /** Accepted reference recording duration bounds in seconds. */
@@ -171,6 +176,7 @@ export const SPEECH_MODELS: Record<SpeechMode, SpeechModelCapabilities> = {
     referenceText: false,
     creativity: true,
     inlineDirections: false,
+    maxScriptChars: SPEECH_MAX_SCRIPT_CHARS,
     pricingBasis: 'characters',
     minimumBilledCharacters: SPEECH_MINIMUM_BILLED_CHARS,
   },
@@ -181,6 +187,7 @@ export const SPEECH_MODELS: Record<SpeechMode, SpeechModelCapabilities> = {
     referenceText: true,
     creativity: true,
     inlineDirections: false,
+    maxScriptChars: SPEECH_MAX_SCRIPT_CHARS,
     maxReferenceTextChars: SPEECH_MAX_REFERENCE_TEXT_CHARS,
     referenceSeconds: SPEECH_REFERENCE_SECONDS,
     pricingBasis: 'characters',
@@ -193,6 +200,7 @@ export const SPEECH_MODELS: Record<SpeechMode, SpeechModelCapabilities> = {
     referenceText: false,
     creativity: true,
     inlineDirections: false,
+    maxScriptChars: SPEECH_MAX_SCRIPT_CHARS,
     pricingBasis: 'characters',
     minimumBilledCharacters: SPEECH_MINIMUM_BILLED_CHARS,
   },
@@ -203,6 +211,7 @@ export const SPEECH_MODELS: Record<SpeechMode, SpeechModelCapabilities> = {
     referenceText: true,
     creativity: false,
     inlineDirections: true,
+    maxScriptChars: DRAMA3_MAX_SCRIPT_CHARS,
     maxReferenceTextChars: DRAMA3_MAX_REFERENCE_TEXT_CHARS,
     referenceSeconds: DRAMA3_REFERENCE_SECONDS,
     pricingBasis: 'characters',
@@ -278,8 +287,10 @@ export function validateSpeechRequest(request: SpeechRequest): string | null {
 
   const script = request.script?.trim() ?? '';
   if (!script) return 'Speech generation needs the words to speak';
-  if (script.length > SPEECH_MAX_SCRIPT_CHARS) {
-    return `Speech scripts are limited to ${SPEECH_MAX_SCRIPT_CHARS} characters; this one is ${script.length}`;
+  const maxChars =
+    request.mode === 'drama3' ? DRAMA3_MAX_SCRIPT_CHARS : SPEECH_MAX_SCRIPT_CHARS;
+  if (script.length > maxChars) {
+    return `Speech scripts are limited to ${maxChars} characters; this one is ${script.length}`;
   }
 
   const instruct = request.instruct?.trim() ?? '';

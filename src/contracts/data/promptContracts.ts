@@ -988,7 +988,7 @@ const GENERATE_SPEECH_CONTRACT: PromptContract = {
   ].join('\n'),
   parameterDocs: {
     prompt:
-      'The literal words to speak, verbatim. With model="drama3", inline [direction] and <whisper>...</whisper> acting tags may be embedded directly in prompt.',
+      'The literal words to speak, verbatim (up to 4096 chars on voice/clone/design, up to 5000 chars on drama3). With model="drama3", inline [direction] and <whisper>...</whisper> acting tags may be embedded directly in prompt.',
     model:
       'Speech engine selector: "voice" (default studio voices), "clone" (Qwen3-TTS voice clone), "design" (invented voice from voiceDescription), or "drama3" (Fish Drama 3 expressive acting voice with inline [direction] tags and optional voice cloning).',
     voice: 'Preset studio voice for model="voice" only (default serena).',

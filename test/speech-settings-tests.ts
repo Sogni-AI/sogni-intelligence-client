@@ -8,6 +8,7 @@ import {
   DEFAULT_SPEECH_VOICE,
   DRAMA3_DIRECTION_TAG_EXAMPLES,
   DRAMA3_MAX_REFERENCE_TEXT_CHARS,
+  DRAMA3_MAX_SCRIPT_CHARS,
   DRAMA3_OUTPUT_SAMPLE_RATE,
   DRAMA3_REFERENCE_SECONDS,
   SPEECH_LANGUAGES,
@@ -77,6 +78,8 @@ export function runSpeechSettingsTests(): { passed: number; failed: number } {
   expect('drama3 codec output rate', DRAMA3_OUTPUT_SAMPLE_RATE, 44100);
   expect('qwen reference clip bounds', SPEECH_REFERENCE_SECONDS, { min: 3, max: 30 });
   expect('drama3 reference clip bounds', DRAMA3_REFERENCE_SECONDS, { min: 1, max: 30 });
+  expect('drama3 max script chars', DRAMA3_MAX_SCRIPT_CHARS, 5000);
+  expect('qwen max script chars', SPEECH_MAX_SCRIPT_CHARS, 4096);
   expect('drama3 max reference transcript chars', DRAMA3_MAX_REFERENCE_TEXT_CHARS, 2000);
   expect('drama3 inline direction examples', DRAMA3_DIRECTION_TAG_EXAMPLES.length, 5);
   expect('a mode option per checkpoint', SPEECH_MODE_OPTIONS.length, 4);
@@ -100,6 +103,7 @@ export function runSpeechSettingsTests(): { passed: number; failed: number } {
       'inlineDirections',
       'instruct',
       'maxReferenceTextChars',
+      'maxScriptChars',
       'minimumBilledCharacters',
       'pricingBasis',
       'referenceAudio',
@@ -111,6 +115,11 @@ export function runSpeechSettingsTests(): { passed: number; failed: number } {
   for (const mode of ['voice', 'clone', 'design', 'drama3'] as const) {
     expect(`${mode} pricingBasis is characters`, SPEECH_MODELS[mode].pricingBasis, 'characters');
     expect(`${mode} minimumBilledCharacters is 170`, SPEECH_MODELS[mode].minimumBilledCharacters, 170);
+    expect(
+      `${mode} maxScriptChars matches mode ceiling`,
+      SPEECH_MODELS[mode].maxScriptChars,
+      mode === 'drama3' ? 5000 : 4096,
+    );
   }
 
   // --- routing -----------------------------------------------------------
@@ -156,6 +165,16 @@ export function runSpeechSettingsTests(): { passed: number; failed: number } {
     'an over-long script is refused rather than truncated',
     validateSpeechRequest(request('voice', { script: 'a'.repeat(SPEECH_MAX_SCRIPT_CHARS + 1) })),
     `Speech scripts are limited to ${SPEECH_MAX_SCRIPT_CHARS} characters; this one is ${SPEECH_MAX_SCRIPT_CHARS + 1}`,
+  );
+  expect(
+    'drama3 script at 5000 chars passes',
+    validateSpeechRequest(request('drama3', { script: 'a'.repeat(DRAMA3_MAX_SCRIPT_CHARS) })),
+    null,
+  );
+  expect(
+    'drama3 script over 5000 chars is refused',
+    validateSpeechRequest(request('drama3', { script: 'a'.repeat(DRAMA3_MAX_SCRIPT_CHARS + 1) })),
+    `Speech scripts are limited to ${DRAMA3_MAX_SCRIPT_CHARS} characters; this one is ${DRAMA3_MAX_SCRIPT_CHARS + 1}`,
   );
 
   // --- validation: voices and directions ----------------------------------

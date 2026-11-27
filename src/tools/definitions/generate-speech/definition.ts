@@ -31,8 +31,8 @@ Punctuation is prosody: full stops, commas, question marks and ellipses control 
 
 If the user asks for a script rather than supplying one — "read me a poem about the sea", "record an intro for my podcast" — write the words first and pass them here. compose_script is for longer or structured pieces; a sentence or two you can simply write.
 
-Limit 4096 characters, roughly five minutes of speech. A longer script is refused rather than cut off mid-sentence, so split it across several calls at a natural break.`,
-          maxLength: 4096,
+Limit up to 4096 characters for Qwen3-TTS modes ("voice", "clone", "design") and up to 5000 characters for Fish Drama 3 ("drama3"). A longer script is refused rather than cut off mid-sentence, so split it across several calls at a natural break.`,
+          maxLength: 5000,
         },
         model: {
           type: 'string',

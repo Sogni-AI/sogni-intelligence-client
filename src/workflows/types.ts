@@ -155,6 +155,7 @@ export interface StageBase {
   id: string;
   label?: string;
   produces?: string[];
+  outputs?: { artifact?: string };
   requiredArtifactsIn?: string[];
   optionalArtifactsIn?: string[];
   reviewFocus?: string[];

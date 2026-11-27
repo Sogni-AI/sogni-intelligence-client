@@ -347,6 +347,135 @@ async function testBindingErrorFailsSlotGracefully(): Promise<void> {
   eq('run still completes (onError: continue), no pool crash', finalRun.state, 'completed');
 }
 
+// ---------------------------------------------------------------------------
+// Task 4 — toolOk output_assets/metadata URL fallbacks & transcribe_audio content
+// ---------------------------------------------------------------------------
+
+async function testToolOkEnvelopeUrlAndTranscriptContentBindings(): Promise<void> {
+  const srtText = '1\n00:00:00,000 --> 00:00:02,000\nWelcome to Sogni.\n';
+  const workflow: WorkflowTemplate = {
+    id: 'wf_video_stt_subtitles',
+    version: '1.0.0',
+    name: 'Video -> STT -> Subtitles',
+    description: '',
+    category: 'video-social',
+    stability: 'experimental',
+    author: 'system',
+    visibility: 'private',
+    inputs: [],
+    stages: [
+      {
+        type: 'fixed',
+        id: 'clip',
+        tool: 'generate_video',
+        produces: ['clip_out'],
+        args: { prompt: 'Presenter speaking to camera' },
+      },
+      {
+        type: 'fixed',
+        id: 'narration',
+        tool: 'generate_speech',
+        produces: ['speech_out'],
+        args: { prompt: 'Welcome to Sogni.', model: 'drama3' },
+      },
+      {
+        type: 'fixed',
+        id: 'stt',
+        tool: 'transcribe_audio',
+        produces: ['stt_out'],
+        args: {
+          audio_source_url: '$artifacts.clip_out.items[0].selectedVersion.url',
+          responseFormat: 'srt',
+        },
+      },
+      {
+        type: 'fixed',
+        id: 'subtitled',
+        tool: 'add_subtitles',
+        produces: ['subtitled_out'],
+        args: {
+          videoUrl: '$artifacts.clip_out.items[0].selectedVersion.url',
+          srt: '$artifacts.stt_out.items[0].selectedVersion.content',
+        },
+      },
+    ],
+    exposeToLLM: false,
+    createdAt: 0,
+    updatedAt: 0,
+  };
+
+  const capturedCalls: Array<{ tool: string; args: Record<string, unknown> }> = [];
+  const dispatch: ToolDispatcher = {
+    has: () => true,
+    execute: async (toolName, args) => {
+      capturedCalls.push({ tool: toolName, args: args as Record<string, unknown> });
+      if (toolName === 'generate_video') {
+        return JSON.stringify({
+          ok: true,
+          output_assets: [{ kind: 'video', url: 'https://cdn.sogni.ai/videos/clip-1.mp4' }],
+        });
+      }
+      if (toolName === 'generate_speech') {
+        return JSON.stringify({
+          ok: true,
+          metadata: { audioUrls: ['https://cdn.sogni.ai/audio/speech-1.wav'] },
+        });
+      }
+      if (toolName === 'transcribe_audio') {
+        return JSON.stringify({
+          ok: true,
+          transcript: 'Welcome to Sogni.',
+          formatted: srtText,
+          metadata: { srt: srtText },
+        });
+      }
+      if (toolName === 'add_subtitles') {
+        return JSON.stringify({
+          ok: true,
+          metadata: { videoUrls: ['https://cdn.sogni.ai/videos/clip-1-subtitled.mp4'] },
+        });
+      }
+      throw new Error(`Unexpected tool ${toolName}`);
+    },
+  };
+
+  const store = memoryStore();
+  const run = await createRun({ workflow, inputs: {}, store });
+  const finalRun = await pump(executeRun(run.id, { store, dispatch, context: {}, callbacks: {} }));
+
+  eq('pipeline completes cleanly', finalRun.state, 'completed');
+  eq(
+    'generate_video output_assets[0].url populates selectedVersion.url',
+    finalRun.artifacts.clip_out?.items[0]?.versions[0]?.url,
+    'https://cdn.sogni.ai/videos/clip-1.mp4',
+  );
+  eq(
+    'generate_speech metadata.audioUrls[0] populates selectedVersion.url',
+    finalRun.artifacts.speech_out?.items[0]?.versions[0]?.url,
+    'https://cdn.sogni.ai/audio/speech-1.wav',
+  );
+  eq(
+    'transcribe_audio receives upstream video URL from selectedVersion.url',
+    capturedCalls.find((c) => c.tool === 'transcribe_audio')?.args.audio_source_url,
+    'https://cdn.sogni.ai/videos/clip-1.mp4',
+  );
+  eq(
+    'transcribe_audio stores clean SRT text in selectedVersion.content rather than JSON envelope',
+    finalRun.artifacts.stt_out?.items[0]?.versions[0]?.content,
+    srtText,
+  );
+  eq(
+    'add_subtitles receives clean SRT string via $artifacts.stt_out.items[0].selectedVersion.content',
+    capturedCalls.find((c) => c.tool === 'add_subtitles')?.args.srt,
+    srtText,
+  );
+  eq(
+    'add_subtitles metadata.videoUrls[0] populates selectedVersion.url',
+    finalRun.artifacts.subtitled_out?.items[0]?.versions[0]?.url,
+    'https://cdn.sogni.ai/videos/clip-1-subtitled.mp4',
+  );
+}
+
 export async function runWorkflowExecutorTests(): Promise<{ passed: number; failed: number }> {
   console.log('\n🧪 workflow executor — per-slot retry-callback primitive\n');
   await testSlotProgressBridge();
@@ -357,6 +486,7 @@ export async function runWorkflowExecutorTests(): Promise<{ passed: number; fail
   await testDefaultsToSequential();
   await testConcurrencyClampedTo16();
   await testBindingErrorFailsSlotGracefully();
+  await testToolOkEnvelopeUrlAndTranscriptContentBindings();
   return { passed: testsPassed, failed: testsFailed };
 }
 
