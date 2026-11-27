@@ -1,4 +1,5 @@
 import { validateAndNormalizeHostedToolArguments, type HostedToolSchema } from '../contracts/hostedToolValidation.js';
+import { assertArtifactUrlIsSafe } from '../workflows/primitives/validateWithRubric.js';
 import { mcpManifest } from './manifest.generated.js';
 
 export const MCP_TOOLS = mcpManifest.tools;
@@ -56,13 +57,26 @@ export function validateMcpArguments(name: string, input: unknown): Record<strin
   return result.cleaned;
 }
 
+function assertSafeHttpsMediaUrl(raw: unknown): string {
+  if (typeof raw !== 'string') {
+    throw new Error('References require HTTPS download URLs without credentials');
+  }
+  const url = new URL(raw);
+  if (url.protocol !== 'https:' || url.username || url.password) {
+    throw new Error('References require HTTPS download URLs without credentials');
+  }
+  const safety = assertArtifactUrlIsSafe(raw);
+  if (!safety.ok) {
+    throw new Error(`References must target a public host: ${safety.reason}`);
+  }
+  return raw;
+}
+
 export function mcpMediaReferences(input: Record<string, unknown>): McpMediaReference[] {
   const refs: McpMediaReference[] = [];
   for (const [type, field] of [['image', 'reference_images'], ['video', 'reference_videos'], ['audio', 'reference_audios']] as const) {
     for (const raw of (input[field] as string[] | undefined) ?? []) {
-      const url = new URL(raw);
-      if (url.protocol !== 'https:' || url.username || url.password) throw new Error('References require HTTPS download URLs without credentials');
-      refs.push({ type, url: raw });
+      refs.push({ type, url: assertSafeHttpsMediaUrl(raw) });
     }
   }
   return refs;
@@ -80,16 +94,16 @@ export function routeMcpCall(name: string, raw: unknown): McpRoutedCall {
   };
   const add = (type: McpMediaReference['type'], url: unknown): number | undefined => {
     if (url === undefined) return undefined;
-    const parsed = new URL(url as string);
-    if (parsed.protocol !== 'https:' || parsed.username || parsed.password) throw new Error('References require HTTPS download URLs without credentials');
+    const validated = assertSafeHttpsMediaUrl(url);
     const index = refs.filter(ref => ref.type === type).length;
-    refs.push({ type, url: url as string });
+    refs.push({ type, url: validated });
     return index;
   };
   put('prompt', input.prompt);
   put('numberOfVariations', input.count);
   let toolName: string;
   if (name === 'generate_image') {
+    if (input.mask !== undefined) assertSafeHttpsMediaUrl(input.mask);
     toolName = refs.some(ref => ref.type === 'image') || input.mask ? 'edit_image' : 'generate_image';
     if (refs.some(ref => ref.type !== 'image')) throw new Error('Image generation accepts image references only');
     if (input.mask && !refs.length) throw new Error('An image mask requires a reference image');
