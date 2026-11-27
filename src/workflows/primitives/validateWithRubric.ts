@@ -271,10 +271,10 @@ export function assertArtifactUrlIsSafe(
       reason: `artifactUrl host "${normalizedHost}" is on a local or internal network suffix`,
     };
   }
-  // IPv4-mapped (::ffff:0:0/96, including ::ffff:a.b.c.d -> ::ffff:hhhh:hhhh
-  // after URL canonicalization) and NAT64 (64:ff9b::/96) IPv6 addresses route
-  // to their embedded IPv4 destination at the socket layer. Reject them outright.
-  if (/^(::ffff:|64:ff9b:)/i.test(normalizedHost)) {
+  // IPv4-mapped (::ffff:0:0/96), IPv4-compatible (::/96, e.g. ::127.0.0.1 ->
+  // ::7f00:1 after URL canonicalization), and NAT64 (64:ff9b::/96) IPv6
+  // addresses route to their embedded IPv4 destination. Reject them outright.
+  if (/^(?:::ffff:|64:ff9b:|::(?:[0-9a-f]{1,4}:)?[0-9a-f]{1,4}$)/i.test(normalizedHost)) {
     return {
       ok: false,
       reason: `artifactUrl host "${normalizedHost}" is an IPv4-embedded IPv6 address`,

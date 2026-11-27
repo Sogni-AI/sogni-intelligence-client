@@ -79,12 +79,12 @@ export class SanitizerError extends Error {
 // Strip patterns that would be quadratic under String.prototype.replace on
 // repeated unterminated openings, named so `stripPattern` can apply them in
 // linear time (see LINEAR_STRIP_SCANS below).
-const UNTRUSTED_USER_INPUT_OPEN_PATTERN = /<\s*UNTRUSTED_USER_INPUT(?:[\s/][^>]*)?>/gi;
-const UNTRUSTED_USER_BRIEF_OPEN_PATTERN = /<\s*UNTRUSTED_USER_BRIEF(?:[\s/][^>]*)?>/gi;
-const SYSTEM_BLOCK_PATTERN = /<\s*system(?:[\s/][^>]*)?>[\s\S]*?<\/\s*system\s*>/gi;
-const TOOL_CALL_BLOCK_PATTERN = /<\s*tool_call(?:[\s/][^>]*)?>[\s\S]*?<\/\s*tool_call\s*>/gi;
-const SYSTEM_TAG_PATTERN = /<\s*\/?\s*system(?:[\s/][^>]*)?>/gi;
-const TOOL_CALL_TAG_PATTERN = /<\s*\/?\s*tool_call(?:[\s/][^>]*)?>/gi;
+const UNTRUSTED_USER_INPUT_OPEN_PATTERN = /<\s*UNTRUSTED_USER_INPUT(?:[\s/][^<>]*)?>/gi;
+const UNTRUSTED_USER_BRIEF_OPEN_PATTERN = /<\s*UNTRUSTED_USER_BRIEF(?:[\s/][^<>]*)?>/gi;
+const SYSTEM_BLOCK_PATTERN = /<\s*system\s*\/?\s*>[\s\S]*?<\/\s*system\s*>/gi;
+const TOOL_CALL_BLOCK_PATTERN = /<\s*tool_call\s*\/?\s*>[\s\S]*?<\/\s*tool_call\s*>/gi;
+const SYSTEM_TAG_PATTERN = /<\s*\/?\s*system\s*\/?\s*>/gi;
+const TOOL_CALL_TAG_PATTERN = /<\s*\/?\s*tool_call\s*\/?\s*>/gi;
 
 const MAX_STRIP_PASSES = 8;
 
@@ -171,12 +171,10 @@ export const HARD_STRIP_PATTERNS: readonly RegExp[] = Object.freeze([
  * matches, so the output is identical for every input.
  */
 const LINEAR_STRIP_SCANS: ReadonlyMap<RegExp, RegExp> = new Map([
-  [SYSTEM_BLOCK_PATTERN, /<\s*system(?:[\s/][^>]*)?(?:>(?:[\s\S]*?(<\/\s*system\s*>)|[\s\S]*)|$)/gi],
-  [TOOL_CALL_BLOCK_PATTERN, /<\s*tool_call(?:[\s/][^>]*)?(?:>(?:[\s\S]*?(<\/\s*tool_call\s*>)|[\s\S]*)|$)/gi],
-  [SYSTEM_TAG_PATTERN, /<\s*\/?\s*system(?:[\s/][^>]*)?(>|$)/gi],
-  [TOOL_CALL_TAG_PATTERN, /<\s*\/?\s*tool_call(?:[\s/][^>]*)?(>|$)/gi],
-  [UNTRUSTED_USER_INPUT_OPEN_PATTERN, /<\s*UNTRUSTED_USER_INPUT(?:[\s/][^>]*)?(>|$)/gi],
-  [UNTRUSTED_USER_BRIEF_OPEN_PATTERN, /<\s*UNTRUSTED_USER_BRIEF(?:[\s/][^>]*)?(>|$)/gi],
+  [SYSTEM_BLOCK_PATTERN, /<\s*system\s*\/?\s*>(?:[\s\S]*?(<\/\s*system\s*>)|[\s\S]*)/gi],
+  [TOOL_CALL_BLOCK_PATTERN, /<\s*tool_call\s*\/?\s*>(?:[\s\S]*?(<\/\s*tool_call\s*>)|[\s\S]*)/gi],
+  [UNTRUSTED_USER_INPUT_OPEN_PATTERN, /<\s*UNTRUSTED_USER_INPUT(?:[\s/][^<>]*)?(>|(?=<)|$)/gi],
+  [UNTRUSTED_USER_BRIEF_OPEN_PATTERN, /<\s*UNTRUSTED_USER_BRIEF(?:[\s/][^<>]*)?(>|(?=<)|$)/gi],
 ]);
 
 /**

@@ -133,6 +133,8 @@ test('MCP media references and masks reject non-public and metadata hosts', () =
     'https://service.cluster.local/asset.png',
     'https://[fe80::1]/asset.png',
     'https://[fd12:3456::1]/asset.png',
+    'https://[::127.0.0.1]/asset.png',
+    'https://[::169.254.169.254]/asset.png',
   ]) {
     assert.throws(
       () => routeMcpCall('generate_image', { ...base, reference_images: [target] }),
