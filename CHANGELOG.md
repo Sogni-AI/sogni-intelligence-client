@@ -1,3 +1,10 @@
+# [4.37.0](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.36.1...v4.37.0) (2026-11-27)
+
+
+### Features
+
+* **loras:** point agents at the newest Krea 2 and H3 LoRA versions ([a727a48](https://github.com/Sogni-AI/sogni-intelligence-client/commit/a727a48bd04032c3082b271ae3e49266e1b261a1))
+
 ## [4.36.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.36.0...v4.36.1) (2026-11-27)
 
 
