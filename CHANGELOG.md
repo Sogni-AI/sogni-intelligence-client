@@ -1,3 +1,10 @@
+## [4.37.2](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.37.1...v4.37.2) (2026-11-28)
+
+
+### Bug Fixes
+
+* **prompt-guides:** refine Wan 3 exclusion phrasing and wardrobe state ([2c10f23](https://github.com/Sogni-AI/sogni-intelligence-client/commit/2c10f23cb2eae78b9b8837b4b0f01666ee68c66b))
+
 ## [4.37.1](https://github.com/Sogni-AI/sogni-intelligence-client/compare/v4.37.0...v4.37.1) (2026-11-27)
 
 
