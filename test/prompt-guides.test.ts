@@ -211,3 +211,25 @@ test('MiniMax H3 Prism resolves to the Ref2VA guide, and no guide names it', () 
     }
   }
 });
+
+test('Wan 3 guides require positive exclusions and physically consistent reference wardrobe state', () => {
+  for (const mode of VIDEO_MODES['wan-3']) {
+    const guide = MODEL_PROMPT_GUIDES['wan-3'][mode];
+    assert.ok(guide, `missing wan-3 ${mode}`);
+    const shaperText = renderModelPromptGuide(guide, { audience: 'shaper' });
+    assert.ok(
+      shaperText.includes("Express the artist's exclusions positively")
+        && shaperText.includes('without naming what is excluded')
+        && shaperText.includes('keep explicit shot-plan syntax such as "One continuous shot, no cuts."'),
+      `wan-3 ${mode} missing positive-exclusion guidance`,
+    );
+    assert.ok(
+      shaperText.includes('Keep clothing and body state physically consistent across every beat')
+        && shaperText.includes('starting frame, reference photo, or saved profile')
+        && shaperText.includes('keep the garment on whenever the artist wants clothed or over-fabric contact')
+        && shaperText.includes('omit it from the opening state')
+        && shaperText.includes('give removing or pulling it aside its own beat right before the act'),
+      `wan-3 ${mode} missing wardrobe/state consistency guidance`,
+    );
+  }
+});
